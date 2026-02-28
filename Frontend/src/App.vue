@@ -1,49 +1,39 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
+import { computed, ref } from 'vue'
+import AppLayout from '@/components/layout/AppLayout.vue'
+import DashboardView from '@/views/dashboard/DashboardView.vue'
+
+const activeSection = ref('dashboard')
+
+const viewMeta = computed(() => {
+  if (activeSection.value === 'staff') {
+    return { title: 'Staff Management', subtitle: 'Manage your team operations', action: 'Add Staff' }
+  }
+  if (activeSection.value === 'tables') {
+    return { title: 'Active Tables', subtitle: 'Track orders and service live', action: 'Refresh' }
+  }
+  if (activeSection.value === 'menu') {
+    return { title: 'Menu Management', subtitle: 'Manage menu items and categories', action: 'Add Item' }
+  }
+  return { title: 'Dashboard', subtitle: 'Welcome to our restaurant', action: 'Add Report' }
+})
+
+function cycleSection() {
+  const ids = ['dashboard', 'menu', 'staff', 'tables']
+  const current = ids.indexOf(activeSection.value)
+  activeSection.value = ids[(current + 1) % ids.length]
+}
 </script>
 
 <template>
-  <div>
-    <header>
-      <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-      <div class="wrapper">
-        <HelloWorld msg="You did it!" />
-      </div>
-    </header>
-
-    <main>
-      <TheWelcome />
-    </main>
-  </div>
+  <AppLayout
+    :active-section="activeSection"
+    :title="viewMeta.title"
+    :subtitle="viewMeta.subtitle"
+    :action-label="viewMeta.action"
+    @update:active-section="activeSection = $event"
+    @action="cycleSection"
+  >
+    <DashboardView :active-section="activeSection" />
+  </AppLayout>
 </template>
-
-<style scoped>
-header {
-  line-height: 1.5;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-}
-</style>
