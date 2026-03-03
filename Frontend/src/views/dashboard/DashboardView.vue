@@ -49,7 +49,7 @@ const filteredTables = computed(() => {
 })
 
 const serviceItems = ref([
-  { id: 1, tableId: 'T-01', item: 'Beef Lok Lak', status: 'Ready' },
+  { id: 1, tableId: 'T-01', item: 'ឆ្មាខ្មៅ​ + ទឹកកក', status: 'Ready' },
   { id: 2, tableId: 'T-01', item: 'Fish Amok', status: 'Kitchen' },
   { id: 3, tableId: 'T-04', item: 'Somlor Korko', status: 'Kitchen' }
 ])
