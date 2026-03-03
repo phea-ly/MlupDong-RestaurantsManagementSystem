@@ -11,14 +11,40 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->rememberToken();
+        Schema::create('restaurants', function (Blueprint $table) {
+            $table->id('restaurant_id');
+            $table->string('name', 150);
+            $table->string('address', 255)->nullable();
+            $table->decimal('lat', 10, 8)->nullable();
+            $table->decimal('lng', 11, 8)->nullable();
+            $table->integer('allowed_radius_meters')->nullable();
+            $table->string('phone', 20)->nullable();
+            $table->time('open_time')->nullable();
+            $table->time('close_time')->nullable();
             $table->timestamps();
+        });
+
+        Schema::create('roles', function (Blueprint $table) {
+            $table->id('role_id');
+            $table->string('role_name', 100);
+            $table->text('description')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('users', function (Blueprint $table) {
+            $table->id('user_id');
+            $table->string('first_name', 100);
+            $table->string('last_name', 100);
+            $table->string('email', 150)->unique();
+            $table->string('password');
+            $table->string('phone', 20)->nullable();
+            $table->boolean('status')->default(true);
+            $table->unsignedBigInteger('role_id')->nullable();
+            $table->unsignedBigInteger('restaurant_id')->nullable();
+            $table->timestamps();
+
+            $table->foreign('role_id')->references('role_id')->on('roles');
+            $table->foreign('restaurant_id')->references('restaurant_id')->on('restaurants');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -43,6 +69,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('users');
+        Schema::dropIfExists('roles');
+        Schema::dropIfExists('restaurants');
         Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
     }
