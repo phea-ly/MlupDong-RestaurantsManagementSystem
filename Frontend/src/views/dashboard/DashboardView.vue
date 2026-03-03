@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
+import MenuManagementView from './MenuManagementView.vue'
 
 const props = defineProps({
   activeSection: {
@@ -245,10 +246,14 @@ function markServed(itemId) {
     </v-row>
   </template>
 
+  <template v-else-if="props.activeSection === 'menu'">
+    <MenuManagementView />
+  </template>
+
   <template v-else>
     <v-card rounded="lg" border class="pa-8 text-center">
-      <p class="text-h6 font-weight-bold mb-2">Menu Section</p>
-      <p class="muted">This section is ready for menu CRUD integration.</p>
+      <p class="text-h6 font-weight-bold mb-2">Section Not Found</p>
+      <p class="muted">This section is under development.</p>
     </v-card>
   </template>
 
