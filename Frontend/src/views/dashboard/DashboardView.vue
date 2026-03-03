@@ -74,10 +74,10 @@ function markServed(itemId) {
       <v-col v-for="card in revenueCards" :key="card.label" cols="12" md="4">
         <v-card rounded="lg" border class="pa-4 fill-height">
           <div class="d-flex justify-space-between mb-3">
-            <v-chip size="small" color="#daf4e8" class="font-weight-bold">Income</v-chip>
+            <v-chip size="small" color="#14d886" class="font-weight-bold">Income</v-chip>
             <v-chip
               size="small"
-              :color="card.negative ? '#ffe7e7' : '#daf4e8'"
+              :color="card.negative ? '#ffaa00' : '#14d886'"
               :text-color="card.negative ? '#d95353' : '#13995a'"
               class="font-weight-bold"
             >
