@@ -134,10 +134,10 @@ function markServed(itemId) {
       <v-table density="comfortable">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Role</th>
-            <th>Shift</th>
-            <th>Status</th>
+            <th scope="col">Name</th>
+            <th scope="col">Role</th>
+            <th scope="col">Shift</th>
+            <th scope="col">Status</th>
           </tr>
         </thead>
         <tbody>
