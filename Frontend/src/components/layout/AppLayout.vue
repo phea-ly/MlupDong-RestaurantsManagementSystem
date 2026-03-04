@@ -33,7 +33,7 @@ const emit = defineEmits(['update:active-section', 'action', 'logout'])
     />
     <v-main class="main-bg">
       <AppBar :title="title" :subtitle="subtitle" :action-label="actionLabel" @action="emit('action')" />
-      <v-container fluid class="pa-4">
+      <v-container fluid class="content-wrap">
         <slot />
       </v-container>
     </v-main>
@@ -46,6 +46,10 @@ const emit = defineEmits(['update:active-section', 'action', 'logout'])
 }
 
 .main-bg {
-  background: #ecf0ef;
+  background: #edf2f1;
+}
+
+.content-wrap {
+  padding: 20px 18px 26px;
 }
 </style>
