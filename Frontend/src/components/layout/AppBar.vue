@@ -1,4 +1,7 @@
 <script setup>
+import { computed } from 'vue'
+import { getSessionUser } from '@/utils/auth'
+
 defineProps({
   title: {
     type: String,
@@ -15,6 +18,19 @@ defineProps({
 })
 
 const emit = defineEmits(['action'])
+
+const sessionUser = computed(() => getSessionUser())
+const profileInitials = computed(() => {
+  const name = sessionUser.value?.name?.trim() || ''
+
+  if (!name) {
+    return 'GU'
+  }
+
+  const parts = name.split(/\s+/).filter(Boolean)
+  const initials = parts.slice(0, 2).map((part) => part[0].toUpperCase()).join('')
+  return initials || 'GU'
+})
 </script>
 
 <template>
@@ -30,7 +46,7 @@ const emit = defineEmits(['action'])
       </v-btn>
       <v-btn icon="mdi-bell-outline" variant="text" />
       <v-btn icon="mdi-cog-outline" variant="text" />
-      <v-avatar color="#10d283" size="36">SK</v-avatar>
+      <v-avatar color="#10d283" size="36">{{ profileInitials }}</v-avatar>
     </div>
   </v-app-bar>
 </template>

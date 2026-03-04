@@ -1,6 +1,15 @@
 <script setup>
+import { computed } from 'vue'
 import SvgIcon from '@jamescoyle/vue-icon';
-import { mdiViewDashboard, mdiSilverware,mdiAccountGroup,mdiTablePicnic } from '@mdi/js'
+import {
+  mdiViewDashboard,
+  mdiSilverware,
+  mdiAccountGroup,
+  mdiTablePicnic,
+  mdiChartBoxOutline,
+  mdiCogOutline,
+} from '@mdi/js'
+import { getSessionUser } from '@/utils/auth'
 
 
 const props = defineProps({
@@ -10,18 +19,36 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:active-section'])
+const emit = defineEmits(['update:active-section', 'logout'])
+
+const sessionUser = computed(() => getSessionUser())
+const profileName = computed(() => sessionUser.value?.name || 'Guest User')
+const profileRole = computed(() => {
+  const role = sessionUser.value?.role || 'client'
+  return role.charAt(0).toUpperCase() + role.slice(1)
+})
+const profileInitials = computed(() => {
+  const name = profileName.value.trim()
+
+  if (!name) {
+    return 'GU'
+  }
+
+  const parts = name.split(/\s+/).filter(Boolean)
+  const initials = parts.slice(0, 2).map((part) => part[0].toUpperCase()).join('')
+  return initials || 'GU'
+})
 
 const menu = [
   { id: 'dashboard', label: 'Dashboard', icon: mdiViewDashboard },
   { id: 'menu', label: 'Menu', icon: mdiSilverware },
-  { id: 'staff', label: 'staff', icon: mdiAccountGroup},
-  { id: 'tables', label: 'tables', icon: mdiTablePicnic }
+  { id: 'staff', label: 'Staff', icon: mdiAccountGroup },
+  { id: 'tables', label: 'Tables', icon: mdiTablePicnic }
 ]
 
 const reportsMenu = [
-  { id: 'sales-report', label: 'Sales Report', icon: 'mdi-chart-box-outline' },
-  { id: 'settings', label: 'Settings', icon: 'mdi-cog-outline' }
+  { id: 'sales-report', label: 'Sales Report', icon: mdiChartBoxOutline },
+  { id: 'settings', label: 'Settings', icon: mdiCogOutline }
 ]
 
 function selectSection(sectionId) {
@@ -61,22 +88,27 @@ function selectSection(sectionId) {
         v-for="item in reportsMenu"
         :key="item.id"
         :title="item.label"
-        :prepend-icon="item.icon"
         rounded="lg"
-        class="nav-item"
-      />
+        class="nav-item ga-3"
+      >
+        <template #prepend>
+          <svg-icon type="mdi" :path="item.icon"></svg-icon>
+        </template>
+      </v-list-item>
     </v-list>
 
     <v-spacer />
     <v-card flat rounded="xl" class="mx-3 mb-5 pa-3 user-card">
       <div class="d-flex align-center ga-3 mb-2">
-        <v-avatar color="#10d283" size="36">SK</v-avatar>
+        <v-avatar color="#10d283" size="36">{{ profileInitials }}</v-avatar>
         <div>
-          <p class="user-name">Sophal K.</p>
-          <p class="user-role">Manager</p>
+          <p class="user-name">{{ profileName }}</p>
+          <p class="user-role">{{ profileRole }}</p>
         </div>
       </div>
-      <v-btn block rounded="lg" color="#14dc8b" class="text-none font-weight-bold">Switch Shift</v-btn>
+      <v-btn block rounded="lg" color="#14dc8b" class="text-none font-weight-bold" @click="emit('logout')">
+        Switch Shift
+      </v-btn>
     </v-card>
   </v-navigation-drawer>
 </template>
@@ -131,12 +163,19 @@ function selectSection(sectionId) {
 
 .nav-item {
   margin-bottom: 4px;
+  min-height: 44px;
 }
 
 .nav-item :deep(.v-list-item-title) {
   font-size: 15px;
   font-weight: 700;
   color: #3f5067;
+}
+
+.nav-item :deep(.v-list-item__prepend) {
+  width: 24px;
+  min-width: 24px;
+  margin-inline-end: 12px;
 }
 
 .nav-item :deep(.v-icon) {

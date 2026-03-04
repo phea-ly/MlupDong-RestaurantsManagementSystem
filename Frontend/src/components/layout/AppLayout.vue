@@ -21,12 +21,16 @@ defineProps({
   }
 })
 
-const emit = defineEmits(['update:active-section', 'action'])
+const emit = defineEmits(['update:active-section', 'action', 'logout'])
 </script>
 
 <template>
   <v-app class="layout-root">
-    <Sidebar :active-section="activeSection" @update:active-section="emit('update:active-section', $event)" />
+    <Sidebar
+      :active-section="activeSection"
+      @update:active-section="emit('update:active-section', $event)"
+      @logout="emit('logout')"
+    />
     <v-main class="main-bg">
       <AppBar :title="title" :subtitle="subtitle" :action-label="actionLabel" @action="emit('action')" />
       <v-container fluid class="pa-4">
