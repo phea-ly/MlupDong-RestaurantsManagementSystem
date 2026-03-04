@@ -7,7 +7,6 @@ const router = useRouter()
 
 const fullName = ref('')
 const email = ref('')
-const role = ref('client')
 const password = ref('')
 const confirmPassword = ref('')
 const loading = ref(false)
@@ -33,7 +32,7 @@ async function register() {
     await registerWithCredentials({
       name: fullName.value.trim(),
       email: email.value.trim(),
-      role: role.value,
+      role: 'admin',
       password: password.value,
       password_confirmation: confirmPassword.value,
     })
@@ -81,21 +80,6 @@ function goToLogin() {
               hide-details="auto"
               class="mb-2"
               placeholder="name@example.com"
-            />
-
-            <p class="field-label">Account Type</p>
-            <v-select
-              v-model="role"
-              :items="[
-                { title: 'Client', value: 'client' },
-                { title: 'Admin', value: 'admin' },
-              ]"
-              item-title="title"
-              item-value="value"
-              variant="outlined"
-              density="comfortable"
-              hide-details="auto"
-              class="mb-2"
             />
 
             <p class="field-label">Password</p>

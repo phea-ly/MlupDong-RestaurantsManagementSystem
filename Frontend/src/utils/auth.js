@@ -18,6 +18,11 @@ export function getSessionUser() {
 }
 
 function setSessionUser(user) {
+  if (!user || user.role !== 'admin') {
+    clearSessionUser()
+    return
+  }
+
   localStorage.setItem(AUTH_KEY, JSON.stringify(user))
 }
 
@@ -45,7 +50,7 @@ function parseApiError(error, fallbackMessage) {
 }
 
 export function isAuthenticated() {
-  return Boolean(getSessionUser())
+  return getUserRole() === 'admin'
 }
 
 export function getUserRole() {
@@ -53,13 +58,7 @@ export function getUserRole() {
 }
 
 export function getDashboardPathByRole() {
-  const role = getUserRole()
-
-  if (role === 'admin') {
-    return '/home/admin-dashboard'
-  }
-
-  return '/home/client-dashboard'
+  return '/home/admin-dashboard'
 }
 
 export async function loginWithCredentials(email, password, remember = false) {

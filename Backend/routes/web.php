@@ -24,14 +24,13 @@ Route::prefix('api/auth')->group(function () {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'role' => ['required', 'in:admin,client'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'role' => $validated['role'],
+            'role' => 'admin',
             'password' => Hash::make($validated['password']),
         ]);
 
@@ -58,6 +57,16 @@ Route::prefix('api/auth')->group(function () {
         ], $remember)) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
+        if ($request->user()?->role !== 'admin') {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            throw ValidationException::withMessages([
+                'email' => ['Only admin accounts can sign in.'],
             ]);
         }
 

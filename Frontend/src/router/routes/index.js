@@ -43,6 +43,12 @@ const routes = [
         component: () => import('@/views/home/Dashboard.vue'),
       },
       {
+        path: 'sales-report',
+        name: 'home-sales-report',
+        meta: { requiresAuth: true },
+        component: () => import('@/views/home/SalesReport.vue'),
+      },
+      {
         path: 'menu',
         name: 'home-menu',
         component: () => import('@/views/home/Menu.vue'),
