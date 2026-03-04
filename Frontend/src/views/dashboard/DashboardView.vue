@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
+import MenuManagementView from './MenuManagementView.vue'
 
 const props = defineProps({
   activeSection: {
@@ -74,10 +75,10 @@ function markServed(itemId) {
       <v-col v-for="card in revenueCards" :key="card.label" cols="12" md="4">
         <v-card rounded="lg" border class="pa-4 fill-height">
           <div class="d-flex justify-space-between mb-3">
-            <v-chip size="small" color="#daf4e8" class="font-weight-bold">Income</v-chip>
+            <v-chip size="small" color="#14d886" class="font-weight-bold">Income</v-chip>
             <v-chip
               size="small"
-              :color="card.negative ? '#ffe7e7' : '#daf4e8'"
+              :color="card.negative ? '#ffaa00' : '#14d886'"
               :text-color="card.negative ? '#d95353' : '#13995a'"
               class="font-weight-bold"
             >
@@ -133,10 +134,10 @@ function markServed(itemId) {
       <v-table density="comfortable">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Role</th>
-            <th>Shift</th>
-            <th>Status</th>
+            <th scope="col">Name</th>
+            <th scope="col">Role</th>
+            <th scope="col">Shift</th>
+            <th scope="col">Status</th>
           </tr>
         </thead>
         <tbody>
@@ -245,10 +246,14 @@ function markServed(itemId) {
     </v-row>
   </template>
 
+  <template v-else-if="props.activeSection === 'menu'">
+    <MenuManagementView />
+  </template>
+
   <template v-else>
     <v-card rounded="lg" border class="pa-8 text-center">
-      <p class="text-h6 font-weight-bold mb-2">Menu Section</p>
-      <p class="muted">This section is ready for menu CRUD integration.</p>
+      <p class="text-h6 font-weight-bold mb-2">Section Not Found</p>
+      <p class="muted">This section is under development.</p>
     </v-card>
   </template>
 
