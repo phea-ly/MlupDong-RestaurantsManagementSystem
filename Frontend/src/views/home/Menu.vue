@@ -6,14 +6,15 @@ import AddMenuItemDialog from '@/components/menu/AddMenuItemDialog.vue'
 
 const menuStore = useMenuStore()
 const searchQuery = ref('')
+const statusFilter = ref('all')
 const showDialog = ref(false)
 const editingItem = ref(null)
 const showDeleteDialog = ref(false)
 const deletingItemId = ref(null)
 
 const filteredItems = computed(() => {
-  let items = menuStore.menuItems.filter(
-    item => item.category === menuStore.activeCategory
+  let items = menuStore.menuItems.filter(item =>
+    menuStore.activeCategory === 'all' ? true : item.category === menuStore.activeCategory
   )
 
   console.log('Active Category:', menuStore.activeCategory)
@@ -26,6 +27,13 @@ const filteredItems = computed(() => {
       item.name.toLowerCase().includes(query) ||
       item.description.toLowerCase().includes(query)
     )
+  }
+
+  if (statusFilter.value !== 'all') {
+    items = items.filter(item => {
+      if (statusFilter.value === 'active') return item.status
+      return !item.status
+    })
   }
 
   return items
@@ -89,6 +97,16 @@ function handleDelete() {
       <div class="d-flex flex-wrap justify-space-between align-center ga-3">
         <div class="d-flex ga-2">
           <v-btn
+            :variant="menuStore.activeCategory === 'all' ? 'flat' : 'outlined'"
+            :color="menuStore.activeCategory === 'all' ? '#111a2e' : undefined"
+            size="small"
+            prepend-icon="mdi-view-grid"
+            class="text-none"
+            @click="menuStore.activeCategory = 'all'"
+          >
+            All
+          </v-btn>
+          <v-btn
             :variant="menuStore.activeCategory === 'food' ? 'flat' : 'outlined'"
             :color="menuStore.activeCategory === 'food' ? '#111a2e' : undefined"
             size="small"
@@ -116,19 +134,36 @@ function handleDelete() {
             class="text-none"
             @click="menuStore.activeCategory = 'promotions'"
           >
-            Promotions
+            Pr
+omotions
           </v-btn>
         </div>
 
-        <v-text-field
-          v-model="searchQuery"
-          density="compact"
-          variant="outlined"
-          placeholder="Search menu items..."
-          prepend-inner-icon="mdi-magnify"
-          hide-details
-          style="max-width: 300px"
-        />
+        <div class="d-flex ga-2 align-center">
+          <v-select
+            v-model="statusFilter"
+            :items="[
+              { title: 'All Status', value: 'all' },
+              { title: 'Active', value: 'active' },
+              { title: 'Inactive', value: 'inactive' }
+            ]"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            variant="outlined"
+            hide-details
+            style="width: 150px"
+          />
+          <v-text-field
+            v-model="searchQuery"
+            density="compact"
+            variant="outlined"
+            placeholder="Search menu items..."
+            prepend-inner-icon="mdi-magnify"
+            hide-details
+            style="max-width: 300px"
+          />
+        </div>
       </div>
     </v-card>
 
