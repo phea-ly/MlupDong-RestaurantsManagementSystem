@@ -142,7 +142,7 @@ function markServed(itemId) {
         </thead>
         <tbody>
           <tr v-for="member in team" :key="member.id">
-            <td>{{ member.name }}</td>
+            <td>{{ member.name }}</td> 
             <td>{{ member.role }}</td>
             <td>{{ member.shift }}</td>
             <td>
