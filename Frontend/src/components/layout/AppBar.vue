@@ -21,10 +21,6 @@ const profileInitials = computed(() => {
 
 <template>
   <div class="topbar px-6">
-    <div>
-      <h1 class="header-title">{{ title }}</h1>
-      <p class="subtitle">{{ subtitle }}</p>
-    </div>
     <div class="spacer" />
     <div class="d-flex align-center" style="gap: 8px">
       <button v-if="actionLabel" class="action-btn" @click="emit('action')">
