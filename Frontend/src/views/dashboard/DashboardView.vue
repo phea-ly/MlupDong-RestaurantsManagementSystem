@@ -15,6 +15,29 @@ const revenueCards = [
   { label: 'Yearly Income', value: '$420,000.00', note: 'Projected by end of Dec', change: '+15.8%' }
 ]
 
+const bestSellingItems = [
+  { name: 'Signature Fish Amok', sold: 452 },
+  { name: 'Iced Coconut Coffee', sold: 310 },
+  { name: 'Kampot Pepper Squid', sold: 285 },
+  { name: 'Mango Sticky Rice', sold: 215 },
+  { name: 'Tamarind Shaked Tea', sold: 198 }
+]
+
+const peakHourData = [
+  { label: '8 AM', value: 8 },
+  { label: '', value: 12 },
+  { label: '', value: 18 },
+  { label: '12 PM', value: 30 },
+  { label: '', value: 68 },
+  { label: '', value: 56 },
+  { label: '4 PM', value: 22 },
+  { label: '', value: 15 },
+  { label: '', value: 34 },
+  { label: '', value: 52 },
+  { label: '8 PM', value: 74 },
+  { label: '', value: 64 }
+]
+
 const team = ref([
   { id: 1, name: 'Sophal K.', role: 'Manager', shift: 'Morning', status: 'On Duty' },
   { id: 2, name: 'Chan Serey', role: 'Captain', shift: 'Morning', status: 'On Break' },
@@ -24,6 +47,8 @@ const team = ref([
 
 const staffCount = computed(() => team.value.length)
 const onDutyCount = computed(() => team.value.filter((m) => m.status === 'On Duty').length)
+const topSold = computed(() => Math.max(...bestSellingItems.map((item) => item.sold)))
+const peakHourMax = computed(() => Math.max(...peakHourData.map((item) => item.value)))
 
 const tableFilter = ref('all')
 const tableSearch = ref('')
@@ -106,6 +131,54 @@ function markServed(itemId) {
         </svg>
       </div>
     </v-card>
+
+    <v-row dense class="mt-2">
+      <v-col cols="12" lg="6">
+        <v-card rounded="lg" border class="pa-4 fill-height">
+          <div class="d-flex justify-space-between align-center mb-5">
+            <p class="text-h6 font-weight-bold ma-0">Best Selling Food/Drinks</p>
+            <a class="chart-link" href="#">View All</a>
+          </div>
+
+          <div v-for="item in bestSellingItems" :key="item.name" class="mb-4">
+            <div class="d-flex justify-space-between align-center mb-1">
+              <p class="ma-0 font-weight-medium">{{ item.name }}</p>
+              <p class="ma-0 font-weight-bold">{{ item.sold }} sold</p>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" :style="{ width: `${(item.sold / topSold) * 100}%` }" />
+            </div>
+          </div>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12" lg="6">
+        <v-card rounded="lg" border class="pa-4 fill-height">
+          <div class="d-flex justify-space-between align-center mb-5">
+            <p class="text-h6 font-weight-bold ma-0">Peak Hour Analysis</p>
+            <v-chip size="x-small" color="#eff3f8">24H CYCLE</v-chip>
+          </div>
+
+          <div class="peak-bars">
+            <div v-for="(hour, index) in peakHourData" :key="index" class="peak-bar-wrap">
+              <div
+                class="peak-bar"
+                :class="{ active: hour.value >= peakHourMax * 0.65 }"
+                :style="{ height: `${(hour.value / peakHourMax) * 100}%` }"
+              />
+              <span v-if="hour.label" class="peak-label">{{ hour.label }}</span>
+            </div>
+          </div>
+
+          <div class="observation-box mt-4">
+            <p class="observation-title mb-1">Observation</p>
+            <p class="ma-0 muted">
+              Dinner service (6 PM - 8 PM) accounts for 42% of daily revenue. Consider increasing floor staff during this window.
+            </p>
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
   </template>
 
   <template v-else-if="props.activeSection === 'staff'">
@@ -324,5 +397,72 @@ polyline {
   font-size: 11px;
   text-transform: uppercase;
   font-weight: 800;
+}
+
+.chart-link {
+  color: #14d886;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background-color: #e8edf3;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #10d784, #3de29f);
+}
+
+.peak-bars {
+  height: 130px;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: end;
+  gap: 6px;
+}
+
+.peak-bar-wrap {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+}
+
+.peak-bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background-color: #b6ebd4;
+}
+
+.peak-bar.active {
+  background-color: #1cd785;
+}
+
+.peak-label {
+  position: absolute;
+  bottom: -22px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #8191a8;
+}
+
+.observation-box {
+  border-radius: 10px;
+  background: #f5f8fb;
+  padding: 12px;
+}
+
+.observation-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #1c2d4a;
 }
 </style>
