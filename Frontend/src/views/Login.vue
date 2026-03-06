@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { loginWithCredentials } from '@/utils/auth'
+import { getDashboardPathByRole, loginWithCredentials } from '@/utils/auth'
 
 const router = useRouter()
 
@@ -17,7 +17,7 @@ async function login() {
 
   try {
     await loginWithCredentials(email.value.trim(), password.value, rememberMe.value)
-    await router.push('/home/dashboard')
+    await router.push(getDashboardPathByRole())
   } catch (error) {
     errorText.value = error.message
   } finally {

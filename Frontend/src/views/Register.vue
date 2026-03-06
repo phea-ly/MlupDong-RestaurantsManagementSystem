@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { registerWithCredentials } from '@/utils/auth'
+import { getDashboardPathByRole, registerWithCredentials } from '@/utils/auth'
 
 const router = useRouter()
 
@@ -9,6 +9,7 @@ const fullName = ref('')
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
+const role = ref('client')
 const loading = ref(false)
 const errorText = ref('')
 
@@ -32,12 +33,12 @@ async function register() {
     await registerWithCredentials({
       name: fullName.value.trim(),
       email: email.value.trim(),
-      role: 'admin',
+      role: role.value,
       password: password.value,
       password_confirmation: confirmPassword.value,
     })
 
-    await router.push('/home/dashboard')
+    await router.push(getDashboardPathByRole())
   } catch (error) {
     errorText.value = error.message
   } finally {
@@ -99,8 +100,18 @@ function goToLogin() {
               variant="outlined"
               density="comfortable"
               hide-details="auto"
-              class="mb-4"
+              class="mb-2"
               @keyup.enter="register"
+            />
+
+            <p class="field-label">Role</p>
+            <v-select
+              v-model="role"
+              :items="['client', 'admin']"
+              variant="outlined"
+              density="comfortable"
+              hide-details="auto"
+              class="mb-4"
             />
 
             <p v-if="errorText" class="error mb-3">{{ errorText }}</p>

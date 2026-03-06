@@ -17,6 +17,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:6|confirmed',
+            'role' => 'sometimes|string|in:admin,client',
         ]);
 
         $name = trim($request->name);
@@ -27,6 +28,7 @@ class AuthController extends Controller
             'first_name' => $firstName,
             'last_name' => $lastName !== '' ? $lastName : $firstName,
             'email' => $request->email,
+            'role' => $request->input('role', 'client'),
             'password' => Hash::make($request->password),
         ]);
 
@@ -44,7 +46,10 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
+        $credentials = $request->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string',
+        ]);
 
         try {
             if (!$token = JWTAuth::attempt($credentials)) {

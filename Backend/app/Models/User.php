@@ -36,6 +36,10 @@ class User extends Authenticatable implements JWTSubject
         'remember_token',
     ];
 
+    protected $appends = [
+        'name',
+    ];
+
     protected function casts(): array
     {
         return [
