@@ -1,37 +1,64 @@
 import { loginApi, logoutApi, meApi, registerApi } from '@/api/auth.api'
 
-const AUTH_KEY = 'auth_session_user'
+const AUTH_USER_KEY = 'auth_session_user'
+const AUTH_TOKEN_KEY = 'auth_session_token'
 
-export function getSessionUser() {
-  const rawUser = localStorage.getItem(AUTH_KEY)
-
-  if (!rawUser) {
+function parseJson(rawValue) {
+  if (!rawValue) {
     return null
   }
 
   try {
-    return JSON.parse(rawUser)
+    return JSON.parse(rawValue)
   } catch {
-    localStorage.removeItem(AUTH_KEY)
     return null
   }
 }
 
-function setSessionUser(user) {
-  if (!user || user.role !== 'admin') {
-    clearSessionUser()
+export function getSessionUser() {
+  const user = parseJson(localStorage.getItem(AUTH_USER_KEY))
+
+  if (user) {
+    return user
+  }
+
+  localStorage.removeItem(AUTH_USER_KEY)
+  return null
+}
+
+export function getSessionToken() {
+  return localStorage.getItem(AUTH_TOKEN_KEY)
+}
+
+function setSessionToken(token) {
+  if (!token) {
+    localStorage.removeItem(AUTH_TOKEN_KEY)
     return
   }
 
-  localStorage.setItem(AUTH_KEY, JSON.stringify(user))
+  localStorage.setItem(AUTH_TOKEN_KEY, token)
 }
 
-function clearSessionUser() {
-  localStorage.removeItem(AUTH_KEY)
+function setSessionUser(user) {
+  if (!user) {
+    localStorage.removeItem(AUTH_USER_KEY)
+    return
+  }
+
+  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user))
+}
+
+function clearSession() {
+  localStorage.removeItem(AUTH_TOKEN_KEY)
+  localStorage.removeItem(AUTH_USER_KEY)
 }
 
 function parseApiError(error, fallbackMessage) {
   const data = error?.response?.data
+
+  if (data?.error) {
+    return data.error
+  }
 
   if (data?.message) {
     return data.message
@@ -50,7 +77,7 @@ function parseApiError(error, fallbackMessage) {
 }
 
 export function isAuthenticated() {
-  return getUserRole() === 'admin'
+  return !!getSessionToken()
 }
 
 export function getUserRole() {
@@ -58,7 +85,7 @@ export function getUserRole() {
 }
 
 export function getDashboardPathByRole() {
-  return '/home/admin-dashboard'
+  return getUserRole() === 'admin' ? '/home/admin-dashboard' : '/home/client-dashboard'
 }
 
 export async function loginWithCredentials(email, password, remember = false) {
@@ -67,10 +94,22 @@ export async function loginWithCredentials(email, password, remember = false) {
   }
 
   try {
-    const response = await loginApi({ email, password, remember })
-    setSessionUser(response.data.user)
-    return response.data.user
+    const loginResponse = await loginApi({ email, password, remember })
+    const token = loginResponse?.data?.token
+
+    if (!token) {
+      throw new Error('Login succeeded but token was not returned.')
+    }
+
+    setSessionToken(token)
+
+    const userResponse = await meApi()
+    const user = userResponse?.data
+    setSessionUser(user)
+
+    return user
   } catch (error) {
+    clearSession()
     throw new Error(parseApiError(error, 'Unable to sign in.'))
   }
 }
@@ -78,20 +117,44 @@ export async function loginWithCredentials(email, password, remember = false) {
 export async function registerWithCredentials(payload) {
   try {
     const response = await registerApi(payload)
-    setSessionUser(response.data.user)
-    return response.data.user
+    const token = response?.data?.token
+    const registeredUser = response?.data?.user ?? null
+
+    if (token) {
+      setSessionToken(token)
+    }
+
+    if (registeredUser) {
+      setSessionUser(registeredUser)
+      return registeredUser
+    }
+
+    if (token) {
+      const userResponse = await meApi()
+      const user = userResponse?.data
+      setSessionUser(user)
+      return user
+    }
+
+    throw new Error('Registration succeeded but token was not returned.')
   } catch (error) {
+    clearSession()
     throw new Error(parseApiError(error, 'Unable to create account.'))
   }
 }
 
 export async function syncAuthSession() {
+  if (!getSessionToken()) {
+    clearSession()
+    return false
+  }
+
   try {
     const response = await meApi()
-    setSessionUser(response.data.user)
+    setSessionUser(response.data)
     return true
   } catch {
-    clearSessionUser()
+    clearSession()
     return false
   }
 }
@@ -100,6 +163,6 @@ export async function logoutSession() {
   try {
     await logoutApi()
   } finally {
-    clearSessionUser()
+    clearSession()
   }
 }

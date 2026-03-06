@@ -12,6 +12,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\TableController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::apiResource('restaurants', RestaurantController::class);
@@ -26,3 +27,16 @@ Route::apiResource('order-items', OrderItemController::class);
 Route::apiResource('payments', PaymentController::class);
 Route::apiResource('discounts', DiscountController::class);
 Route::apiResource('order-status-logs', OrderStastusLogController::class);
+
+Route::get('/', function () {
+    return response()->json(['message' => 'Hello world!']);
+});
+
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+
+Route::middleware('jwt')->group(function () {
+    Route::get('/user', [AuthController::class, 'getUser']);
+    Route::put('/user', [AuthController::class, 'updateUser']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+});

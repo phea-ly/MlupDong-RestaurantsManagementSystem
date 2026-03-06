@@ -1,4 +1,4 @@
-import client from './client'
+import client from './api'
 
 export const getUsers = () => {
   return client.get('/users')
