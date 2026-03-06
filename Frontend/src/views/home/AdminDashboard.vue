@@ -1,468 +1,374 @@
 <script setup>
-const incomeCards = [
+import { ref } from 'vue'
+import { mdiCurrencyUsd, mdiCalendarMonth, mdiTrendingUp, mdiFilter } from '@mdi/js'
+
+const activeRange = ref('7days')
+
+const stats = [
   {
-    label: 'Daily Income',
+    label: 'DAILY INCOME',
     value: '$1,250.00',
-    note: 'Compared with yesterday',
-    change: '+12.5 %',
-    trend: 'up',
-    icon: 'mdi-cash'
+    sub: 'Compared to yesterday ($1,110.00)',
+    trend: '+12.5%',
+    up: true,
+    icon: mdiCurrencyUsd,
   },
   {
-    label: 'Monthly Income',
+    label: 'MONTHLY INCOME',
     value: '$38,400.00',
-    note: 'Compared with last month',
-    change: '-2.4 %',
-    trend: 'down',
-    icon: 'mdi-calendar-month'
+    sub: 'Compared to last month ($39,340.00)',
+    trend: '-2.4%',
+    up: false,
+    icon: mdiCalendarMonth,
   },
   {
-    label: 'Yearly Income',
+    label: 'YEARLY INCOME',
     value: '$420,000.00',
-    note: 'Projected till end of Dec',
-    change: '+15.8 %',
-    trend: 'up',
-    icon: 'mdi-chart-line'
-  }
+    sub: 'Projected $450k by end of Dec',
+    trend: '+15.8%',
+    up: true,
+    icon: mdiTrendingUp,
+  },
 ]
 
-const weekLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
-const topSelling = [
-  { name: 'Signature Fish Amok', sold: 452 },
-  { name: 'Iced Coconut Coffee', sold: 310 },
-  { name: 'Kampot Pepper Squid', sold: 285 },
-  { name: 'Mango Sticky Rice', sold: 215 },
-  { name: 'Tamarind Shaked Tea', sold: 198 }
+const bestSelling = [
+  { name: 'Signature Fish Amok', sold: 452, pct: 100 },
+  { name: 'Iced Coconut Coffee', sold: 310, pct: 69 },
+  { name: 'Kampot Pepper Squid', sold: 285, pct: 63 },
+  { name: 'Mango Sticky Rice', sold: 215, pct: 48 },
+  { name: 'Tamarind Shaked Tea', sold: 198, pct: 44 },
 ]
-
-const maxSold = Math.max(...topSelling.map((item) => item.sold))
 
 const peakHours = [
-  { time: '8 AM', value: 14 },
-  { time: '10 AM', value: 28 },
-  { time: '12 PM', value: 51 },
-  { time: '2 PM', value: 60 },
-  { time: '4 PM', value: 26 },
-  { time: '6 PM', value: 44 },
-  { time: '8 PM', value: 55 },
-  { time: '9 PM', value: 48 }
+  { label: '8 AM', height: 30 },
+  { label: '10 AM', height: 45 },
+  { label: '12 PM', height: 85 },
+  { label: '2 PM', height: 55 },
+  { label: '4 PM', height: 40 },
+  { label: '6 PM', height: 95 },
+  { label: '8 PM', height: 75 },
 ]
 
-const maxPeak = Math.max(...peakHours.map((item) => item.value))
-
-const orders = [
-  {
-    id: '#MD-2284',
-    customer: 'Rith Chamry',
-    items: 'Fish Amok x2, Cambodia Beer x4',
-    status: 'completed',
-    amount: '$124.50'
-  },
-  {
-    id: '#MD-2283',
-    customer: 'Sokha Meas',
-    items: 'Beef Lok Lak x3, Fresh Juices x3',
-    status: 'preparing',
-    amount: '$88.20'
-  },
-  {
-    id: '#MD-2281',
-    customer: 'John Pierce',
-    items: 'Signature Seafood Platter x1',
-    status: 'completed',
-    amount: '$55.00'
-  }
+const recentOrders = [
+  { id: 'MD-9284', initials: 'RC', color: '#e8f5e9', textColor: '#2e7d32', customer: 'Rithy Chann', items: 'Fish Amok x2, Cambodia Beer x4', status: 'COMPLETED', statusColor: 'success', amount: '$124.50' },
+  { id: 'MD-9283', initials: 'SM', color: '#fff3e0', textColor: '#e65100', customer: 'Sokha Meas', items: 'Beef Lok Lak x3, Fresh Juices x3', status: 'PREPARING', statusColor: 'warning', amount: '$86.20' },
+  { id: 'MD-9281', initials: 'JP', color: '#e3f2fd', textColor: '#1565c0', customer: 'John Pierce', items: 'Signature Seafood Platter x1', status: 'COMPLETED', statusColor: 'success', amount: '$55.00' },
 ]
 
-function soldWidth(sold) {
-  return `${Math.round((sold / maxSold) * 100)}%`
-}
-
-function peakHeight(value) {
-  return `${Math.round((value / maxPeak) * 100)}%`
-}
-
-function statusColor(status) {
-  if (status === 'completed') {
-    return '#d8f6e7'
-  }
-
-  return '#ffeecb'
-}
-
-function statusTextColor(status) {
-  if (status === 'completed') {
-    return '#0e9c5d'
-  }
-
-  return '#bc7f02'
-}
+// Simple SVG line chart points
+const chartPoints = '50,80 150,60 250,65 350,45 450,30 550,20 650,25'
 </script>
 
 <template>
-  <section class="dashboard-root">
-    <v-row dense class="mb-2">
-      <v-col v-for="card in incomeCards" :key="card.label" cols="12" md="4">
-        <v-card rounded="lg" border class="pa-4 metric-card fill-height">
-          <div class="d-flex justify-space-between align-center mb-3">
-            <div class="metric-icon" :class="{ 'metric-icon--negative': card.trend === 'down' }">
-              <v-icon size="13">{{ card.icon }}</v-icon>
+  <div class="dashboard">
+    <!-- Stat Cards -->
+    <v-row class="mb-2">
+      <v-col v-for="stat in stats" :key="stat.label" cols="12" md="4">
+        <v-card rounded="xl" elevation="0" class="stat-card pa-5">
+          <div class="d-flex justify-space-between align-start">
+            <div>
+              <p class="stat-label">{{ stat.label }}</p>
+              <p class="stat-value">{{ stat.value }}</p>
+              <p class="stat-sub">{{ stat.sub }}</p>
             </div>
-            <span class="metric-change" :class="{ 'metric-change--negative': card.trend === 'down' }">
-              {{ card.change }}
-            </span>
+            <div :class="['trend-badge', stat.up ? 'trend-up' : 'trend-down']">
+              {{ stat.trend }} {{ stat.up ? '↑' : '↘' }}
+            </div>
           </div>
-          <p class="metric-label">{{ card.label }}</p>
-          <p class="metric-value">{{ card.value }}</p>
-          <p class="metric-note">{{ card.note }}</p>
         </v-card>
       </v-col>
     </v-row>
 
-    <v-card rounded="lg" border class="pa-4 mb-3 stats-card">
-      <div class="d-flex justify-space-between align-center mb-2 flex-wrap ga-2">
-        <div>
-          <p class="panel-title">Order Statistics</p>
-          <p class="panel-subtitle">Total volume over the last 7 days</p>
-        </div>
-        <div class="d-flex ga-2">
-          <v-chip size="small" class="range-chip">Last 30 Days</v-chip>
-          <v-chip size="small" class="range-chip range-chip--active">Last 7 Days</v-chip>
-        </div>
-      </div>
-
-      <div class="line-chart">
-        <svg viewBox="0 0 860 220" preserveAspectRatio="none" aria-label="Order volume chart">
-          <line x1="20" y1="180" x2="840" y2="180" class="axis-line" />
-        </svg>
-        <div class="x-labels">
-          <span v-for="label in weekLabels" :key="label">{{ label }}</span>
-        </div>
-      </div>
-    </v-card>
-
-    <v-row dense class="mb-3">
-      <v-col cols="12" lg="6">
-        <v-card rounded="lg" border class="pa-4 panel-card fill-height">
-          <div class="d-flex justify-space-between align-center mb-3">
-            <p class="panel-title">Best Selling Food/Drinks</p>
-            <a href="#" class="panel-link">View All</a>
-          </div>
-
-          <div v-for="item in topSelling" :key="item.name" class="selling-row">
-            <div class="d-flex justify-space-between align-center mb-2">
-              <p class="item-name">{{ item.name }}</p>
-              <p class="item-value">{{ item.sold }} sold</p>
-            </div>
-            <div class="meter-track">
-              <div class="meter-value" :style="{ width: soldWidth(item.sold) }"></div>
-            </div>
-          </div>
-        </v-card>
-      </v-col>
-
-      <v-col cols="12" lg="6">
-        <v-card rounded="lg" border class="pa-4 panel-card fill-height">
+    <!-- Order Statistics Chart -->
+    <v-row class="mb-2">
+      <v-col cols="12">
+        <v-card rounded="xl" elevation="0" class="stat-card pa-5">
           <div class="d-flex justify-space-between align-center mb-4">
-            <p class="panel-title">Peak Hour Analysis</p>
-            <p class="panel-subtitle text-uppercase">Service</p>
-          </div>
-
-          <div class="bar-wrap">
-            <div v-for="point in peakHours" :key="point.time" class="bar-item">
-              <div class="bar" :style="{ height: peakHeight(point.value) }"></div>
-              <span class="bar-label">{{ point.time }}</span>
+            <div>
+              <p class="section-title">Order Statistics</p>
+              <p class="section-sub">Total volume over the last 7 days</p>
+            </div>
+            <div class="d-flex ga-2">
+              <v-btn
+                :variant="activeRange === '30days' ? 'flat' : 'outlined'"
+                rounded="lg"
+                size="small"
+                :color="activeRange === '30days' ? '#0f9e5f' : ''"
+                @click="activeRange = '30days'"
+              >Last 30 Days</v-btn>
+              <v-btn
+                :variant="activeRange === '7days' ? 'flat' : 'outlined'"
+                rounded="lg"
+                size="small"
+                :color="activeRange === '7days' ? '#0f9e5f' : ''"
+                @click="activeRange = '7days'"
+              >Last 7 Days</v-btn>
             </div>
           </div>
-
-          <div class="observation-box mt-4">
-            <p class="observation-title">Observation</p>
-            <p class="observation-text">
-              Dinner service is 32% above lunch average. Consider increasing floor staff during peak evening slots.
-            </p>
+          <!-- SVG Line Chart -->
+          <svg width="100%" height="160" viewBox="0 0 700 120" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#0f9e5f" stop-opacity="0.15"/>
+                <stop offset="100%" stop-color="#0f9e5f" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <polygon
+              :points="chartPoints + ' 650,120 50,120'"
+              fill="url(#lineGrad)"
+            />
+            <polyline
+              :points="chartPoints"
+              fill="none"
+              stroke="#0f9e5f"
+              stroke-width="2.5"
+              stroke-linejoin="round"
+              stroke-linecap="round"
+            />
+          </svg>
+          <div class="chart-labels d-flex justify-space-between px-2 mt-1">
+            <span v-for="d in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']" :key="d" class="chart-label">{{ d }}</span>
           </div>
         </v-card>
       </v-col>
     </v-row>
 
-    <v-card rounded="lg" border class="pa-4">
-      <div class="d-flex justify-space-between align-center mb-3 flex-wrap ga-2">
-        <p class="panel-title">Recent High-Value Orders</p>
-        <v-btn size="small" variant="tonal" rounded="lg" class="text-none filter-btn">Filter</v-btn>
-      </div>
+    <!-- Best Selling + Peak Hour -->
+    <v-row class="mb-2">
+      <v-col cols="12" md="6">
+        <v-card rounded="xl" elevation="0" class="stat-card pa-5" style="height:100%">
+          <div class="d-flex justify-space-between align-center mb-4">
+            <p class="section-title">Best Selling Food/Drinks</p>
+            <a class="view-all">View All</a>
+          </div>
+          <div v-for="item in bestSelling" :key="item.name" class="mb-3">
+            <div class="d-flex justify-space-between mb-1">
+              <span class="item-name">{{ item.name }}</span>
+              <span class="item-sold">{{ item.sold }} sold</span>
+            </div>
+            <div class="progress-bg">
+              <div class="progress-fill" :style="{ width: item.pct + '%' }"></div>
+            </div>
+          </div>
+        </v-card>
+      </v-col>
 
-      <v-table density="comfortable" class="orders-table">
-        <thead>
-          <tr>
-            <th>Order ID</th>
-            <th>Customer Name</th>
-            <th>Items</th>
-            <th>Status</th>
-            <th class="text-right">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="order in orders" :key="order.id">
-            <td class="order-id">{{ order.id }}</td>
-            <td>{{ order.customer }}</td>
-            <td class="order-items">{{ order.items }}</td>
-            <td>
-              <v-chip
-                size="x-small"
-                rounded="pill"
-                class="font-weight-bold text-uppercase"
-                :color="statusColor(order.status)"
-                :text-color="statusTextColor(order.status)"
-              >
-                {{ order.status }}
-              </v-chip>
-            </td>
-            <td class="text-right font-weight-bold">{{ order.amount }}</td>
-          </tr>
-        </tbody>
-      </v-table>
-    </v-card>
-  </section>
+      <v-col cols="12" md="6">
+        <v-card rounded="xl" elevation="0" class="stat-card pa-5" style="height:100%">
+          <div class="d-flex justify-space-between align-center mb-4">
+            <p class="section-title">Peak Hour Analysis</p>
+            <span class="cycle-badge">24H CYCLE</span>
+          </div>
+          <!-- Bar chart -->
+          <div class="bar-chart d-flex align-end ga-2 mb-2" style="height:100px">
+            <div
+              v-for="bar in peakHours"
+              :key="bar.label"
+              class="bar-item"
+              :style="{ height: bar.height + '%' }"
+            ></div>
+          </div>
+          <div class="d-flex justify-space-between">
+            <span v-for="bar in peakHours" :key="bar.label" class="chart-label">{{ bar.label }}</span>
+          </div>
+          <div class="observation-box mt-3 pa-3">
+            <div class="d-flex align-start ga-2">
+              <v-icon color="#0f9e5f" size="16">mdi-map-marker-outline</v-icon>
+              <div>
+                <p class="obs-title">Observation</p>
+                <p class="obs-text">Dinner service (6 PM - 8 PM) accounts for 42% of daily revenue. Consider increasing floor staff during this window.</p>
+              </div>
+            </div>
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Recent High-Value Orders -->
+    <v-row>
+      <v-col cols="12">
+        <v-card rounded="xl" elevation="0" class="stat-card pa-5">
+          <div class="d-flex justify-space-between align-center mb-4">
+            <p class="section-title">Recent High-Value Orders</p>
+            <v-btn variant="outlined" rounded="lg" size="small" prepend-icon="mdi-filter-outline">Filter</v-btn>
+          </div>
+          <v-table density="comfortable" class="orders-table">
+            <thead>
+              <tr>
+                <th>ORDER ID</th>
+                <th>CUSTOMER</th>
+                <th>ITEMS</th>
+                <th>STATUS</th>
+                <th>AMOUNT</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="order in recentOrders" :key="order.id">
+                <td class="order-id">#{{ order.id }}</td>
+                <td>
+                  <div class="d-flex align-center ga-2">
+                    <v-avatar size="28" :color="order.color">
+                      <span :style="{ color: order.textColor, fontSize: '11px', fontWeight: 800 }">{{ order.initials }}</span>
+                    </v-avatar>
+                    {{ order.customer }}
+                  </div>
+                </td>
+                <td class="order-items">{{ order.items }}</td>
+                <td>
+                  <v-chip :color="order.statusColor" size="small" rounded="lg" variant="tonal">
+                    {{ order.status }}
+                  </v-chip>
+                </td>
+                <td class="order-amount">{{ order.amount }}</td>
+              </tr>
+            </tbody>
+          </v-table>
+          <p class="footer-copy mt-4 text-center">© 2023 Mlup Dong Restaurant Management System. All rights reserved.</p>
+        </v-card>
+      </v-col>
+    </v-row>
+  </div>
 </template>
 
 <style scoped>
-.dashboard-root {
-  max-width: 1440px;
+.dashboard { padding-bottom: 12px; }
+
+.stat-card {
+  background: #ffffff;
+  border: 1px solid #e4eaec;
 }
 
-.metric-card,
-.panel-card,
-.stats-card {
-  background: #f9fbfb;
-  border-color: #e2eaee !important;
-}
-
-.metric-icon {
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  display: grid;
-  place-items: center;
-  color: #0eac67;
-  background: #dcf8e9;
-}
-
-.metric-icon--negative {
-  color: #d65a5a;
-  background: #ffe7e7;
-}
-
-.metric-change {
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: #dcf8e9;
-  color: #0eac67;
+.stat-label {
   font-size: 10px;
   font-weight: 800;
-}
-
-.metric-change--negative {
-  background: #ffe7e7;
-  color: #d65a5a;
-}
-
-.metric-label {
-  margin: 0 0 6px;
-  color: #7b8da3;
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  color: #7a899f;
   text-transform: uppercase;
-  font-weight: 800;
+  letter-spacing: 0.1em;
+  margin: 0 0 6px;
 }
 
-.metric-value {
-  margin: 0;
-  font-size: 33px;
-  line-height: 1.1;
+.stat-value {
+  font-size: 28px;
   font-weight: 900;
-  color: #122039;
+  color: #1a2e48;
+  margin: 0 0 4px;
+  letter-spacing: -0.5px;
 }
 
-.metric-note {
-  margin: 4px 0 0;
-  font-size: 11px;
-  color: #8a9cb0;
-}
-
-.panel-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 900;
-  color: #1a2a44;
-}
-
-.panel-subtitle {
-  margin: 2px 0 0;
-  font-size: 11px;
-  color: #8b9caf;
-}
-
-.range-chip {
-  background: #edf2f2;
-  color: #5f6f85;
-  font-weight: 700;
-}
-
-.range-chip--active {
-  background: #1bde8e;
-  color: #064228;
-}
-
-.line-chart {
-  border: 1px solid #e6edf1;
-  border-radius: 10px;
-  padding: 8px 12px 10px;
-  background: #fbfdfd;
-  min-height: 220px;
-}
-
-.line-chart svg {
-  width: 100%;
-  height: 188px;
-}
-
-.axis-line {
-  stroke: #22d587;
-  stroke-width: 2;
-}
-
-.x-labels {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  color: #9aaabd;
-  font-size: 10px;
-  text-align: center;
-}
-
-.panel-link {
-  font-size: 11px;
-  color: #0cab66;
-  text-decoration: none;
-  font-weight: 700;
-}
-
-.selling-row {
-  margin-bottom: 14px;
-}
-
-.selling-row:last-child {
-  margin-bottom: 0;
-}
-
-.item-name,
-.item-value {
-  margin: 0;
+.stat-sub {
   font-size: 12px;
+  color: #9aabbd;
+  margin: 0;
+}
+
+.trend-badge {
+  font-size: 12px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.trend-up { background: #e6f9f0; color: #0f9e5f; }
+.trend-down { background: #fdecea; color: #d32f2f; }
+
+.section-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a2e48;
+  margin: 0 0 2px;
+}
+.section-sub {
+  font-size: 12px;
+  color: #9aabbd;
+  margin: 0;
+}
+
+.chart-label {
+  font-size: 11px;
+  color: #9aabbd;
+  font-weight: 600;
+}
+
+.view-all {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f9e5f;
+  cursor: pointer;
 }
 
 .item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a2e48;
+}
+.item-sold {
+  font-size: 13px;
   font-weight: 700;
-  color: #22334d;
+  color: #1a2e48;
 }
 
-.item-value {
-  color: #5e738c;
-  font-weight: 700;
-}
-
-.meter-track {
+.progress-bg {
   height: 5px;
-  border-radius: 999px;
-  background: #e4ece9;
+  background: #edf2f1;
+  border-radius: 99px;
   overflow: hidden;
 }
-
-.meter-value {
+.progress-fill {
   height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #11d483 0%, #20e595 100%);
+  background: #0f9e5f;
+  border-radius: 99px;
 }
 
-.bar-wrap {
-  display: flex;
-  gap: 8px;
-  align-items: flex-end;
-  min-height: 148px;
-  padding-top: 6px;
+.cycle-badge {
+  font-size: 10px;
+  font-weight: 800;
+  background: #edf2f1;
+  color: #4b5d74;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.05em;
 }
 
+.bar-chart { width: 100%; }
 .bar-item {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.bar {
-  width: 100%;
-  max-width: 28px;
-  min-height: 12px;
-  border-radius: 5px 5px 0 0;
-  background: linear-gradient(180deg, #27e497 0%, #16ce7f 100%);
-}
-
-.bar-label {
-  font-size: 9px;
-  color: #9bacbe;
+  background: #0f9e5f;
+  border-radius: 4px 4px 0 0;
+  opacity: 0.7;
+  min-height: 8px;
 }
 
 .observation-box {
-  border: 1px solid #dce8e5;
+  background: #f7faf9;
   border-radius: 10px;
-  padding: 9px 10px;
-  background: #f1f8f5;
+  border: 1px solid #e0ebe6;
 }
-
-.observation-title {
-  margin: 0 0 3px;
-  font-size: 11px;
-  font-weight: 800;
-  color: #1d3858;
-}
-
-.observation-text {
-  margin: 0;
-  font-size: 11px;
-  color: #57718e;
-}
-
-.filter-btn {
-  background: #ecf1f4;
-  color: #6d8098;
-}
-
-.orders-table {
-  border: 1px solid #e4ebef;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.orders-table :deep(th) {
-  background: #f3f7f8;
-  color: #8899ad;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  font-weight: 800;
-}
-
-.orders-table :deep(td) {
+.obs-title {
   font-size: 12px;
-  color: #1f3049;
+  font-weight: 800;
+  color: #1a2e48;
+  margin: 0 0 2px;
+}
+.obs-text {
+  font-size: 12px;
+  color: #7a899f;
+  margin: 0;
+  line-height: 1.5;
 }
 
-.order-id {
-  font-weight: 700;
+.orders-table th {
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  color: #9aabbd !important;
+  letter-spacing: 0.08em;
 }
+.order-id { font-weight: 700; color: #0f9e5f; }
+.order-items { font-size: 13px; color: #4b5d74; }
+.order-amount { font-weight: 800; color: #1a2e48; }
 
-.order-items {
-  color: #71859c;
+.footer-copy {
+  font-size: 12px;
+  color: #b0bec5;
+  margin: 0;
 }
 </style>

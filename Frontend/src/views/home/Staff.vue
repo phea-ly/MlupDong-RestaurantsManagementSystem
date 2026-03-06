@@ -1,121 +1,118 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const search = ref('')
+const showAddDialog = ref(false)
+const newStaff = ref({ name: '', email: '', role: '', status: 'Active' })
 
-const team = ref([
-  {
-    id: 1,
-    name: 'Marcus Nguyen',
-    email: 'marcus@mlupdong.com',
-    role: 'chef',
-    joinedAt: 'Oct 12, 2022',
-    status: 'active',
-    avatar: 'https://i.pravatar.cc/80?img=13',
-  },
-  {
-    id: 2,
-    name: 'Sarah Jenkins',
-    email: 'sarah.j@mlupdong.com',
-    role: 'admin',
-    joinedAt: 'Jan 05, 2021',
-    status: 'active',
-    avatar: 'https://i.pravatar.cc/80?img=47',
-  },
-  {
-    id: 3,
-    name: 'David Chen',
-    email: 'david@mlupdong.com',
-    role: 'waiter',
-    joinedAt: 'Mar 22, 2023',
-    status: 'inactive',
-    avatar: 'https://i.pravatar.cc/80?img=12',
-  },
-  {
-    id: 4,
-    name: 'Jordan Lee',
-    email: 'j.lee@mlupdong.com',
-    role: 'chef',
-    joinedAt: 'Jun 15, 2022',
-    status: 'active',
-    avatar: 'https://i.pravatar.cc/80?img=15',
-  },
-  {
-    id: 5,
-    name: 'Maya Patel',
-    email: 'maya.p@mlupdong.com',
-    role: 'waiter',
-    joinedAt: 'Nov 30, 2023',
-    status: 'active',
-    avatar: 'https://i.pravatar.cc/80?img=5',
-  },
+const staffList = ref([
+  { id: 1, name: 'Marcus Nguyen', email: 'marcus@mlupdong.com', role: 'CHEF', dateJoined: 'Oct 12, 2022', status: 'Active', initials: 'MN', color: '#e8f5e9', textColor: '#2e7d32' },
+  { id: 2, name: 'Sarah Jenkins', email: 'sarah.j@mlupdong.com', role: 'ADMIN', dateJoined: 'Jan 05, 2021', status: 'Active', initials: 'SJ', color: '#fce4ec', textColor: '#c62828' },
+  { id: 3, name: 'David Chen', email: 'david@mlupdong.com', role: 'WAITER', dateJoined: 'Mar 22, 2023', status: 'Inactive', initials: 'DC', color: '#fff3e0', textColor: '#e65100' },
+  { id: 4, name: 'Jordan Lee', email: 'j.lee@mlupdong.com', role: 'CHEF', dateJoined: 'Jun 15, 2022', status: 'Active', initials: 'JL', color: '#fce4ec', textColor: '#ad1457' },
+  { id: 5, name: 'Maya Patel', email: 'maya.p@mlupdong.com', role: 'WAITER', dateJoined: 'Nov 30, 2023', status: 'Active', initials: 'MP', color: '#e8eaf6', textColor: '#283593' },
 ])
 
-const filteredTeam = computed(() => {
-  const query = search.value.trim().toLowerCase()
-  if (!query) {
-    return team.value
-  }
-
-  return team.value.filter((member) =>
-    member.name.toLowerCase().includes(query) || member.role.toLowerCase().includes(query)
+const filteredStaff = computed(() =>
+  staffList.value.filter(s =>
+    s.name.toLowerCase().includes(search.value.toLowerCase()) ||
+    s.role.toLowerCase().includes(search.value.toLowerCase())
   )
-})
+)
 
-const activeCount = computed(() => team.value.filter((member) => member.status === 'active').length)
-const kitchenCount = computed(() => team.value.filter((member) => member.role === 'chef').length)
-const serviceCount = computed(() => team.value.filter((member) => member.role === 'waiter').length)
+const activeCount = computed(() => staffList.value.filter(s => s.status === 'Active').length)
+const kitchenCount = computed(() => staffList.value.filter(s => s.role === 'CHEF').length)
+const serviceCount = computed(() => staffList.value.filter(s => s.role === 'WAITER').length)
 
-function roleLabel(role) {
-  return role.toUpperCase()
+function addStaff() {
+  if (!newStaff.value.name) return
+  const parts = newStaff.value.name.trim().split(' ')
+  const initials = parts.map(p => p[0]).join('').toUpperCase().slice(0, 2)
+  staffList.value.push({
+    id: Date.now(),
+    ...newStaff.value,
+    role: newStaff.value.role.toUpperCase() || 'STAFF',
+    dateJoined: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+    initials,
+    color: '#e8f5e9',
+    textColor: '#2e7d32',
+  })
+  newStaff.value = { name: '', email: '', role: '', status: 'Active' }
+  showAddDialog.value = false
+}
+
+function deleteStaff(id) {
+  staffList.value = staffList.value.filter(s => s.id !== id)
 }
 </script>
 
 <template>
-  <section>
-    <v-card rounded="lg" border class="pa-3 mb-4 toolbar-card">
-      <div class="d-flex align-center ga-3 flex-wrap">
+  <div>
+    <!-- Add Staff Dialog -->
+    <v-dialog v-model="showAddDialog" max-width="440">
+      <v-card rounded="xl" class="pa-6">
+        <p class="dialog-title mb-4">Add New Staff</p>
+        <v-text-field v-model="newStaff.name" label="Full Name" variant="outlined" rounded="lg" density="comfortable" class="mb-3" />
+        <v-text-field v-model="newStaff.email" label="Email" variant="outlined" rounded="lg" density="comfortable" class="mb-3" />
+        <v-select
+          v-model="newStaff.role"
+          :items="['Chef', 'Waiter', 'Admin', 'Manager']"
+          label="Role"
+          variant="outlined"
+          rounded="lg"
+          density="comfortable"
+          class="mb-3"
+        />
+        <v-select
+          v-model="newStaff.status"
+          :items="['Active', 'Inactive']"
+          label="Status"
+          variant="outlined"
+          rounded="lg"
+          density="comfortable"
+          class="mb-4"
+        />
+        <div class="d-flex ga-3 justify-end">
+          <v-btn variant="outlined" rounded="lg" @click="showAddDialog = false">Cancel</v-btn>
+          <v-btn color="#0f9e5f" rounded="lg" flat @click="addStaff">Add Staff</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    <!-- Search + Filter + Export -->
+    <v-card rounded="xl" elevation="0" class="main-card pa-0 mb-4">
+      <div class="pa-4 d-flex ga-3">
         <v-text-field
           v-model="search"
           placeholder="Search staff by name or role..."
           prepend-inner-icon="mdi-magnify"
-          hide-details
+          variant="outlined"
           density="comfortable"
-          variant="solo"
-          flat
-          bg-color="#f7f9fb"
-          class="search-input"
+          rounded="lg"
+          hide-details
+          class="flex-grow-1"
         />
-        <div class="d-flex ga-2">
-          <v-btn variant="outlined" class="text-none filter-btn" color="#6e7f99">
-            <v-icon start size="16">mdi-filter-variant</v-icon>
-            Filters
-          </v-btn>
-          <v-btn variant="outlined" class="text-none filter-btn" color="#6e7f99">
-            <v-icon start size="16">mdi-export-variant</v-icon>
-            Export
-          </v-btn>
-        </div>
+        <v-btn variant="outlined" rounded="lg" prepend-icon="mdi-filter-outline">Filters</v-btn>
+        <v-btn variant="outlined" rounded="lg" prepend-icon="mdi-download-outline">Export</v-btn>
       </div>
-    </v-card>
 
-    <v-card rounded="lg" border class="table-card mb-4">
-      <v-table density="comfortable">
+      <!-- Table -->
+      <v-table density="comfortable" class="staff-table">
         <thead>
           <tr>
             <th>NAME</th>
             <th>ROLE</th>
             <th>DATE JOINED</th>
             <th>STATUS</th>
-            <th class="text-right">ACTIONS</th>
+            <th>ACTIONS</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="member in filteredTeam" :key="member.id">
+          <tr v-for="member in filteredStaff" :key="member.id">
             <td>
               <div class="d-flex align-center ga-3">
-                <v-avatar size="36" class="member-avatar">
-                  <img :src="member.avatar" :alt="member.name" />
+                <v-avatar :color="member.color" size="38">
+                  <span :style="{ color: member.textColor, fontSize: '13px', fontWeight: 800 }">{{ member.initials }}</span>
                 </v-avatar>
                 <div>
                   <p class="member-name">{{ member.name }}</p>
@@ -125,51 +122,56 @@ function roleLabel(role) {
             </td>
             <td>
               <v-chip
-                size="x-small"
-                class="role-chip font-weight-bold"
-                :class="`role-${member.role}`"
+                size="small"
+                rounded="lg"
+                variant="tonal"
+                :color="member.role === 'CHEF' ? 'success' : member.role === 'ADMIN' ? 'deep-purple' : 'teal'"
               >
-                {{ roleLabel(member.role) }}
+                {{ member.role }}
               </v-chip>
             </td>
-            <td class="joined-text">{{ member.joinedAt }}</td>
+            <td class="date-cell">{{ member.dateJoined }}</td>
             <td>
-              <span class="status-dot" :class="member.status"></span>
-              <span class="status-text">{{ member.status === 'active' ? 'Active' : 'Inactive' }}</span>
+              <div class="d-flex align-center ga-1">
+                <span class="status-dot" :style="{ background: member.status === 'Active' ? '#0f9e5f' : '#b0bec5' }"></span>
+                <span :class="member.status === 'Active' ? 'status-active' : 'status-inactive'">{{ member.status }}</span>
+              </div>
             </td>
-            <td class="text-right">
-              <v-btn icon variant="text" size="small" color="#7e90ab">
-                <v-icon size="16">mdi-playlist-edit</v-icon>
-              </v-btn>
-              <v-btn icon variant="text" size="small" color="#7e90ab">
-                <v-icon size="16">mdi-delete-outline</v-icon>
-              </v-btn>
+            <td>
+              <div class="d-flex align-center ga-2">
+                <v-btn icon size="x-small" variant="text" color="#9aabbd">
+                  <v-icon size="18">mdi-playlist-edit</v-icon>
+                </v-btn>
+                <v-btn icon size="x-small" variant="text" color="#9aabbd" @click="deleteStaff(member.id)">
+                  <v-icon size="18">mdi-delete-outline</v-icon>
+                </v-btn>
+              </div>
             </td>
           </tr>
         </tbody>
       </v-table>
 
-      <div class="table-footer">
-        <p>Showing 1-{{ filteredTeam.length }} of 24 staff members</p>
-        <div class="d-flex align-center ga-2">
-          <v-btn icon size="x-small" variant="outlined" color="#b3bfce">
-            <v-icon size="14">mdi-chevron-left</v-icon>
-          </v-btn>
-          <v-btn size="x-small" min-width="28" color="#19d989" class="text-none">1</v-btn>
-          <v-btn size="x-small" min-width="28" variant="text" color="#5f708a">2</v-btn>
-          <v-btn size="x-small" min-width="28" variant="text" color="#5f708a">3</v-btn>
-          <v-btn icon size="x-small" variant="outlined" color="#b3bfce">
-            <v-icon size="14">mdi-chevron-right</v-icon>
-          </v-btn>
+      <!-- Pagination -->
+      <div class="d-flex justify-space-between align-center pa-4">
+        <span class="showing-text">Showing 1-{{ filteredStaff.length }} of {{ staffList.length }} staff members</span>
+        <div class="d-flex align-center ga-1">
+          <v-btn icon size="x-small" variant="outlined"><v-icon size="16">mdi-chevron-left</v-icon></v-btn>
+          <v-btn size="x-small" color="#0f9e5f" rounded flat style="min-width:28px">1</v-btn>
+          <v-btn size="x-small" variant="outlined" rounded style="min-width:28px">2</v-btn>
+          <v-btn size="x-small" variant="outlined" rounded style="min-width:28px">3</v-btn>
+          <v-btn icon size="x-small" variant="outlined"><v-icon size="16">mdi-chevron-right</v-icon></v-btn>
         </div>
       </div>
     </v-card>
 
-    <v-row dense>
+    <!-- Summary Cards -->
+    <v-row>
       <v-col cols="12" md="4">
-        <v-card rounded="lg" border class="pa-4 summary-card">
+        <v-card rounded="xl" elevation="0" class="summary-card pa-4">
           <div class="d-flex align-center ga-3">
-            <div class="summary-icon icon-green"><v-icon>mdi-account-group-outline</v-icon></div>
+            <v-avatar color="#e6f9f0" size="44" rounded="lg">
+              <v-icon color="#0f9e5f" size="22">mdi-account-check-outline</v-icon>
+            </v-avatar>
             <div>
               <p class="summary-label">ACTIVE STAFF</p>
               <p class="summary-value">{{ activeCount }}</p>
@@ -178,9 +180,11 @@ function roleLabel(role) {
         </v-card>
       </v-col>
       <v-col cols="12" md="4">
-        <v-card rounded="lg" border class="pa-4 summary-card">
+        <v-card rounded="xl" elevation="0" class="summary-card pa-4">
           <div class="d-flex align-center ga-3">
-            <div class="summary-icon icon-blue"><v-icon>mdi-silverware-fork-knife</v-icon></div>
+            <v-avatar color="#e8f0fe" size="44" rounded="lg">
+              <v-icon color="#3c6bc4" size="22">mdi-silverware-fork-knife</v-icon>
+            </v-avatar>
             <div>
               <p class="summary-label">KITCHEN TEAM</p>
               <p class="summary-value">{{ kitchenCount }}</p>
@@ -189,9 +193,11 @@ function roleLabel(role) {
         </v-card>
       </v-col>
       <v-col cols="12" md="4">
-        <v-card rounded="lg" border class="pa-4 summary-card">
+        <v-card rounded="xl" elevation="0" class="summary-card pa-4">
           <div class="d-flex align-center ga-3">
-            <div class="summary-icon icon-mint"><v-icon>mdi-bell-ring-outline</v-icon></div>
+            <v-avatar color="#e6f9f0" size="44" rounded="lg">
+              <v-icon color="#0f9e5f" size="22">mdi-map-marker-outline</v-icon>
+            </v-avatar>
             <div>
               <p class="summary-label">SERVICE TEAM</p>
               <p class="summary-value">{{ serviceCount }}</p>
@@ -200,163 +206,32 @@ function roleLabel(role) {
         </v-card>
       </v-col>
     </v-row>
-  </section>
+  </div>
 </template>
 
 <style scoped>
-.toolbar-card {
-  background: #f3f5f6;
-}
+.main-card { background: #fff; border: 1px solid #e4eaec; }
+.summary-card { background: #fff; border: 1px solid #e4eaec; }
 
-.search-input {
-  flex: 1 1 420px;
-  max-width: 100%;
-}
-
-.filter-btn {
-  border-color: #d6dee8;
-}
-
-.table-card {
-  overflow: hidden;
-}
-
-thead th {
-  color: #7f8ea3 !important;
-  font-size: 11px !important;
-  letter-spacing: 0.08em;
+.staff-table th {
+  font-size: 10px !important;
   font-weight: 800 !important;
+  color: #9aabbd !important;
+  letter-spacing: 0.08em;
 }
 
-tbody tr {
-  height: 74px;
-}
+.member-name { font-size: 14px; font-weight: 700; color: #1a2e48; margin: 0; }
+.member-email { font-size: 12px; color: #9aabbd; margin: 0; }
+.date-cell { font-size: 13px; color: #4b5d74; }
 
-.member-avatar {
-  border: 2px solid #dbe3ee;
-}
+.status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.status-active { font-size: 13px; font-weight: 600; color: #0f9e5f; }
+.status-inactive { font-size: 13px; font-weight: 600; color: #9aabbd; }
 
-.member-name {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: #1f2a3f;
-}
+.showing-text { font-size: 12px; color: #9aabbd; }
 
-.member-email {
-  margin: 2px 0 0;
-  font-size: 12px;
-  color: #8a99ad;
-}
+.summary-label { font-size: 10px; font-weight: 800; color: #9aabbd; letter-spacing: 0.08em; margin: 0 0 4px; }
+.summary-value { font-size: 24px; font-weight: 900; color: #1a2e48; margin: 0; }
 
-.role-chip {
-  min-width: 64px;
-  justify-content: center;
-}
-
-.role-chef {
-  background: #dce9ff;
-  color: #2c62c7;
-}
-
-.role-admin {
-  background: #eadcfa;
-  color: #8145cb;
-}
-
-.role-waiter {
-  background: #d4f0df;
-  color: #1e9660;
-}
-
-.joined-text {
-  color: #5f6f87;
-  font-size: 14px;
-}
-
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  display: inline-block;
-  margin-right: 8px;
-}
-
-.status-dot.active {
-  background: #1bd483;
-}
-
-.status-dot.inactive {
-  background: #cad3df;
-}
-
-.status-text {
-  color: #3a4a61;
-  font-size: 14px;
-}
-
-.table-footer {
-  border-top: 1px solid #ebeff4;
-  padding: 12px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.table-footer p {
-  margin: 0;
-  color: #7d8ca2;
-  font-size: 12px;
-}
-
-.summary-card {
-  background: #f8fafb;
-}
-
-.summary-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-}
-
-.icon-green {
-  background: #d6f8ea;
-  color: #11be72;
-}
-
-.icon-blue {
-  background: #dce9ff;
-  color: #2e66ca;
-}
-
-.icon-mint {
-  background: #d9f6e7;
-  color: #14bf74;
-}
-
-.summary-label {
-  margin: 0;
-  color: #7f8ea2;
-  font-size: 10px;
-  letter-spacing: 0.09em;
-  font-weight: 800;
-}
-
-.summary-value {
-  margin: 2px 0 0;
-  font-size: 30px;
-  line-height: 1;
-  font-weight: 900;
-  color: #17243b;
-}
-
-@media (max-width: 960px) {
-  .summary-value {
-    font-size: 24px;
-  }
-}
+.dialog-title { font-size: 16px; font-weight: 800; color: #1a2e48; margin: 0; }
 </style>

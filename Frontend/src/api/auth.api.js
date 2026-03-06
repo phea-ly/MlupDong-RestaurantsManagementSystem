@@ -1,17 +1,17 @@
-import client from './client'
+import api from './api'
 
 export const loginApi = (data) => {
-  return client.post('/auth/login', data)
+  return api.post('/auth/login', data)
 }
 
 export const registerApi = (data) => {
-  return client.post('/auth/register', data)
+  return api.post('/auth/register', data)
 }
 
 export const meApi = () => {
-  return client.get('/auth/me')
+  return api.get('/auth/me')
 }
 
 export const logoutApi = () => {
-  return client.post('/auth/logout')
+  return api.post('/auth/logout')
 }

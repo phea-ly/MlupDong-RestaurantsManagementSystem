@@ -1,6 +1,0 @@
-export default [
-  {
-    path: '/dashboard',
-    component: () => import('@/views/dashboard/DashboardView.vue')
-  }
-]
