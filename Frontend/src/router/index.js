@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 import { createRouter, createWebHistory } from 'vue-router'
 import {
   getDashboardPathByRole,
@@ -85,11 +83,8 @@ const routes = [
     component: () => import('@/views/NotFoundView.vue'),
   },
 ]
->>>>>>> e159202bdfe4d65fb2d1c3f48c42c4cdacd9d8f2
 
 
-<<<<<<< HEAD
-=======
 let sessionChecked = false
 
 async function ensureSession() {
@@ -135,4 +130,3 @@ router.beforeEach(async (to) => {
 export default router
 
 
->>>>>>> e159202bdfe4d65fb2d1c3f48c42c4cdacd9d8f2

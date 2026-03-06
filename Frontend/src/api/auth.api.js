@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 import api from './api'
 
 export const loginApi = (data) => {
@@ -17,4 +15,3 @@ export const meApi = () => {
 export const logoutApi = () => {
   return api.post('/auth/logout')
 }
->>>>>>> e159202bdfe4d65fb2d1c3f48c42c4cdacd9d8f2
