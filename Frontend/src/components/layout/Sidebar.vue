@@ -5,6 +5,7 @@ import {
   mdiViewDashboard,
   mdiSilverware,
   mdiAccountGroup,
+  mdiAccountCog,
   mdiTablePicnic,
   mdiChartBoxOutline,
   mdiCogOutline,
@@ -26,6 +27,8 @@ const profileRole = computed(() => {
   const role = sessionUser.value?.role || 'manager'
   return role.charAt(0).toUpperCase() + role.slice(1)
 })
+
+const isAdmin = computed(() => sessionUser.value?.role === 'admin')
 const profileInitials = computed(() => {
   const name = profileName.value.trim()
 
@@ -38,12 +41,20 @@ const profileInitials = computed(() => {
   return initials || 'SK'
 })
 
-const menu = [
-  { id: 'dashboard', label: 'Dashboard', icon: mdiViewDashboard },
-  { id: 'menu', label: 'Menu', icon: mdiSilverware },
-  { id: 'staff', label: 'Staff', icon: mdiAccountGroup },
-  { id: 'tables', label: 'Tables', icon: mdiTablePicnic }
-]
+const menu = computed(() => {
+  const baseMenu = [
+    { id: 'dashboard', label: 'Dashboard', icon: mdiViewDashboard },
+    { id: 'menu', label: 'Menu', icon: mdiSilverware },
+    { id: 'staff', label: 'Staff', icon: mdiAccountGroup },
+    { id: 'tables', label: 'Tables', icon: mdiTablePicnic },
+  ]
+
+  if (isAdmin.value) {
+    baseMenu.splice(3, 0, { id: 'users', label: 'Users', icon: mdiAccountCog })
+  }
+
+  return baseMenu
+})
 
 const reportsMenu = [
   { id: 'sales-report', label: 'Sales Report', icon: mdiChartBoxOutline },

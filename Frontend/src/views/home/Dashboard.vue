@@ -1,9 +1,49 @@
 <script setup>
-const revenueCards = [
-  { label: 'Daily Income', value: '$1,250.00', note: 'Compared to yesterday', change: '+12.5%' },
-  { label: 'Monthly Income', value: '$38,400.00', note: 'Compared to last month', change: '-2.4%', negative: true },
-  { label: 'Yearly Income', value: '$420,000.00', note: 'Projected by end of Dec', change: '+15.8%' },
-]
+import { computed, onMounted, ref } from 'vue'
+import { getPaymentsApi } from '@/api/management.api'
+
+const payments = ref([])
+
+function formatCurrency(value) {
+  return `$${Number(value || 0).toFixed(2)}`
+}
+
+const dailyIncome = computed(() =>
+  payments.value
+    .filter((p) => p.payment_date && new Date(p.payment_date).toDateString() === new Date().toDateString())
+    .reduce((sum, p) => sum + Number(p.amount_paid || 0), 0)
+)
+
+const monthlyIncome = computed(() => {
+  const now = new Date()
+  return payments.value
+    .filter((p) => {
+      if (!p.payment_date) return false
+      const d = new Date(p.payment_date)
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+    })
+    .reduce((sum, p) => sum + Number(p.amount_paid || 0), 0)
+})
+
+const yearlyIncome = computed(() => {
+  const year = new Date().getFullYear()
+  return payments.value
+    .filter((p) => p.payment_date && new Date(p.payment_date).getFullYear() === year)
+    .reduce((sum, p) => sum + Number(p.amount_paid || 0), 0)
+})
+
+const revenueCards = computed(() => [
+  { label: 'Daily Income', value: formatCurrency(dailyIncome.value), note: 'Live from payments', change: '+0.0%' },
+  { label: 'Monthly Income', value: formatCurrency(monthlyIncome.value), note: 'Live from payments', change: '+0.0%' },
+  { label: 'Yearly Income', value: formatCurrency(yearlyIncome.value), note: 'Live from payments', change: '+0.0%' },
+])
+
+async function loadData() {
+  const response = await getPaymentsApi()
+  payments.value = Array.isArray(response.data) ? response.data : []
+}
+
+onMounted(loadData)
 </script>
 
 <template>

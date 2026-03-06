@@ -67,6 +67,12 @@ const routes = [
         component: () => import('@/views/home/Staff.vue'),
       },
       {
+        path: 'users',
+        name: 'home-users',
+        meta: { requiresAuth: true, roles: ['admin'] },
+        component: () => import('@/views/home/Users.vue'),
+      },
+      {
         path: 'table',
         name: 'home-table',
         component: () => import('@/views/home/Table.vue'),

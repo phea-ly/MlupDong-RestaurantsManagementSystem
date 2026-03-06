@@ -1,9 +1,30 @@
 <script setup>
-const cards = [
-  { label: 'My Orders', value: '12', note: 'Orders this month' },
-  { label: 'Pending Orders', value: '2', note: 'Need attention' },
-  { label: 'Favorite Items', value: '7', note: 'Saved menu items' },
-]
+import { computed, onMounted, ref } from 'vue'
+import { getMenuItemsApi, getOrdersApi } from '@/api/management.api'
+import { getSessionUser } from '@/utils/auth'
+
+const orders = ref([])
+const menuItems = ref([])
+
+const myEmail = computed(() => getSessionUser()?.email || null)
+const myOrders = computed(() => {
+  if (!myEmail.value) return []
+  return orders.value.filter((order) => order.user?.email === myEmail.value)
+})
+
+const cards = computed(() => [
+  { label: 'My Orders', value: String(myOrders.value.length), note: 'Orders in history' },
+  { label: 'Pending Orders', value: String(myOrders.value.filter((o) => o.order_status !== 'completed').length), note: 'Need attention' },
+  { label: 'Available Items', value: String(menuItems.value.filter((m) => m.status).length), note: 'Current menu items' },
+])
+
+async function loadData() {
+  const [ordersRes, menuRes] = await Promise.all([getOrdersApi(), getMenuItemsApi()])
+  orders.value = Array.isArray(ordersRes.data) ? ordersRes.data : []
+  menuItems.value = Array.isArray(menuRes.data) ? menuRes.data : []
+}
+
+onMounted(loadData)
 </script>
 
 <template>

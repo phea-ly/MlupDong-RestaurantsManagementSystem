@@ -1,55 +1,43 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { getStaffsApi } from '@/api/management.api'
 
 const search = ref('')
+const loading = ref(false)
+const errorText = ref('')
 
-const team = ref([
-  {
-    id: 1,
-    name: 'Marcus Nguyen',
-    email: 'marcus@mlupdong.com',
-    role: 'chef',
-    joinedAt: 'Oct 12, 2022',
-    status: 'active',
-    avatar: 'https://i.pravatar.cc/80?img=13',
-  },
-  {
-    id: 2,
-    name: 'Sarah Jenkins',
-    email: 'sarah.j@mlupdong.com',
-    role: 'admin',
-    joinedAt: 'Jan 05, 2021',
-    status: 'active',
-    avatar: 'https://i.pravatar.cc/80?img=47',
-  },
-  {
-    id: 3,
-    name: 'David Chen',
-    email: 'david@mlupdong.com',
-    role: 'waiter',
-    joinedAt: 'Mar 22, 2023',
-    status: 'inactive',
-    avatar: 'https://i.pravatar.cc/80?img=12',
-  },
-  {
-    id: 4,
-    name: 'Jordan Lee',
-    email: 'j.lee@mlupdong.com',
-    role: 'chef',
-    joinedAt: 'Jun 15, 2022',
-    status: 'active',
-    avatar: 'https://i.pravatar.cc/80?img=15',
-  },
-  {
-    id: 5,
-    name: 'Maya Patel',
-    email: 'maya.p@mlupdong.com',
-    role: 'waiter',
-    joinedAt: 'Nov 30, 2023',
-    status: 'active',
-    avatar: 'https://i.pravatar.cc/80?img=5',
-  },
-])
+const team = ref([])
+
+async function loadStaff() {
+  loading.value = true
+  errorText.value = ''
+  try {
+    const response = await getStaffsApi()
+    const rows = Array.isArray(response.data) ? response.data : []
+    team.value = rows.map((staff) => {
+      const position = (staff.position || '').toLowerCase()
+      const normalizedRole = position.includes('chef')
+        ? 'chef'
+        : position.includes('wait')
+          ? 'waiter'
+          : (staff.user?.role || 'admin')
+
+      return {
+        id: staff.staff_id,
+        name: staff.user?.name || `${staff.user?.first_name || ''} ${staff.user?.last_name || ''}`.trim() || `Staff #${staff.staff_id}`,
+        email: staff.user?.email || '-',
+        role: normalizedRole,
+        joinedAt: staff.hire_date || '-',
+        status: staff.is_active ? 'active' : 'inactive',
+        avatar: staff.profile_image || `https://i.pravatar.cc/80?img=${(staff.staff_id % 60) + 1}`,
+      }
+    })
+  } catch (error) {
+    errorText.value = error?.response?.data?.message || 'Failed to load staff data.'
+  } finally {
+    loading.value = false
+  }
+}
 
 const filteredTeam = computed(() => {
   const query = search.value.trim().toLowerCase()
@@ -69,6 +57,8 @@ const serviceCount = computed(() => team.value.filter((member) => member.role ==
 function roleLabel(role) {
   return role.toUpperCase()
 }
+
+onMounted(loadStaff)
 </script>
 
 <template>
@@ -111,6 +101,12 @@ function roleLabel(role) {
           </tr>
         </thead>
         <tbody>
+          <tr v-if="loading">
+            <td colspan="5" class="text-center py-6">Loading staff...</td>
+          </tr>
+          <tr v-else-if="filteredTeam.length === 0">
+            <td colspan="5" class="text-center py-6">{{ errorText || 'No staff found.' }}</td>
+          </tr>
           <tr v-for="member in filteredTeam" :key="member.id">
             <td>
               <div class="d-flex align-center ga-3">

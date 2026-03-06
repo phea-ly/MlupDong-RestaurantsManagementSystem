@@ -9,13 +9,40 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $perPage = (int) $request->integer('per_page', 10);
+        $perPage = max(1, min($perPage, 100));
+        $search = trim((string) $request->input('search', ''));
+        $role = $request->input('role');
+        $status = $request->input('status');
+
+        $query = User::query()
+            ->with(['role', 'restaurant', 'staff'])
+            ->latest('user_id');
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('role', 'like', "%{$search}%");
+            });
+        }
+
+        if (in_array($role, ['admin', 'client'], true)) {
+            $query->where('role', $role);
+        }
+
+        if ($status !== null && $status !== '') {
+            $statusValue = filter_var($status, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($statusValue !== null) {
+                $query->where('status', $statusValue);
+            }
+        }
+
         return response()->json(
-            User::query()
-                ->with(['role', 'restaurant', 'staff'])
-                ->latest('user_id')
-                ->get()
+            $query->paginate($perPage)->appends($request->query())
         );
     }
 
@@ -26,6 +53,7 @@ class UserController extends Controller
             'last_name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:150', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
+            'role' => ['nullable', Rule::in(['admin', 'client'])],
             'phone' => ['nullable', 'string', 'max:20'],
             'status' => ['nullable', 'boolean'],
             'role_id' => ['nullable', 'exists:roles,role_id'],
@@ -60,6 +88,7 @@ class UserController extends Controller
                 Rule::unique('users', 'email')->ignore($id, 'user_id'),
             ],
             'password' => ['nullable', 'string', 'min:8'],
+            'role' => ['nullable', Rule::in(['admin', 'client'])],
             'phone' => ['nullable', 'string', 'max:20'],
             'status' => ['nullable', 'boolean'],
             'role_id' => ['nullable', 'exists:roles,role_id'],

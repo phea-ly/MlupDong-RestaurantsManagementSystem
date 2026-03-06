@@ -1,15 +1,12 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { getOrderItemsApi, getOrdersApi, getTablesApi } from '@/api/management.api'
 
 const tableFilter = ref('all')
 const tableSearch = ref('')
-const tableCards = ref([
-  { id: 'T-08', minsAgo: 4, status: 'help', guests: 4, order: '#901', progress: 18, note: 'Customer assistance' },
-  { id: 'T-01', minsAgo: 12, status: 'ready', guests: 4, order: '#882', progress: 100, note: 'Ready to serve' },
-  { id: 'T-04', minsAgo: 25, status: 'cooking', guests: 2, order: '#879', progress: 64, note: 'Cooking' },
-  { id: 'T-09', minsAgo: 2, status: 'ordering', guests: 2, order: '#905', progress: 0, note: 'Selecting drinks' },
-])
-const selectedTableId = ref('T-01')
+const loading = ref(false)
+const tableCards = ref([])
+const selectedTableId = ref('')
 const tableFilterOptions = [
   { id: 'all', label: 'All' },
   { id: 'ready', label: 'Ready' },
@@ -17,18 +14,17 @@ const tableFilterOptions = [
   { id: 'help', label: 'Help' },
 ]
 
-const selectedTable = computed(() => tableCards.value.find((t) => t.id === selectedTableId.value) || tableCards.value[0])
+const selectedTable = computed(() => tableCards.value.find((t) => t.id === selectedTableId.value) || tableCards.value[0] || {
+  id: '-',
+  order: '-',
+})
 const filteredTables = computed(() => {
   const byFilter = tableCards.value.filter((table) => (tableFilter.value === 'all' ? true : table.status === tableFilter.value))
   const search = tableSearch.value.trim().toLowerCase()
   return search ? byFilter.filter((table) => table.id.toLowerCase().includes(search)) : byFilter
 })
 
-const serviceItems = ref([
-  { id: 1, tableId: 'T-01', item: 'Beef Lok Lak', status: 'Ready' },
-  { id: 2, tableId: 'T-01', item: 'Fish Amok', status: 'Kitchen' },
-  { id: 3, tableId: 'T-04', item: 'Somlor Korko', status: 'Kitchen' },
-])
+const serviceItems = ref([])
 const selectedItems = computed(() => serviceItems.value.filter((item) => item.tableId === selectedTable.value.id))
 
 const servedItems = ref([{ id: 9, name: 'Angkor Beer (Large)', ago: 'Served 15m ago' }])
@@ -43,6 +39,67 @@ function markServed(itemId) {
   snackbarText.value = `${selectedTable.value.id} status updated`
   snackbar.value = true
 }
+
+function mapOrderStatus(orderStatus) {
+  if (orderStatus === 'completed') return 'ready'
+  if (orderStatus === 'preparing') return 'cooking'
+  if (orderStatus === 'new') return 'ordering'
+  if (orderStatus === 'cancelled') return 'help'
+  return 'ordering'
+}
+
+async function loadTableData() {
+  loading.value = true
+  try {
+    const [tablesRes, ordersRes, orderItemsRes] = await Promise.all([
+      getTablesApi(),
+      getOrdersApi(),
+      getOrderItemsApi(),
+    ])
+
+    const tables = Array.isArray(tablesRes.data) ? tablesRes.data : []
+    const orders = Array.isArray(ordersRes.data) ? ordersRes.data : []
+    const orderItems = Array.isArray(orderItemsRes.data) ? orderItemsRes.data : []
+
+    tableCards.value = tables.map((table) => {
+      const tableOrders = orders.filter((o) => o.table_id === table.table_id)
+      const latestOrder = tableOrders[0] || null
+      const createdAt = latestOrder?.created_at ? new Date(latestOrder.created_at) : null
+      const minsAgo = createdAt ? Math.max(0, Math.floor((Date.now() - createdAt.getTime()) / 60000)) : 0
+
+      return {
+        id: `T-${String(table.table_number || table.table_id).padStart(2, '0')}`,
+        tableId: table.table_id,
+        minsAgo,
+        status: latestOrder ? mapOrderStatus(latestOrder.order_status) : 'ordering',
+        guests: table.capacity || 0,
+        order: latestOrder?.order_number || `#${latestOrder?.order_id || '-'}`,
+        progress: latestOrder?.order_status === 'completed' ? 100 : latestOrder?.order_status === 'preparing' ? 64 : 18,
+        note: latestOrder ? `Order ${latestOrder.order_status}` : 'No active order',
+      }
+    })
+
+    if (tableCards.value.length > 0) {
+      selectedTableId.value = tableCards.value[0].id
+    }
+
+    serviceItems.value = orderItems
+      .filter((item) => item.order)
+      .map((item) => {
+        const table = tableCards.value.find((t) => t.tableId === item.order.table_id)
+        return {
+          id: item.order_item_id,
+          tableId: table?.id || '',
+          item: item.menu_item?.item_name || `Item #${item.menu_item_id}`,
+          status: item.order?.order_status === 'completed' ? 'Ready' : 'Kitchen',
+        }
+      })
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(loadTableData)
 </script>
 
 <template>
@@ -76,6 +133,9 @@ function markServed(itemId) {
       </v-card>
 
       <v-row dense>
+        <v-col v-if="loading" cols="12">
+          <v-card rounded="lg" border class="pa-4 text-center">Loading table data...</v-card>
+        </v-col>
         <v-col v-for="table in filteredTables" :key="table.id" cols="12" sm="6" md="4">
           <v-card
             rounded="lg"

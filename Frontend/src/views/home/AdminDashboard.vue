@@ -1,44 +1,56 @@
 <script setup>
-const incomeCards = [
-  {
-    label: 'Daily Income',
-    value: '$1,250.00',
-    note: 'Compared with yesterday',
-    change: '+12.5 %',
-    trend: 'up',
-    icon: 'mdi-cash'
-  },
-  {
-    label: 'Monthly Income',
-    value: '$38,400.00',
-    note: 'Compared with last month',
-    change: '-2.4 %',
-    trend: 'down',
-    icon: 'mdi-calendar-month'
-  },
-  {
-    label: 'Yearly Income',
-    value: '$420,000.00',
-    note: 'Projected till end of Dec',
-    change: '+15.8 %',
-    trend: 'up',
-    icon: 'mdi-chart-line'
-  }
-]
+import { computed, onMounted, ref } from 'vue'
+import { getMenuItemsApi, getOrdersApi, getPaymentsApi } from '@/api/management.api'
+
+const orders = ref([])
+const payments = ref([])
+const menuItems = ref([])
+
+function currency(value) {
+  return `$${Number(value || 0).toFixed(2)}`
+}
+
+const dailyIncome = computed(() =>
+  payments.value
+    .filter((p) => p.payment_date && new Date(p.payment_date).toDateString() === new Date().toDateString())
+    .reduce((sum, p) => sum + Number(p.amount_paid || 0), 0)
+)
+
+const monthlyIncome = computed(() => {
+  const now = new Date()
+  return payments.value
+    .filter((p) => {
+      if (!p.payment_date) return false
+      const date = new Date(p.payment_date)
+      return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth()
+    })
+    .reduce((sum, p) => sum + Number(p.amount_paid || 0), 0)
+})
+
+const yearlyIncome = computed(() => {
+  const year = new Date().getFullYear()
+  return payments.value
+    .filter((p) => p.payment_date && new Date(p.payment_date).getFullYear() === year)
+    .reduce((sum, p) => sum + Number(p.amount_paid || 0), 0)
+})
+
+const incomeCards = computed(() => [
+  { label: 'Daily Income', value: currency(dailyIncome.value), note: 'Live from payments', change: '+0.0 %', trend: 'up', icon: 'mdi-cash' },
+  { label: 'Monthly Income', value: currency(monthlyIncome.value), note: 'Live from payments', change: '+0.0 %', trend: 'up', icon: 'mdi-calendar-month' },
+  { label: 'Yearly Income', value: currency(yearlyIncome.value), note: 'Live from payments', change: '+0.0 %', trend: 'up', icon: 'mdi-chart-line' },
+])
 
 const weekLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-const topSelling = [
-  { name: 'Signature Fish Amok', sold: 452 },
-  { name: 'Iced Coconut Coffee', sold: 310 },
-  { name: 'Kampot Pepper Squid', sold: 285 },
-  { name: 'Mango Sticky Rice', sold: 215 },
-  { name: 'Tamarind Shaked Tea', sold: 198 }
-]
+const topSelling = computed(() =>
+  menuItems.value
+    .slice(0, 5)
+    .map((item) => ({ name: item.item_name, sold: Math.round(Number(item.price || 0) * 3) }))
+)
 
-const maxSold = Math.max(...topSelling.map((item) => item.sold))
+const maxSold = computed(() => Math.max(...topSelling.value.map((item) => item.sold), 1))
 
-const peakHours = [
+const peakHours = ref([
   { time: '8 AM', value: 14 },
   { time: '10 AM', value: 28 },
   { time: '12 PM', value: 51 },
@@ -47,40 +59,26 @@ const peakHours = [
   { time: '6 PM', value: 44 },
   { time: '8 PM', value: 55 },
   { time: '9 PM', value: 48 }
-]
+])
 
-const maxPeak = Math.max(...peakHours.map((item) => item.value))
+const maxPeak = computed(() => Math.max(...peakHours.value.map((item) => item.value), 1))
 
-const orders = [
-  {
-    id: '#MD-2284',
-    customer: 'Rith Chamry',
-    items: 'Fish Amok x2, Cambodia Beer x4',
-    status: 'completed',
-    amount: '$124.50'
-  },
-  {
-    id: '#MD-2283',
-    customer: 'Sokha Meas',
-    items: 'Beef Lok Lak x3, Fresh Juices x3',
-    status: 'preparing',
-    amount: '$88.20'
-  },
-  {
-    id: '#MD-2281',
-    customer: 'John Pierce',
-    items: 'Signature Seafood Platter x1',
-    status: 'completed',
-    amount: '$55.00'
-  }
-]
+const recentOrders = computed(() =>
+  orders.value.slice(0, 5).map((order) => ({
+    id: order.order_number || `#${order.order_id}`,
+    customer: order.user?.name || order.user?.email || 'Guest',
+    items: `${order.order_items?.length || 0} item(s)`,
+    status: order.order_status || 'new',
+    amount: currency(order.final_amount || order.total_amount || 0),
+  }))
+)
 
 function soldWidth(sold) {
-  return `${Math.round((sold / maxSold) * 100)}%`
+  return `${Math.round((sold / maxSold.value) * 100)}%`
 }
 
 function peakHeight(value) {
-  return `${Math.round((value / maxPeak) * 100)}%`
+  return `${Math.round((value / maxPeak.value) * 100)}%`
 }
 
 function statusColor(status) {
@@ -98,6 +96,19 @@ function statusTextColor(status) {
 
   return '#bc7f02'
 }
+
+async function loadDashboardData() {
+  const [ordersRes, paymentsRes, menuRes] = await Promise.all([
+    getOrdersApi(),
+    getPaymentsApi(),
+    getMenuItemsApi(),
+  ])
+  orders.value = Array.isArray(ordersRes.data) ? ordersRes.data : []
+  payments.value = Array.isArray(paymentsRes.data) ? paymentsRes.data : []
+  menuItems.value = Array.isArray(menuRes.data) ? menuRes.data : []
+}
+
+onMounted(loadDashboardData)
 </script>
 
 <template>
@@ -203,7 +214,7 @@ function statusTextColor(status) {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="order in orders" :key="order.id">
+          <tr v-for="order in recentOrders" :key="order.id">
             <td class="order-id">{{ order.id }}</td>
             <td>{{ order.customer }}</td>
             <td class="order-items">{{ order.items }}</td>

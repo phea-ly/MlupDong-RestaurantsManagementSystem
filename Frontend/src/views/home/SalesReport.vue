@@ -1,72 +1,76 @@
 <script setup>
+import { computed, onMounted, ref } from 'vue'
+import { getMenuItemsApi, getOrdersApi, getPaymentsApi } from '@/api/management.api'
+
 const periodFilters = ['Today', 'Yesterday', 'Last 7 Days', 'Custom']
-
-const summaryCards = [
-  {
-    label: 'Total Revenue',
-    value: '$12,840.00',
-    change: '+12.5% vs yesterday',
-    icon: 'mdi-cash-multiple'
-  },
-  {
-    label: 'Total Orders',
-    value: '342',
-    change: '+5.2% vs yesterday',
-    icon: 'mdi-receipt-text-outline'
-  },
-  {
-    label: 'Average Order',
-    value: '$37.54',
-    change: '+1.8% vs yesterday',
-    icon: 'mdi-calculator-variant-outline'
-  },
-  {
-    label: 'Net Profit',
-    value: '$8,210.00',
-    change: '+10.4% vs yesterday',
-    icon: 'mdi-piggy-bank-outline'
-  }
-]
-
 const weekLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const loading = ref(false)
+const orders = ref([])
+const payments = ref([])
+const menuItems = ref([])
 
-const categories = [
-  { name: 'Main Course', value: 45 },
-  { name: 'Drinks', value: 32 },
-  { name: 'Desserts', value: 18 },
-  { name: 'Appetizers', value: 5 }
-]
+function asCurrency(value) {
+  return `$${Number(value || 0).toFixed(2)}`
+}
 
-const logs = [
-  {
-    date: 'Oct 24, 14:22',
-    orderId: '#ORD-9421',
-    items: 'Beef Steak, Red Wine, Caesar Salad',
-    method: 'Visa **** 4421',
-    total: '$84.50'
-  },
-  {
-    date: 'Oct 24, 13:58',
-    orderId: '#ORD-9420',
-    items: 'Chicken Pasta, Iced Tea',
-    method: 'Cash',
-    total: '$32.00'
-  },
-  {
-    date: 'Oct 24, 13:45',
-    orderId: '#ORD-9419',
-    items: 'Veggie Pizza, Garlic Bread, Coke x2',
-    method: 'Apple Pay',
-    total: '$45.20'
-  },
-  {
-    date: 'Oct 24, 13:30',
-    orderId: '#ORD-9418',
-    items: 'Cheeseburger Deluxe, Fries, Shake',
-    method: 'Visa **** 1022',
-    total: '$24.90'
+const totalRevenue = computed(() =>
+  payments.value.reduce((sum, p) => sum + Number(p.amount_paid || 0), 0)
+)
+const totalOrders = computed(() => orders.value.length)
+const averageOrder = computed(() => (totalOrders.value ? totalRevenue.value / totalOrders.value : 0))
+const netProfit = computed(() => totalRevenue.value * 0.64)
+
+const summaryCards = computed(() => [
+  { label: 'Total Revenue', value: asCurrency(totalRevenue.value), change: 'Live from payments', icon: 'mdi-cash-multiple' },
+  { label: 'Total Orders', value: String(totalOrders.value), change: 'Live order count', icon: 'mdi-receipt-text-outline' },
+  { label: 'Average Order', value: asCurrency(averageOrder.value), change: 'Revenue / orders', icon: 'mdi-calculator-variant-outline' },
+  { label: 'Net Profit', value: asCurrency(netProfit.value), change: 'Estimated 64% margin', icon: 'mdi-piggy-bank-outline' },
+])
+
+const categories = computed(() => {
+  const items = menuItems.value
+  if (!items.length) return []
+
+  const grouped = {}
+  items.forEach((item) => {
+    const key = item.category?.category_name || 'Uncategorized'
+    grouped[key] = (grouped[key] || 0) + 1
+  })
+
+  const total = items.length
+  return Object.entries(grouped)
+    .map(([name, count]) => ({ name, value: Math.round((count / total) * 100) }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 4)
+})
+
+const logs = computed(() =>
+  orders.value.slice(0, 8).map((order) => ({
+    date: order.created_at ? new Date(order.created_at).toLocaleString() : '-',
+    orderId: order.order_number || `#${order.order_id}`,
+    items: `${order.order_items?.length || 0} item(s)`,
+    method: order.payments?.[0]?.payment_method || 'Unknown',
+    total: asCurrency(order.final_amount || order.total_amount || 0),
+  }))
+)
+
+async function loadSalesData() {
+  loading.value = true
+  try {
+    const [ordersRes, paymentsRes, menuRes] = await Promise.all([
+      getOrdersApi(),
+      getPaymentsApi(),
+      getMenuItemsApi(),
+    ])
+    orders.value = Array.isArray(ordersRes.data) ? ordersRes.data : []
+    payments.value = Array.isArray(paymentsRes.data) ? paymentsRes.data : []
+    menuItems.value = Array.isArray(menuRes.data) ? menuRes.data : []
+  } finally {
+    loading.value = false
   }
-]
+}
+
+onMounted(loadSalesData)
 </script>
 
 <template>
