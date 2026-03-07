@@ -27,8 +27,9 @@ const profileInitials = computed(() => {
 const menu = [
   { id: 'dashboard', label: 'Dashboard', icon: 'mdi-view-dashboard-outline' },
   { id: 'menu', label: 'Menu', icon: 'mdi-silverware' },
-  { id: 'staff', label: 'Staff', icon: 'mdi-account-group-outline' },
+  { id: 'staff', label: 'Staff', icon: 'mdi-account-circle-outline' },
   { id: 'tables', label: 'Tables', icon: 'mdi-table-chair' },
+  { id: 'user', label: 'User', icon: 'mdi-account-group-outline' },
 ]
 
 const reportsMenu = [

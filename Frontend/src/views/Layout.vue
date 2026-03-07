@@ -13,6 +13,7 @@ const routeToSection = {
   '/home/menu': 'menu',
   '/home/staff': 'staff',
   '/home/table': 'tables',
+  '/home/user': 'user',
   '/home/settings': 'settings',  // ✅ add this
 }
 
@@ -22,6 +23,7 @@ const sectionToRoute = {
   menu: '/home/menu',
   staff: '/home/staff',
   tables: '/home/table',
+  user: '/home/user',
   settings: '/home/settings',    // ✅ add this
 }
 

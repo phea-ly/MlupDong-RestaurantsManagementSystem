@@ -23,8 +23,6 @@ const emit = defineEmits(['update:active-section', 'action', 'logout'])
       <AppBar
         :title="title"
         :subtitle="subtitle"
-        :action-label="actionLabel"
-        @action="emit('action')"
       />
       <div class="content-wrap">
         <slot />

@@ -60,6 +60,11 @@ const routes = [
       component: () => import('@/views/home/Table.vue'),
     },
     {
+      path: 'user',
+      name: 'home-user',
+      component: () => import('@/views/home/User.vue'),
+    },
+    {
       path: 'settings',
       name: 'home-settings',
       meta: { requiresAuth: true },

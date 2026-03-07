@@ -27,7 +27,6 @@ const profileInitials = computed(() => {
         + {{ actionLabel }}
       </button>
       <v-btn icon="mdi-bell-outline" variant="text" size="small" class="toolbar-icon" />
-      <v-btn icon="mdi-cog-outline" variant="text" size="small" class="toolbar-icon" />
       <v-avatar color="#e7eef3" size="30" class="avatar-text">{{ profileInitials }}</v-avatar>
     </div>
   </div>
