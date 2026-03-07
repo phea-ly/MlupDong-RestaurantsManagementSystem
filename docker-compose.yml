@@ -1,0 +1,83 @@
+
+# docker-compose.yml
+services:
+  backend:
+    image: ${DOCKER_USERNAME}/image_name:latest
+    container_name: container_name
+    restart: always
+    networks: [web]
+    env_file: ./backend/.env
+    volumes:
+      - backend_storage:/var/www/html/storage
+      - ./backend/bootstrap/cache:/var/www/html/bootstrap/cache
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "-r", "echo ok;"]
+      interval: 30s
+      retries: 3
+
+
+  frontend:
+    image: ${DOCKER_USERNAME}/image_name:latest
+    container_name: container_name
+    restart: always
+    networks: [web]
+
+  webserver:
+    image: ${DOCKER_USERNAME}/image_name:latest
+    container_name: container_name
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./backend/public:/var/www/html/public
+      - backend_storage:/var/www/html/storage
+      - ./certbot/conf:/etc/letsencrypt
+    networks: [web]
+    depends_on:
+      backend:
+        condition: service_healthy
+
+
+  db:
+    image: mysql
+    container_name: container_name
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}      # Was MYSQL_DB (wrong env var name)
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql         # Was postgresql path
+    networks: [web]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USERNAME}", "-p${DB_PASSWORD}"]
+      interval: 10s
+    retries: 5
+
+
+  redis:
+    image: redis:7-alpine
+    container_name: container_name
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes: [redis_data:/data]
+    networks: [web]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 3
+
+
+networks:
+  web:
+    external: true
+
+volumes:
+  backend_storage:
+  postgres_data:
+  redis_data:
+
