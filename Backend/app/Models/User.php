@@ -2,26 +2,31 @@
 
 namespace App\Models;
 
+<<<<<<< HEAD
+use Illuminate\Database\Eloquent\Casts\Attribute;
+=======
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+>>>>>>> e159202bdfe4d65fb2d1c3f48c42c4cdacd9d8f2
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Fortify\TwoFactorAuthenticatable;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    protected $table = 'users';
+
+    protected $primaryKey = 'user_id';
+
     protected $fillable = [
         'first_name',
         'last_name',
@@ -34,28 +39,21 @@ class User extends Authenticatable
         'restaurant_id',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
-        'two_factor_secret',
-        'two_factor_recovery_codes',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'password' => 'hashed',
             'status' => 'boolean',
+<<<<<<< HEAD
+        ];
+    }
+
+=======
             'two_factor_confirmed_at' => 'datetime',
         ];
     }
@@ -64,6 +62,7 @@ class User extends Authenticatable
 
     protected $primaryKey = 'user_id';
 
+>>>>>>> e159202bdfe4d65fb2d1c3f48c42c4cdacd9d8f2
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id', 'role_id');
@@ -90,4 +89,23 @@ class User extends Authenticatable
             get: fn () => trim(($this->first_name ?? '').' '.($this->last_name ?? '')),
         );
     }
+<<<<<<< HEAD
+
+    /**
+     * Get the identifier that will be stored in the JWT token.
+     */
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    /**
+     * Return an array with custom claims to be added to the JWT token.
+     */
+    public function getJWTCustomClaims()
+    {
+        return [];
+    }
+=======
+>>>>>>> e159202bdfe4d65fb2d1c3f48c42c4cdacd9d8f2
 }
