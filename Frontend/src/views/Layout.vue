@@ -1,67 +1,27 @@
 <script setup>
 import AppLayout from '@/components/layout/AppLayout.vue'
 import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { logoutSession } from '@/utils/auth'
+import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const router = useRouter()
 
-const routeToSection = {
-  '/home/admin-dashboard': 'dashboard',
-  '/home/sales-report': 'sales-report',
-  '/home/menu': 'menu',
-  '/home/staff': 'staff',
-  '/home/table': 'tables',
-  '/home/user': 'user',
-  '/home/settings': 'settings',  // ✅ add this
-}
-
-const sectionToRoute = {
-  dashboard: '/home/admin-dashboard',
-  'sales-report': '/home/sales-report',
-  menu: '/home/menu',
-  staff: '/home/staff',
-  tables: '/home/table',
-  user: '/home/user',
-  settings: '/home/settings',    // ✅ add this
-}
-
-// Page meta per section
 const pageMeta = {
-  dashboard:      { title: 'Dashboard',    subtitle: 'Overview of your restaurant', actionLabel: '' },
-  menu:           { title: 'Menu',         subtitle: 'Manage your menu items',       actionLabel: 'Add Item' },
-  staff:          { title: 'Staff',        subtitle: 'Manage your team',             actionLabel: 'Add Staff' },
-  tables:         { title: 'Tables',       subtitle: 'Manage restaurant tables',     actionLabel: 'Add Table' },
-  'sales-report': { title: 'Sales Report', subtitle: 'View sales analytics',         actionLabel: 'Export' },
-  settings:       { title: 'Settings',     subtitle: 'System settings',              actionLabel: '' },
+  '/home/admin-dashboard': { title: 'Dashboard',    subtitle: 'Overview of your restaurant' },
+  '/home/menu':            { title: 'Menu',         subtitle: 'Manage your menu items'       },
+  '/home/staff':           { title: 'Staff',        subtitle: 'Manage your team'             },
+  '/home/table':           { title: 'Tables',       subtitle: 'Manage restaurant tables'     },
+  '/home/sales-report':    { title: 'Sales Report', subtitle: 'View sales analytics'         },
+  '/home/user':            { title: 'User',         subtitle: 'Manage system accounts'       },
+  '/home/settings':        { title: 'Settings',     subtitle: 'System configuration'         },
 }
 
-const activeSection = computed(() => routeToSection[route.path] ?? 'dashboard')
-const meta = computed(() => pageMeta[activeSection.value] ?? pageMeta.dashboard)
-
-function goToSection(sectionId) {
-  const targetPath = sectionToRoute[sectionId]
-  if (targetPath && targetPath !== route.path) {
-    router.push(targetPath)
-  }
-}
-
-async function logout() {
-  await logoutSession()
-  router.push('/login')
-}
+const meta = computed(() =>
+  pageMeta[route.path] ?? { title: 'Dashboard', subtitle: 'Overview of your restaurant' }
+)
 </script>
 
 <template>
-  <AppLayout
-    :active-section="activeSection"
-    :title="meta.title"
-    :subtitle="meta.subtitle"
-    :action-label="meta.actionLabel"
-    @update:active-section="goToSection"
-    @logout="logout"
-  >
+  <AppLayout :title="meta.title" :subtitle="meta.subtitle">
     <router-view />
   </AppLayout>
 </template>

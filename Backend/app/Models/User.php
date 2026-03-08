@@ -2,15 +2,7 @@
 
 namespace App\Models;
 
-<<<<<<< HEAD
 use Illuminate\Database\Eloquent\Casts\Attribute;
-=======
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
->>>>>>> e159202bdfe4d65fb2d1c3f48c42c4cdacd9d8f2
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -49,20 +41,9 @@ class User extends Authenticatable implements JWTSubject
         return [
             'password' => 'hashed',
             'status' => 'boolean',
-<<<<<<< HEAD
         ];
     }
 
-=======
-            'two_factor_confirmed_at' => 'datetime',
-        ];
-    }
-
-    protected $table = 'users';
-
-    protected $primaryKey = 'user_id';
-
->>>>>>> e159202bdfe4d65fb2d1c3f48c42c4cdacd9d8f2
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id', 'role_id');
@@ -89,7 +70,6 @@ class User extends Authenticatable implements JWTSubject
             get: fn () => trim(($this->first_name ?? '').' '.($this->last_name ?? '')),
         );
     }
-<<<<<<< HEAD
 
     /**
      * Get the identifier that will be stored in the JWT token.
@@ -106,6 +86,4 @@ class User extends Authenticatable implements JWTSubject
     {
         return [];
     }
-=======
->>>>>>> e159202bdfe4d65fb2d1c3f48c42c4cdacd9d8f2
 }

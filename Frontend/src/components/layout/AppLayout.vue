@@ -1,29 +1,18 @@
 <script setup>
-import AppBar from './AppBar.vue'
+import AppBar  from './AppBar.vue'
 import Sidebar from './Sidebar.vue'
 
 defineProps({
-  activeSection: { type: String, required: true },
-  title: { type: String, required: true },
+  title:    { type: String, required: true },
   subtitle: { type: String, required: true },
-  actionLabel: { type: String, required: true }
 })
-
-const emit = defineEmits(['update:active-section', 'action', 'logout'])
 </script>
 
 <template>
   <div class="layout-root">
-    <Sidebar
-      :active-section="activeSection"
-      @update:active-section="emit('update:active-section', $event)"
-      @logout="emit('logout')"
-    />
+    <Sidebar />
     <div class="layout-main">
-      <AppBar
-        :title="title"
-        :subtitle="subtitle"
-      />
+      <AppBar :title="title" :subtitle="subtitle" />
       <div class="content-wrap">
         <slot />
       </div>
@@ -40,7 +29,6 @@ const emit = defineEmits(['update:active-section', 'action', 'logout'])
   font-family: Manrope, 'Segoe UI', sans-serif;
   background: #edf2f1;
 }
-
 .layout-main {
   flex: 1;
   display: flex;
@@ -48,7 +36,6 @@ const emit = defineEmits(['update:active-section', 'action', 'logout'])
   overflow: hidden;
   min-width: 0;
 }
-
 .content-wrap {
   flex: 1;
   overflow-y: auto;

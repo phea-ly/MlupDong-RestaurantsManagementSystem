@@ -1,17 +1,17 @@
 import api from './api'
 
-export const loginApi = (data) => {
-  return api.post('/auth/login', data)
+export const loginApi = ({ email, password }) => {
+  return api.post('/login', { email, password })
 }
 
 export const registerApi = (data) => {
-  return api.post('/auth/register', data)
+  return api.post('/register', data)
 }
 
 export const meApi = () => {
-  return api.get('/auth/me')
+  return api.get('/user')
 }
 
 export const logoutApi = () => {
-  return api.post('/auth/logout')
+  return api.post('/logout')
 }

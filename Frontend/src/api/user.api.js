@@ -1,2 +1,2 @@
-import client from './api'
+import api from './api'
 
