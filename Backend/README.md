@@ -1,84 +1,159 @@
-# Project Title
+# MlupDong Restaurants Management System
 
-A brief one or two-sentence description of the project and what it does.
+Full-stack restaurant management system with a Vue 3 + Vuetify frontend and Laravel 12 backend.
 
-## About the Project
+## Tech Stack
+- Frontend: Vue 3, Vite, Vuetify, Pinia, Vue Router, Axios
+- Backend: Laravel 12, PHP 8.2+, JWT (`tymon/jwt-auth`), Fortify (included), Eloquent ORM
+- Database: MySQL (recommended) or SQLite
 
-This project is a web application built using the [Laravel 12](https://laravel.com) framework. It leverages Laravel's elegant syntax and robust features for tasks such as routing, database migrations, and authentication.
+## Project Structure
+- `Frontend/` - Vue application
+- `Backend/` - Laravel API and web app
 
-### Built With
+## Prerequisites
+- Node.js `^20.19.0` or `>=22.12.0`
+- npm
+- PHP `^8.2`
+- Composer
+- MySQL (if using MySQL)
 
-*   [Laravel 12.x](https://laravel.com)
-*   [PHP 8.2 or 8.3](https://www.zend.com/blog/laravel-php-requirements)
-*   [Composer](https://getcomposer.org/)
-*   [Node.js & Vite](https://laravel.com/vite) (for asset bundling)
-*   [MySQL](https://www.mysql.com) (or your chosen database system)
+## Quick Start
 
-## Getting Started
+### 1. Install dependencies
+Backend:
+```bash
+cd Backend
+composer install
+```
 
-Follow these steps to set up the project locally.
+Frontend:
+```bash
+cd Frontend
+npm install
+```
 
-### Prerequisites
+### 2. Configure backend environment
+In `Backend/.env`, make sure database and app values are correct.
 
-*   [PHP](https://www.php.net) (v8.2+) and necessary extensions
-*   [Composer](https://getcomposer.org)
-*   [Node.js](https://nodejs.org) and [NPM](https://www.npmjs.com)
-*   A database server (e.g., MySQL, PostgreSQL)
+Recommended MySQL config:
+```env
+APP_URL=http://127.0.0.1:8000
 
-### Installation
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=restaurant-management
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-1.  **Clone the repository**:
-    ```bash
-    git clone https://github.com
-    cd your-project-name
-    ```
+Important:
+- Do not leave a leading space in `DB_DATABASE`.
+- If `DB_CONNECTION` is missing, Laravel defaults to SQLite.
 
-2.  **Install PHP dependencies**:
-    ```bash
-    composer install
-    ```
+Generate app and JWT keys:
+```bash
+cd Backend
+php artisan key:generate
+php artisan jwt:secret
+```
 
-3.  **Create a copy of the environment file**:
-    ```bash
-    cp .env.example .env
-    ```
+### 3. Run migrations
+```bash
+cd Backend
+php artisan migrate
+```
 
-4.  **Configure your `.env` file**:
-    *   Set your database credentials (`DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`).
-    *   Configure other environment-specific variables if needed.
+### 4. Start backend and frontend
+Terminal 1 (backend):
+```bash
+cd Backend
+php artisan serve --host=127.0.0.1 --port=8000
+```
 
-5.  **Generate an application key**:
-    ```bash
-    php artisan key:generate
-    ```
+Terminal 2 (frontend):
+```bash
+cd Frontend
+npm run dev
+```
 
-6.  **Run database migrations (and seeders, if applicable)**:
-    ```bash
-    php artisan migrate
-    # If you have seeders, run:
-    # php artisan db:seed
-    ```
+Frontend Vite proxy forwards `/api/*` to `http://localhost:8000` (see `Frontend/vite.config.js`).
 
-7.  **Install Node.js dependencies and build assets**:
-    ```bash
-    npm install
-    npm run build
-    ```
+## Available Scripts
 
-8.  **Start the local development server**:
-    ```bash
-    php artisan serve
-    ```
-    Your application should now be accessible at `http://127.0.0.1:8000`.
+### Frontend (`Frontend/package.json`)
+- `npm run dev` - start Vite dev server
+- `npm run build` - production build
+- `npm run preview` - preview production build
 
-## Usage
+### Backend (`Backend/composer.json`)
+- `composer run dev` - run Laravel server + queue + Vite concurrently
+- `php artisan serve` - start backend only
+- `php artisan test` - run tests
 
-Describe how users can interact with your application. Mention key features, entry points (e.g., admin panel URL), and any specific functionality.
+## API Routes (Current)
+Defined in `Backend/routes/api.php`:
+- `restaurants`
+- `roles`
+- `users`
+- `staffs`
+- `tables`
+- `categories`
+- `menu-items`
+- `orders`
+- `order-items`
+- `payments`
+- `discounts`
+- `order-status-logs`
 
-## Contributing
+Each is registered as `Route::apiResource(...)`.
 
-Thank you for considering contributing to this project! The contribution guide can be found in the official [Laravel documentation](https://laravel.com/contributions).
+## Authentication Notes
+This repository currently has two auth styles in code:
+- JWT auth controller flow (API-oriented)
+- Session/Fortify-style routes under `Backend/routes/web.php` (`/api/auth/*`)
+
+For consistency with the current frontend Axios base URL (`/api`), use one auth approach and remove/align the other to avoid confusion.
+
+## Common Issues & Fixes
+
+### 1) Vite proxy error `ECONNREFUSED` for `/api/...`
+Cause: backend server is not running on the expected host/port.
+Fix:
+- start backend at `127.0.0.1:8000`
+- then run frontend
+- if needed, update `Frontend/vite.config.js` proxy target to `http://127.0.0.1:8000`
+
+### 2) `Database file at path [restaurant-management] does not exist`
+Cause: app is using SQLite because `DB_CONNECTION` is not set.
+Fix:
+- set `DB_CONNECTION=mysql`
+- ensure `DB_DATABASE=restaurant-management` (no leading space)
+- run `php artisan config:clear`
+
+### 3) `Could not create token`
+Cause: JWT secret missing or invalid.
+Fix:
+```bash
+cd Backend
+php artisan jwt:secret
+php artisan optimize:clear
+```
+
+### 4) `users.first_name NOT NULL constraint failed`
+Cause: user creation is sending `name` but schema requires `first_name` and `last_name`.
+Fix:
+- align register logic with your `users` schema (`first_name`, `last_name`)
+
+## Development Tips
+- Clear Laravel cache after env/config changes:
+```bash
+cd Backend
+php artisan optimize:clear
+```
+- Check backend errors in:
+`Backend/storage/logs/laravel.log`
 
 ## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org).
+This project is currently unlicensed for public distribution unless you add a license file.
