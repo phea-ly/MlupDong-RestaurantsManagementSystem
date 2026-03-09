@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { isAuthenticated, syncAuthSession } from '@/utils/auth'
+import { useAuthStore } from '@/stores/auth.store'  // ← ADD this import
 
 const routes = [
   {
@@ -13,20 +13,11 @@ const routes = [
     component: () => import('@/views/Login.vue'),
   },
   {
-    path: '/register',
-    name: 'register',
-    meta: { guestOnly: true },
-    component: () => import('@/views/Register.vue'),
-  },
-  {
     path: '/home',
     meta: { requiresAuth: true },
     component: () => import('@/views/Layout.vue'),
     children: [
-      {
-        path: '',
-        redirect: '/home/admin-dashboard',
-      },
+      { path: '', redirect: '/home/admin-dashboard' },
       {
         path: 'admin-dashboard',
         name: 'home-dashboard',
@@ -78,36 +69,20 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(),
   routes,
 })
 
-// ── Navigation Guard ───────────────────────────────────
-let sessionChecked = false
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token')   // ← read directly, most reliable
 
-async function ensureSession() {
-  if (!isAuthenticated()) {
-    sessionChecked = true
-    return false
+  if (to.meta.requiresAuth && !token) {
+    next('/login')
+  } else if (to.meta.guestOnly && token) {
+    next('/home')
+  } else {
+    next()
   }
-  if (sessionChecked) return true
-  const ok = await syncAuthSession()
-  sessionChecked = true
-  return ok
-}
-
-router.beforeEach(async (to) => {
-  const authed = await ensureSession()
-
-  if (to.meta.requiresAuth && !authed) {
-    return { path: '/login', query: { redirect: to.fullPath } }
-  }
-
-  if (to.meta.guestOnly && authed) {
-    return '/home/admin-dashboard'
-  }
-
-  return true
 })
 
 export default router

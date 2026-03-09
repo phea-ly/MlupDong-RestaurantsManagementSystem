@@ -1,21 +1,38 @@
-import { defineStore } from 'pinia'
+// src/stores/auth.store.js   ← must match the import path
+import { defineStore } from "pinia";
+import api from "@/plugins/axios";
 
-export const useAuthStore = defineStore('auth', {
+export const useAuthStore = defineStore("auth", {
   state: () => ({
-    user: null,
-    token: null
+    user: JSON.parse(localStorage.getItem("user")) ?? null,
+    token: localStorage.getItem("token") ?? null,
   }),
   getters: {
-    isAuthenticated: (state) => !!state.token
+    isAuthenticated: (state) => !!state.token,
   },
   actions: {
     async login(email, password) {
-      this.user = { email: credentials.email }
-      this.token = 'fake-token'
+      const { data } = await api.post("/login", { email, password });
+
+      if (!data.token) throw new Error("No token received");
+
+      this.token = data.token;
+      this.user = data.user ?? null;
+
+      localStorage.setItem("token", data.token);
+      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
     },
-    logout() {
-      this.user = null
-      this.token = null
-    }
-  }
-})
+    async logout() {
+      try {
+        await api.post("/logout");
+      } catch (e) {
+        // continue logout even if API fails
+      } finally {
+        this.token = null;
+        this.user = null;
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+      }
+    },
+  },
+});

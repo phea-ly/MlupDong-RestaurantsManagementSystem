@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+// use App\Http\Requests\LoginRequest;
+// use App\Http\Resources\UserResource;
+// use Illuminate\Database\Eloquent\Attributes\UseResource;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -11,55 +15,42 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
-        ]);
-
-        $name = trim($request->name);
-        $firstName = Str::of($name)->before(' ')->value();
-        $lastName = trim(Str::of($name)->after(' ')->value());
-
-        $user = User::create([
-            'first_name' => $firstName,
-            'last_name' => $lastName !== '' ? $lastName : $firstName,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-
-        try {
-            $token = JWTAuth::fromUser($user);
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Could not create token'], 500);
-        }
-
-        return response()->json([
-            'token' => $token,
-            'user' => $user,
-        ], 201);
-    }
 
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
+        $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required|string',
+        ]);
 
-        try {
-            if (!$token = JWTAuth::attempt($credentials)) {
-                return response()->json(['error' => 'Invalid credentials'], 401);
-            }
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Could not create token'], 500);
+        // Check if email exists first
+        $user = \App\Models\User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Email not found.',
+            ], 401);
+        }
+
+        // Email exists but password wrong
+        if (!$token = JWTAuth::attempt($request->only('email', 'password'))) {
+            return response()->json([
+                'message' => 'Incorrect password.',
+            ], 401);
         }
 
         return response()->json([
-            'token' => $token,
-            'expires_in' => (int) config('jwt.ttl', 60) * 60,
+            'token'      => $token,
+            'expires_in' => config('jwt.ttl') * 60,
+            'user'       => [
+                'id'         => $user->user_id,
+                'email'      => $user->email,
+                'first_name' => $user->first_name,
+                'last_name'  => $user->last_name,
+                'role_id'    => $user->role_id,
+            ],
         ]);
     }
-
     public function logout()
     {
         try {
@@ -88,7 +79,7 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|string|email|max:255|unique:users,email,'.auth('api')->id().',user_id',
+            'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . auth('api')->id() . ',user_id',
         ]);
 
         try {
