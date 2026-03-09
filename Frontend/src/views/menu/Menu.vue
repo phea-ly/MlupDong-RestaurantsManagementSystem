@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useMenuStore } from '@/stores'
 import MenuItemCard from '@/components/menu/MenuItemCard.vue'
 import AddMenuItemDialog from '@/components/menu/AddMenuItemDialog.vue'
@@ -11,6 +11,11 @@ const showDialog   = ref(false)
 const editingItem  = ref(null)
 const showDeleteDialog = ref(false)
 const deletingItemId   = ref(null)
+
+// Set default category to 'all' on component mount
+onMounted(() => {
+  menuStore.activeCategory = 'all'
+})
 
 const filteredItems = computed(() => {
   let items = menuStore.menuItems.filter(item =>
