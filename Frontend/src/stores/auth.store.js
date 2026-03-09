@@ -23,16 +23,19 @@ export const useAuthStore = defineStore("auth", {
       if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
     },
     async logout() {
-      try {
-        await api.post("/logout");
-      } catch (e) {
-        // continue logout even if API fails
-      } finally {
-        this.token = null;
-        this.user = null;
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-      }
+      // Clear state immediately — don't wait for API
+      this.token = null;
+      this.user = null;
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+
+      // Call API in background — we don't care about the response
+      api.post("/logout").catch(() => {});
+    },
+    async updateProfile(data) {
+      const response = await api.put("/user", data);
+      this.user = { ...this.user, ...response.data.user };
+      localStorage.setItem("user", JSON.stringify(this.user));
     },
   },
 });
