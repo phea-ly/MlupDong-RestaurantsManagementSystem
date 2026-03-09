@@ -2,25 +2,23 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Fortify\TwoFactorAuthenticatable;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    protected $table = 'users';
+
+    protected $primaryKey = 'user_id';
+
     protected $fillable = [
         'first_name',
         'last_name',
@@ -33,35 +31,18 @@ class User extends Authenticatable
         'restaurant_id',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
-        'two_factor_secret',
-        'two_factor_recovery_codes',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'password' => 'hashed',
             'status' => 'boolean',
-            'two_factor_confirmed_at' => 'datetime',
         ];
     }
-
-    protected $table = 'users';
-
-    protected $primaryKey = 'user_id';
 
     public function role(): BelongsTo
     {
@@ -81,5 +62,28 @@ class User extends Authenticatable
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class, 'user_id', 'user_id');
+    }
+
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => trim(($this->first_name ?? '').' '.($this->last_name ?? '')),
+        );
+    }
+
+    /**
+     * Get the identifier that will be stored in the JWT token.
+     */
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    /**
+     * Return an array with custom claims to be added to the JWT token.
+     */
+    public function getJWTCustomClaims()
+    {
+        return [];
     }
 }

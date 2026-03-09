@@ -1,55 +1,45 @@
 <script setup>
-import AppBar from './AppBar.vue'
+import AppBar  from './AppBar.vue'
 import Sidebar from './Sidebar.vue'
 
 defineProps({
-  activeSection: {
-    type: String,
-    required: true
-  },
-  title: {
-    type: String,
-    required: true
-  },
-  subtitle: {
-    type: String,
-    required: true
-  },
-  actionLabel: {
-    type: String,
-    required: true
-  }
+  title:    { type: String, required: true },
+  subtitle: { type: String, required: true },
 })
-
-const emit = defineEmits(['update:active-section', 'action', 'logout'])
 </script>
 
 <template>
-  <v-app class="layout-root">
-    <Sidebar
-      :active-section="activeSection"
-      @update:active-section="emit('update:active-section', $event)"
-      @logout="emit('logout')"
-    />
-    <v-main class="main-bg">
-      <AppBar :title="title" :subtitle="subtitle" :action-label="actionLabel" @action="emit('action')" />
-      <v-container fluid class="content-wrap">
+  <div class="layout-root">
+    <Sidebar />
+    <div class="layout-main">
+      <AppBar :title="title" :subtitle="subtitle" />
+      <div class="content-wrap">
         <slot />
-      </v-container>
-    </v-main>
-  </v-app>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>
 .layout-root {
-  font-family: Manrope, Segoe UI, sans-serif;
-}
-
-.main-bg {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  font-family: Manrope, 'Segoe UI', sans-serif;
   background: #edf2f1;
 }
-
+.layout-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
 .content-wrap {
+  flex: 1;
+  overflow-y: auto;
   padding: 20px 18px 26px;
+  background: #edf2f1;
 }
 </style>

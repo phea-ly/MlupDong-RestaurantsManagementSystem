@@ -9,7 +9,7 @@ export const useAuthStore = defineStore('auth', {
     isAuthenticated: (state) => !!state.token
   },
   actions: {
-    async login(credentials) {
+    async login(email, password) {
       this.user = { email: credentials.email }
       this.token = 'fake-token'
     },

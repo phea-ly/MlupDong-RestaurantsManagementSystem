@@ -1,105 +1,69 @@
-import { loginApi, logoutApi, meApi, registerApi } from '@/api/auth.api'
+const SESSION_KEY = 'auth_session'
 
-const AUTH_KEY = 'auth_session_user'
+
+// ── Save / clear session ────────────────────────────────────────────
+export function saveSession(user) {
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(user))
+}
+
+export function clearSession() {
+  sessionStorage.removeItem(SESSION_KEY)
+}
 
 export function getSessionUser() {
-  const rawUser = localStorage.getItem(AUTH_KEY)
-
-  if (!rawUser) {
-    return null
-  }
-
   try {
-    return JSON.parse(rawUser)
+    const raw = sessionStorage.getItem(SESSION_KEY)
+    return raw ? JSON.parse(raw) : null
   } catch {
-    localStorage.removeItem(AUTH_KEY)
     return null
   }
 }
 
-function setSessionUser(user) {
-  if (!user || user.role !== 'admin') {
-    clearSessionUser()
-    return
-  }
-
-  localStorage.setItem(AUTH_KEY, JSON.stringify(user))
-}
-
-function clearSessionUser() {
-  localStorage.removeItem(AUTH_KEY)
-}
-
-function parseApiError(error, fallbackMessage) {
-  const data = error?.response?.data
-
-  if (data?.message) {
-    return data.message
-  }
-
-  if (data?.errors) {
-    const firstField = Object.keys(data.errors)[0]
-    const firstMessage = data.errors[firstField]?.[0]
-
-    if (firstMessage) {
-      return firstMessage
-    }
-  }
-
-  return fallbackMessage
-}
-
+// ── Auth state ──────────────────────────────────────────────────────
 export function isAuthenticated() {
-  return getUserRole() === 'admin'
+  return !!getSessionUser()
 }
 
 export function getUserRole() {
   return getSessionUser()?.role ?? null
 }
 
+// ── Route helper ────────────────────────────────────────────────────
 export function getDashboardPathByRole() {
-  return '/home/admin-dashboard'
+  const role = getUserRole()
+  if (role === 'admin') return '/home/admin-dashboard'
+  return '/home/admin-dashboard' // ✅ everyone goes here for now
 }
 
-export async function loginWithCredentials(email, password, remember = false) {
-  if (!email || !password) {
-    throw new Error('Email and password are required.')
-  }
+// ── Auth actions ────────────────────────────────────────────────────
+export async function loginSession({ email, password }) {
+  // 🔧 Replace this with your real API call
+  // Example: const res = await fetch('/api/login', { method: 'POST', body: JSON.stringify({ email, password }) })
 
-  try {
-    const response = await loginApi({ email, password, remember })
-    setSessionUser(response.data.user)
-    return response.data.user
-  } catch (error) {
-    throw new Error(parseApiError(error, 'Unable to sign in.'))
+  // Mock login for now
+  if (email === 'admin@test.com' && password === 'password') {
+    saveSession({ name: 'Admin User', email, role: 'admin' })
+    return
   }
+  if (email === 'staff@test.com' && password === 'password') {
+    saveSession({ name: 'Sophal K.', email, role: 'manager' })
+    return
+  }
+  throw new Error('Invalid email or password')
 }
 
-export async function registerWithCredentials(payload) {
-  try {
-    const response = await registerApi(payload)
-    setSessionUser(response.data.user)
-    return response.data.user
-  } catch (error) {
-    throw new Error(parseApiError(error, 'Unable to create account.'))
-  }
-}
-
-export async function syncAuthSession() {
-  try {
-    const response = await meApi()
-    setSessionUser(response.data.user)
-    return true
-  } catch {
-    clearSessionUser()
-    return false
-  }
+export async function registerSession({ name, email, password }) {
+  // 🔧 Replace with your real API call later
+  const role = email.includes('admin') ? 'admin' : 'manager'
+  saveSession({ name, email, role })
 }
 
 export async function logoutSession() {
-  try {
-    await logoutApi()
-  } finally {
-    clearSessionUser()
-  }
+  clearSession()
+}
+
+export async function syncAuthSession() {
+  // 🔧 Replace with API token validation if needed
+  // e.g. verify token with backend, refresh if expired
+  return isAuthenticated()
 }
