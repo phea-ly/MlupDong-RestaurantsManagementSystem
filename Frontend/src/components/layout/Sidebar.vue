@@ -11,6 +11,7 @@ const menu = [
   { path: '/home/table',           label: 'Tables',      icon: 'mdi-table-chair'            },
   { path: '/home/user',            label: 'User',        icon: 'mdi-account-group-outline'  },
 ]
+
 const reportsMenu = [
   { path: '/home/sales-report', label: 'Sales Report', icon: 'mdi-chart-box-outline' },
   { path: '/home/settings',     label: 'Settings',     icon: 'mdi-cog-outline'       },
@@ -30,7 +31,8 @@ function navigate(path) {
     <!-- Brand -->
     <div class="d-flex align-center ga-3 px-4 pt-5 pb-4">
       <v-avatar
-        size="34" rounded="lg"
+        size="34"
+        rounded="lg"
         style="background:linear-gradient(135deg,#19e092,#0f9e5f);
                box-shadow:0 4px 12px rgba(15,158,95,0.28); flex-shrink:0"
       >
@@ -81,15 +83,13 @@ function navigate(path) {
       </v-list-item>
     </v-list>
 
-    <!-- ✅ NO profile section here anymore -->
-
   </v-navigation-drawer>
 </template>
 
 <style scoped>
-.brand-title  { font-size:13px; font-weight:900; color:#1a2e48; line-height:1.2; }
-.brand-sub    { font-size:9.5px; font-weight:700; color:#7f90a4; text-transform:uppercase; letter-spacing:.07em; }
-.section-label{ font-size:10px; font-weight:800; color:#9aabbd; text-transform:uppercase; letter-spacing:.12em; }
+.brand-title   { font-size:13px; font-weight:900; color:#1a2e48; line-height:1.2; }
+.brand-sub     { font-size:9.5px; font-weight:700; color:#7f90a4; text-transform:uppercase; letter-spacing:.07em; }
+.section-label { font-size:10px; font-weight:800; color:#9aabbd; text-transform:uppercase; letter-spacing:.12em; }
 
 .nav-item { min-height:40px; }
 .nav-item :deep(.v-list-item-title) { font-size:13px; font-weight:700; color:#4b5d74; }

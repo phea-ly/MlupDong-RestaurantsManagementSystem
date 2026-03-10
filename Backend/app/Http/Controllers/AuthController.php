@@ -75,30 +75,53 @@ class AuthController extends Controller
         }
     }
 
+    // app/Http/Controllers/AuthController.php
     public function updateUser(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . auth('api')->id() . ',user_id',
+        $user = auth()->user();
+
+        $request->validate([
+            'first_name'            => 'sometimes|string|max:100',
+            'last_name'             => 'sometimes|string|max:100',
+            'current_password'      => 'sometimes|string',
+            'password'              => 'sometimes|string|min:6|confirmed',
+            'avatar'                => 'sometimes|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
-        try {
-            $user = auth('api')->user();
+        $data = $request->only('first_name', 'last_name');
 
-            if (isset($validated['name'])) {
-                $name = trim($validated['name']);
-                $firstName = Str::of($name)->before(' ')->value();
-                $lastName = trim(Str::of($name)->after(' ')->value());
-                $validated['first_name'] = $firstName;
-                $validated['last_name'] = $lastName !== '' ? $lastName : $firstName;
-                unset($validated['name']);
+        // Handle avatar upload
+        if ($request->hasFile('avatar')) {
+            // Delete old avatar if exists
+            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+                Storage::disk('public')->delete($user->avatar);
             }
-
-            $user->update($validated);
-
-            return response()->json($user);
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Failed to update user'], 500);
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $data['avatar'] = $path;
         }
+
+        // Handle password change
+        if ($request->filled('password')) {
+            if (!Hash::check($request->current_password, $user->password)) {
+                return response()->json(['message' => 'Current password is incorrect.'], 422);
+            }
+            $data['password'] = Hash::make($request->password);
+        }
+
+        $user->update($data);
+
+        return response()->json([
+            'success' => true,
+            'user'    => [
+                'id'         => $user->user_id,
+                'email'      => $user->email,
+                'first_name' => $user->first_name,
+                'last_name'  => $user->last_name,
+                'role_id'    => $user->role_id,
+                'avatar'     => $user->avatar
+                    ? asset('storage/' . $user->avatar)
+                    : null,
+            ],
+        ]);
     }
 }
