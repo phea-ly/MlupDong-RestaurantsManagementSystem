@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 
 const activeFilter     = ref('all')
 const showCreateDialog = ref(false)
@@ -9,6 +10,9 @@ const newTableName     = ref('')
 const deletingId       = ref(null)
 const editingTable     = ref(null)
 const editForm         = ref({ name: '', status: 'available' })
+const { locale } = useI18n()
+const isKhmer = computed(() => locale.value === 'km')
+const tr = (en, km) => (isKhmer.value ? km : en)
 
 const tables = ref([
   { id: 1, name: 'Table 01', status: 'available' },
@@ -86,6 +90,11 @@ function exportAllQR() {
   tables.value.forEach(t => downloadQR(t))
 }
 
+function statusLabel(status) {
+  if (status === 'available') return tr('AVAILABLE', 'ទំនេរ')
+  return tr('OCCUPIED', 'កំពុងប្រើ')
+}
+
 // ── QR SVG generator ──────────────────────────────────
 function generateQRSvg(label = '') {
   return `<svg xmlns='http://www.w3.org/2000/svg' width='100' height='110' viewBox='0 0 100 110'>
@@ -122,29 +131,29 @@ function generateQRSvg(label = '') {
         <button
           class="tab-btn" :class="{ active: activeFilter === 'all' }"
           @click="activeFilter = 'all'"
-        >All Tables ({{ allCount }})</button>
+        >{{ tr('All Tables', 'តុទាំងអស់') }} ({{ allCount }})</button>
         <button
           class="tab-btn" :class="{ active: activeFilter === 'available' }"
           @click="activeFilter = 'available'"
-        >Available ({{ availableCount }})</button>
+        >{{ tr('Available', 'ទំនេរ') }} ({{ availableCount }})</button>
         <button
           class="tab-btn" :class="{ active: activeFilter === 'occupied' }"
           @click="activeFilter = 'occupied'"
-        >Occupied ({{ occupiedCount }})</button>
+        >{{ tr('Occupied', 'កំពុងប្រើ') }} ({{ occupiedCount }})</button>
       </div>
 
       <div style="margin-left:auto" class="d-flex align-center ga-2">
         <span class="last-updated">
           <v-icon size="13" color="#9aabbd">mdi-clock-outline</v-icon>
-          Last updated: Just now
+          {{ tr('Last updated: Just now', 'បានធ្វើបច្ចុប្បន្នភាព: មុននេះបន្តិច') }}
         </span>
         <button class="btn-outline" @click="exportAllQR">
           <v-icon size="16">mdi-download-outline</v-icon>
-          Export All QR
+          {{ tr('Export All QR', 'នាំចេញ QR ទាំងអស់') }}
         </button>
         <button class="btn-add" @click="openCreate">
           <v-icon size="17" color="#063824">mdi-plus</v-icon>
-          Create Table
+          {{ tr('Create Table', 'បង្កើតតុ') }}
         </button>
       </div>
 
@@ -161,7 +170,7 @@ function generateQRSvg(label = '') {
           <span
             class="status-chip"
             :class="table.status === 'available' ? 'chip-available' : 'chip-occupied'"
-          >{{ table.status.toUpperCase() }}</span>
+          >{{ statusLabel(table.status) }}</span>
         </div>
 
         <!-- QR Code -->
@@ -170,18 +179,18 @@ function generateQRSvg(label = '') {
         <!-- Download QR -->
         <button class="btn-download" @click="downloadQR(table)">
           <v-icon size="15">mdi-download-outline</v-icon>
-          Download QR
+          {{ tr('Download QR', 'ទាញយក QR') }}
         </button>
 
         <!-- Actions -->
         <div class="card-actions">
           <button class="act-btn edit" @click="openEdit(table)">
             <v-icon size="15">mdi-pencil-outline</v-icon>
-            Edit
+            {{ tr('Edit', 'កែប្រែ') }}
           </button>
           <button class="act-btn del" @click="confirmDelete(table.id)">
             <v-icon size="15">mdi-trash-can-outline</v-icon>
-            Delete
+            {{ tr('Delete', 'លុប') }}
           </button>
         </div>
 
@@ -190,7 +199,7 @@ function generateQRSvg(label = '') {
       <!-- Add new card -->
       <div class="table-card add-card" @click="openCreate">
         <v-icon size="36" color="#c8d4dc">mdi-plus-circle-outline</v-icon>
-        <p class="add-label">Add New Table</p>
+        <p class="add-label">{{ tr('Add New Table', 'បន្ថែមតុថ្មី') }}</p>
       </div>
 
     </div>
@@ -198,8 +207,8 @@ function generateQRSvg(label = '') {
     <!-- Empty state -->
     <div v-if="filteredTables.length === 0" class="empty-state">
       <v-icon size="40" color="#d1dce4">mdi-table-furniture</v-icon>
-      <p class="empty-title">No tables found</p>
-      <p class="empty-sub">Try a different filter or create a new table.</p>
+      <p class="empty-title">{{ tr('No tables found', 'មិនមានតុ') }}</p>
+      <p class="empty-sub">{{ tr('Try a different filter or create a new table.', 'សូមប្តូរតម្រង ឬ បង្កើតតុថ្មី។') }}</p>
     </div>
 
     <!-- ── Print CTA ── -->
@@ -209,32 +218,32 @@ function generateQRSvg(label = '') {
           <v-icon color="#0f9e5f" size="22">mdi-printer-outline</v-icon>
         </div>
         <div>
-          <p class="print-title">Ready to Print?</p>
-          <p class="print-sub">Download all your table QR codes as a high-quality PDF for professional printing.</p>
+          <p class="print-title">{{ tr('Ready to Print?', 'រួចរាល់សម្រាប់បោះពុម្ព?') }}</p>
+          <p class="print-sub">{{ tr('Download all your table QR codes as a high-quality PDF for professional printing.', 'ទាញយក QR កូដតុទាំងអស់ជាឯកសារ PDF គុណភាពខ្ពស់ សម្រាប់បោះពុម្ព។') }}</p>
         </div>
       </div>
       <button class="btn-print" @click="exportAllQR">
         <v-icon size="16" color="#063824">mdi-file-pdf-box</v-icon>
-        Generate Print-Ready PDF
+        {{ tr('Generate Print-Ready PDF', 'បង្កើត PDF សម្រាប់បោះពុម្ព') }}
       </button>
     </div>
 
     <!-- ── Create Table Dialog ── -->
     <v-dialog v-model="showCreateDialog" max-width="420" rounded="xl">
       <v-card rounded="xl" class="pa-6" elevation="0">
-        <p class="dialog-title mb-5">Create New Table</p>
+        <p class="dialog-title mb-5">{{ tr('Create New Table', 'បង្កើតតុថ្មី') }}</p>
         <div class="mb-4">
-          <label class="form-label">Table Name</label>
+          <label class="form-label">{{ tr('Table Name', 'ឈ្មោះតុ') }}</label>
           <input
             class="form-input"
             v-model="newTableName"
-            placeholder="e.g. Table 06"
+            :placeholder="tr('e.g. Table 06', 'ឧ. តុ 06')"
             @keyup.enter="createTable"
           />
         </div>
         <div class="d-flex justify-end ga-2">
-          <button class="btn-cancel" @click="showCreateDialog = false">Cancel</button>
-          <button class="btn-save"   @click="createTable">Create Table</button>
+          <button class="btn-cancel" @click="showCreateDialog = false">{{ tr('Cancel', 'បោះបង់') }}</button>
+          <button class="btn-save"   @click="createTable">{{ tr('Create Table', 'បង្កើតតុ') }}</button>
         </div>
       </v-card>
     </v-dialog>
@@ -242,28 +251,28 @@ function generateQRSvg(label = '') {
     <!-- ── Edit Table Dialog ── -->
     <v-dialog v-model="showEditDialog" max-width="420" rounded="xl">
       <v-card rounded="xl" class="pa-6" elevation="0">
-        <p class="dialog-title mb-5">Edit Table</p>
+        <p class="dialog-title mb-5">{{ tr('Edit Table', 'កែប្រែតុ') }}</p>
         <div class="mb-3">
-          <label class="form-label">Table Name</label>
+          <label class="form-label">{{ tr('Table Name', 'ឈ្មោះតុ') }}</label>
           <input
             class="form-input"
             v-model="editForm.name"
-            placeholder="e.g. Table 06"
+            :placeholder="tr('e.g. Table 06', 'ឧ. តុ 06')"
           />
         </div>
         <div class="mb-4">
-          <label class="form-label">Status</label>
+          <label class="form-label">{{ tr('Status', 'ស្ថានភាព') }}</label>
           <div class="filter-select">
             <select v-model="editForm.status">
-              <option value="available">Available</option>
-              <option value="occupied">Occupied</option>
+              <option value="available">{{ tr('Available', 'ទំនេរ') }}</option>
+              <option value="occupied">{{ tr('Occupied', 'កំពុងប្រើ') }}</option>
             </select>
             <v-icon size="16" color="#9aabbd">mdi-chevron-down</v-icon>
           </div>
         </div>
         <div class="d-flex justify-end ga-2">
-          <button class="btn-cancel" @click="showEditDialog = false">Cancel</button>
-          <button class="btn-save"   @click="saveEdit">Save Changes</button>
+          <button class="btn-cancel" @click="showEditDialog = false">{{ tr('Cancel', 'បោះបង់') }}</button>
+          <button class="btn-save"   @click="saveEdit">{{ tr('Save Changes', 'រក្សាទុកការផ្លាស់ប្តូរ') }}</button>
         </div>
       </v-card>
     </v-dialog>
@@ -275,14 +284,14 @@ function generateQRSvg(label = '') {
           <div class="delete-icon-wrap">
             <v-icon size="22" color="#ef4444">mdi-trash-can-outline</v-icon>
           </div>
-          <p class="dialog-title">Delete Table</p>
+          <p class="dialog-title">{{ tr('Delete Table', 'លុបតុ') }}</p>
         </div>
         <p class="dialog-body">
-          Are you sure you want to delete this table? This action cannot be undone.
+          {{ tr('Are you sure you want to delete this table? This action cannot be undone.', 'តើអ្នកប្រាកដទេថាចង់លុបតុនេះ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។') }}
         </p>
         <div class="d-flex justify-end ga-2 mt-5">
-          <button class="btn-cancel" @click="showDeleteDialog = false">Cancel</button>
-          <button class="btn-delete" @click="handleDelete">Delete</button>
+          <button class="btn-cancel" @click="showDeleteDialog = false">{{ tr('Cancel', 'បោះបង់') }}</button>
+          <button class="btn-delete" @click="handleDelete">{{ tr('Delete', 'លុប') }}</button>
         </div>
       </v-card>
     </v-dialog>

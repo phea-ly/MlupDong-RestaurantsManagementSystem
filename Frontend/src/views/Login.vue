@@ -2,9 +2,11 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth.store";
+import { useI18n } from "@/composables/useI18n";
 
 const auth = useAuthStore();
 const router = useRouter();
+const { t } = useI18n();
 
 const email = ref("");
 const password = ref("");
@@ -30,12 +32,12 @@ async function login() {
     } else if (e.response?.status === 401) {
       const msg = e.response?.data?.message?.toLowerCase() ?? "";
       if (msg.includes("email"))
-        error.value = "Email not found. Please check your email.";
+        error.value = t("login.emailNotFound");
       else if (msg.includes("password"))
-        error.value = "Incorrect password. Please try again.";
-      else error.value = "Invalid email or password.";
+        error.value = t("login.incorrectPassword");
+      else error.value = t("login.invalidCredentials");
     } else {
-      error.value = e.message || "Something went wrong.";
+      error.value = e.message || t("login.somethingWrong");
     }
   } finally {
     loading.value = false;
@@ -68,9 +70,9 @@ async function login() {
               </div>
 
               <!-- Title -->
-              <div class="login-title mb-1">Login</div>
+              <div class="login-title mb-1">{{ t('login.login') }}</div>
               <div class="login-sub mb-6">
-                Welcome back, please login to your account
+                {{ t('login.welcomeBack') }}
               </div>
 
               <!-- Error -->
@@ -89,7 +91,7 @@ async function login() {
               <!-- Email -->
               <v-text-field
                 v-model="email"
-                placeholder="Email Address"
+                :placeholder="t('login.emailAddress')"
                 type="email"
                 append-inner-icon="mdi-account-outline"
                 variant="outlined"
@@ -105,7 +107,7 @@ async function login() {
               <!-- Password -->
               <v-text-field
                 v-model="password"
-                placeholder="Password"
+                :placeholder="t('login.password')"
                 :type="showPass ? 'text' : 'password'"
                 :append-inner-icon="
                   showPass ? 'mdi-eye-outline' : 'mdi-eye-off-outline'
@@ -124,7 +126,7 @@ async function login() {
               <!-- Remember me -->
               <v-checkbox
                 v-model="remember"
-                label="Remember me"
+                :label="t('login.rememberMe')"
                 color="#19e092"
                 density="compact"
                 hide-details
@@ -141,7 +143,7 @@ async function login() {
                 class="login-btn mb-5"
                 @click="login"
               >
-                Login
+                {{ t('login.login') }}
               </v-btn>
 
               <v-divider
@@ -151,7 +153,7 @@ async function login() {
 
               <!-- Footer -->
               <div class="text-center footer-text">
-                Powered by <em><strong>Mlup Dong</strong></em>
+                {{ t('login.poweredBy') }} <em><strong>Mlup Dong</strong></em>
               </div>
             </v-card>
           </v-col>

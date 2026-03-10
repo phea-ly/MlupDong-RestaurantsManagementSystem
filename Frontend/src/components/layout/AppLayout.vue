@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
+import { useI18n } from '@/composables/useI18n'
 import AppBar  from './AppBar.vue'
 import Sidebar from './Sidebar.vue'
 
@@ -10,6 +11,7 @@ defineProps({
 })
 
 const auth = useAuthStore()
+const { t } = useI18n()
 
 const editDialog      = ref(false)
 const editLoading     = ref(false)
@@ -72,14 +74,14 @@ async function saveProfile() {
         first_name: editFirstName.value,
         last_name:  editLastName.value,
       })
-      editSuccess.value = 'Profile updated successfully!'
+      editSuccess.value = t('profile.profileUpdated')
     } else {
       if (newPassword.value !== confirmPassword.value) {
-        editError.value = 'New passwords do not match.'
+        editError.value = t('profile.newPasswordsMismatch')
         return
       }
       if (newPassword.value.length < 6) {
-        editError.value = 'Password must be at least 6 characters.'
+        editError.value = t('profile.passwordMinLength')
         return
       }
       await auth.updateProfile({
@@ -87,13 +89,13 @@ async function saveProfile() {
         password:              newPassword.value,
         password_confirmation: confirmPassword.value,
       })
-      editSuccess.value     = 'Password changed successfully!'
+      editSuccess.value     = t('profile.passwordChanged')
       currentPassword.value = ''
       newPassword.value     = ''
       confirmPassword.value = ''
     }
   } catch (e) {
-    editError.value = e.response?.data?.message || 'Update failed.'
+    editError.value = e.response?.data?.message || t('profile.updateFailed')
   } finally {
     editLoading.value = false
   }
@@ -124,10 +126,10 @@ async function saveProfile() {
         >
           <div>
             <div style="font-size: 16px; font-weight: 800; color: #1a2e48">
-              Account Settings
+              {{ t('profile.accountSettings') }}
             </div>
             <div style="font-size: 12px; color: #7f90a4">
-              Manage your profile and security
+              {{ t('profile.manageProfileSecurity') }}
             </div>
           </div>
           <v-btn
@@ -172,7 +174,7 @@ async function saveProfile() {
           />
         </div>
         <div class="text-center mb-1" style="font-size: 11px; color: #9aabbd">
-          Click avatar to change photo
+          {{ t('profile.changePhoto') }}
         </div>
 
         <!-- Tabs -->
@@ -190,7 +192,7 @@ async function saveProfile() {
             style="text-transform: none; font-weight: 700; font-size: 13px"
           >
             <v-icon start size="16">mdi-account-outline</v-icon>
-            Profile
+            {{ t('profile.profile') }}
           </v-tab>
           <v-tab
             value="password"
@@ -199,7 +201,7 @@ async function saveProfile() {
             style="text-transform: none; font-weight: 700; font-size: 13px"
           >
             <v-icon start size="16">mdi-shield-lock-outline</v-icon>
-            Password
+            {{ t('profile.password') }}
           </v-tab>
         </v-tabs>
 
@@ -238,7 +240,7 @@ async function saveProfile() {
                 <v-col cols="6">
                   <v-text-field
                     v-model="editFirstName"
-                    label="First Name"
+                    :label="t('profile.firstName')"
                     variant="outlined"
                     rounded="lg"
                     density="comfortable"
@@ -249,7 +251,7 @@ async function saveProfile() {
                 <v-col cols="6">
                   <v-text-field
                     v-model="editLastName"
-                    label="Last Name"
+                    :label="t('profile.lastName')"
                     variant="outlined"
                     rounded="lg"
                     density="comfortable"
@@ -260,7 +262,7 @@ async function saveProfile() {
 
               <v-text-field
                 v-model="editEmail"
-                label="Email Address"
+                :label="t('profile.emailAddress')"
                 variant="outlined"
                 rounded="lg"
                 density="comfortable"
@@ -276,7 +278,7 @@ async function saveProfile() {
               <div class="mt-1">
                 <v-text-field
                   v-model="currentPassword"
-                  label="Current Password"
+                  :label="t('profile.currentPassword')"
                   :type="showCurrent ? 'text' : 'password'"
                   :append-inner-icon="
                     showCurrent ? 'mdi-eye-off-outline' : 'mdi-eye-outline'
@@ -291,7 +293,7 @@ async function saveProfile() {
                 />
                 <v-text-field
                   v-model="newPassword"
-                  label="New Password"
+                  :label="t('profile.newPassword')"
                   :type="showNew ? 'text' : 'password'"
                   :append-inner-icon="
                     showNew ? 'mdi-eye-off-outline' : 'mdi-eye-outline'
@@ -306,7 +308,7 @@ async function saveProfile() {
                 />
                 <v-text-field
                   v-model="confirmPassword"
-                  label="Confirm New Password"
+                  :label="t('profile.confirmNewPassword')"
                   :type="showConfirm ? 'text' : 'password'"
                   :append-inner-icon="
                     showConfirm ? 'mdi-eye-off-outline' : 'mdi-eye-outline'
@@ -319,7 +321,7 @@ async function saveProfile() {
                   :error="!!confirmPassword && newPassword !== confirmPassword"
                   :error-messages="
                     confirmPassword && newPassword !== confirmPassword
-                      ? 'Passwords do not match'
+                      ? t('profile.passwordMismatch')
                       : ''
                   "
                   @click:append-inner="showConfirm = !showConfirm"
@@ -339,7 +341,7 @@ async function saveProfile() {
             style="text-transform: none; font-weight: 600"
             @click="editDialog = false"
           >
-            Cancel
+            {{ t('common.cancel') }}
           </v-btn>
           <v-spacer />
           <v-btn
@@ -355,7 +357,7 @@ async function saveProfile() {
             @click="saveProfile"
           >
             <v-icon start size="16">mdi-check</v-icon>
-            {{ activeTab === "profile" ? "Save Profile" : "Update Password" }}
+            {{ activeTab === "profile" ? t('profile.saveProfile') : t('profile.updatePassword') }}
           </v-btn>
         </v-card-actions>
       </v-card>

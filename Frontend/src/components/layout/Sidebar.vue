@@ -1,20 +1,23 @@
 <script setup>
 import { useRoute, useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 
 const route  = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
-const menu = [
-  { path: '/home/admin-dashboard', label: 'Dashboard',   icon: 'mdi-view-dashboard-outline' },
-  { path: '/home/menu',            label: 'Menu',        icon: 'mdi-silverware'             },
-  { path: '/home/staff',           label: 'Staff',       icon: 'mdi-account-circle-outline' },
-  { path: '/home/table',           label: 'Tables',      icon: 'mdi-table-chair'            },
-  { path: '/home/user',            label: 'User',        icon: 'mdi-account-group-outline'  },
-]
-const reportsMenu = [
-  { path: '/home/sales-report', label: 'Sales Report', icon: 'mdi-chart-box-outline' },
-  { path: '/home/settings',     label: 'Settings',     icon: 'mdi-cog-outline'       },
-]
+const menu = computed(() => [
+  { path: '/home/admin-dashboard', label: t('layout.dashboard'), icon: 'mdi-view-dashboard-outline' },
+  { path: '/home/menu', label: t('layout.menu'), icon: 'mdi-silverware' },
+  { path: '/home/staff', label: t('layout.staff'), icon: 'mdi-account-circle-outline' },
+  { path: '/home/table', label: t('layout.tables'), icon: 'mdi-table-chair' },
+  { path: '/home/user', label: t('layout.user'), icon: 'mdi-account-group-outline' },
+])
+const reportsMenu = computed(() => [
+  { path: '/home/sales-report', label: t('layout.salesReport'), icon: 'mdi-chart-box-outline' },
+  { path: '/home/settings', label: t('layout.settings'), icon: 'mdi-cog-outline' },
+])
 
 function navigate(path) {
   if (route.path !== path) router.push(path)
@@ -63,7 +66,7 @@ function navigate(path) {
     </v-list>
 
     <!-- Reports -->
-    <div class="section-label px-4 mt-3 mb-1">Reports</div>
+    <div class="section-label px-4 mt-3 mb-1">{{ t('sidebar.reports') }}</div>
     <v-list nav density="comfortable" class="px-2">
       <v-list-item
         v-for="item in reportsMenu"

@@ -2,6 +2,7 @@
 import { ref, computed } from "vue";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRouter } from "vue-router";
+import { useI18n } from "@/composables/useI18n";
 
 const props = defineProps({
   title: { type: String, required: true },
@@ -12,6 +13,7 @@ const emit = defineEmits(["action", "open-edit"]);
 
 const auth = useAuthStore();
 const router = useRouter();
+const { t } = useI18n();
 
 const profileMenu = ref(false);
 
@@ -21,7 +23,7 @@ const profileName = computed(() => {
   return (f + " " + l).trim() || "Admin User";
 });
 const profileRole = computed(() =>
-  auth.user?.role_id ? "Administrator" : "Manager",
+  auth.user?.role_id ? t("common.administrator") : t("common.manager"),
 );
 const profileInitials = computed(() => {
   const f = auth.user?.first_name?.[0] ?? "A";
@@ -129,7 +131,7 @@ function logout() {
                   style="font-size: 10px"
                 >
                   <v-icon start size="9">mdi-circle</v-icon>
-                  Online
+                  {{ t("common.online") }}
                 </v-chip>
               </div>
             </div>
@@ -141,14 +143,14 @@ function logout() {
             <v-list density="compact" nav class="py-2">
               <v-list-item
                 prepend-icon="mdi-account-edit-outline"
-                title="Edit Profile"
+                :title="t('profile.editProfile')"
                 rounded="lg"
                 class="menu-item"
                 @click="openEdit('profile')"
               />
               <v-list-item
                 prepend-icon="mdi-shield-lock-outline"
-                title="Change Password"
+                :title="t('profile.changePassword')"
                 rounded="lg"
                 class="menu-item"
                 @click="openEdit('password')"
@@ -161,7 +163,7 @@ function logout() {
             <v-list density="compact" nav class="py-2">
               <v-list-item
                 prepend-icon="mdi-logout"
-                title="Sign Out"
+                :title="t('profile.signOut')"
                 rounded="lg"
                 class="menu-item logout-item"
                 @click="logout"

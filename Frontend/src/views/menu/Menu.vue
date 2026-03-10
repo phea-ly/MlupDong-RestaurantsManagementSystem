@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useMenuStore } from '@/stores'
 import MenuItemCard from '@/components/menu/MenuItemCard.vue'
 import AddMenuItemDialog from '@/components/menu/AddMenuItemDialog.vue'
+import { useI18n } from '@/composables/useI18n'
 
 const menuStore    = useMenuStore()
 const searchQuery  = ref('')
@@ -11,6 +12,9 @@ const showDialog   = ref(false)
 const editingItem  = ref(null)
 const showDeleteDialog = ref(false)
 const deletingItemId   = ref(null)
+const { locale } = useI18n()
+const isKhmer = computed(() => locale.value === 'km')
+const tr = (en, km) => (isKhmer.value ? km : en)
 
 // Set default category to 'all' on component mount
 onMounted(() => {
@@ -39,12 +43,12 @@ const filteredItems = computed(() => {
   return items
 })
 
-const categories = [
-  { value: 'all',        label: 'All',        icon: 'mdi-view-grid-outline' },
-  { value: 'food',       label: 'Food',        icon: 'mdi-silverware-fork-knife' },
-  { value: 'drinks',     label: 'Drinks',      icon: 'mdi-cup-outline' },
-  { value: 'promotions', label: 'Promotions',  icon: 'mdi-tag-outline' },
-]
+const categories = computed(() => [
+  { value: 'all', label: tr('All', 'ទាំងអស់'), icon: 'mdi-view-grid-outline' },
+  { value: 'food', label: tr('Food', 'ម្ហូប'), icon: 'mdi-silverware-fork-knife' },
+  { value: 'drinks', label: tr('Drinks', 'ភេសជ្ជៈ'), icon: 'mdi-cup-outline' },
+  { value: 'promotions', label: tr('Promotions', 'ប្រូម៉ូសិន'), icon: 'mdi-tag-outline' },
+])
 
 function handleAddNew() {
   editingItem.value = null
@@ -102,9 +106,9 @@ function handleDelete() {
         <!-- Status filter -->
         <div class="filter-select">
           <select v-model="statusFilter">
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="all">{{ tr('All Status', 'ស្ថានភាពទាំងអស់') }}</option>
+            <option value="active">{{ tr('Active', 'កំពុងប្រើ') }}</option>
+            <option value="inactive">{{ tr('Inactive', 'មិនដំណើរការ') }}</option>
           </select>
           <v-icon size="16" color="#9aabbd">mdi-chevron-down</v-icon>
         </div>
@@ -112,13 +116,13 @@ function handleDelete() {
         <!-- Search -->
         <div class="search-bar">
           <v-icon size="16" color="#9aabbd">mdi-magnify</v-icon>
-          <input v-model="searchQuery" placeholder="Search menu items..." />
+          <input v-model="searchQuery" :placeholder="tr('Search menu items...', 'ស្វែងរកមុខម្ហូប...')" />
         </div>
 
         <!-- Add New Item button -->
         <button class="btn-add" @click="handleAddNew">
           <v-icon size="17" color="#063824">mdi-plus</v-icon>
-          Add New Item
+          {{ tr('Add New Item', 'បន្ថែមមុខម្ហូបថ្មី') }}
         </button>
 
       </div>
@@ -142,7 +146,7 @@ function handleDelete() {
       <v-col cols="12" sm="6" md="4" lg="3">
         <div class="add-new-card" @click="handleAddNew">
           <v-icon size="40" color="#14dc8b">mdi-plus-circle-outline</v-icon>
-          <p class="add-new-label">Add New Menu Item</p>
+          <p class="add-new-label">{{ tr('Add New Menu Item', 'បន្ថែមមុខម្ហូបថ្មី') }}</p>
         </div>
       </v-col>
     </v-row>
@@ -150,11 +154,11 @@ function handleDelete() {
     <!-- Empty state -->
     <div v-if="filteredItems.length === 0" class="empty-state">
       <v-icon size="48" color="#d1dce4">mdi-food-off-outline</v-icon>
-      <p class="empty-title">No menu items found</p>
-      <p class="empty-sub">Try adjusting your search or filter, or add a new item.</p>
+      <p class="empty-title">{{ tr('No menu items found', 'មិនមានមុខម្ហូប') }}</p>
+      <p class="empty-sub">{{ tr('Try adjusting your search or filter, or add a new item.', 'សូមប្ដូរការស្វែងរក ឬ តម្រង ឬ បន្ថែមមុខម្ហូបថ្មី។') }}</p>
       <button class="btn-add mt-2" @click="handleAddNew">
         <v-icon size="17" color="#063824">mdi-plus</v-icon>
-        Add New Item
+        {{ tr('Add New Item', 'បន្ថែមមុខម្ហូបថ្មី') }}
       </button>
     </div>
 
@@ -172,14 +176,14 @@ function handleDelete() {
           <div class="delete-icon-wrap">
             <v-icon size="22" color="#ef4444">mdi-trash-can-outline</v-icon>
           </div>
-          <p class="dialog-title">Delete Menu Item</p>
+          <p class="dialog-title">{{ tr('Delete Menu Item', 'លុបមុខម្ហូប') }}</p>
         </div>
         <p class="dialog-body">
-          Are you sure you want to delete this menu item? This action cannot be undone.
+          {{ tr('Are you sure you want to delete this menu item? This action cannot be undone.', 'តើអ្នកប្រាកដទេថាចង់លុបមុខម្ហូបនេះ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។') }}
         </p>
         <div class="d-flex justify-end ga-2 mt-5">
-          <button class="btn-cancel" @click="showDeleteDialog = false">Cancel</button>
-          <button class="btn-delete" @click="handleDelete">Delete</button>
+          <button class="btn-cancel" @click="showDeleteDialog = false">{{ tr('Cancel', 'បោះបង់') }}</button>
+          <button class="btn-delete" @click="handleDelete">{{ tr('Delete', 'លុប') }}</button>
         </div>
       </v-card>
     </v-dialog>
