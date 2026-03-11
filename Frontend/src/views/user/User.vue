@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 
 // ── Stats ──────────────────────────────────────────────
 const stats = ref({ total: 124, active: 118, inactive: 6, locations: 8 })
@@ -10,11 +11,27 @@ const pendingApprovals = ref([
 ])
 
 // ── Filters ────────────────────────────────────────────
-const filters     = ref({ restaurant: 'All Locations', role: 'All Roles' })
+const filters     = ref({ restaurant: 'all', role: 'all' })
 const searchQuery = ref('')
+const { locale } = useI18n()
+const isKhmer = computed(() => locale.value === 'km')
+const tr = (en, km) => (isKhmer.value ? km : en)
 
-const restaurantOptions = ['All Locations', 'Downtown Bistro', 'Uptown Grill', 'Riverside Café', 'Midtown Kitchen']
-const roleOptions       = ['All Roles', 'ADMINISTRATOR', 'MANAGER', 'CHEF', 'SERVER', 'HOST']
+const restaurantOptions = computed(() => [
+  { value: 'all', label: tr('All Locations', 'គ្រប់សាខា') },
+  { value: 'Downtown Bistro', label: tr('Downtown Bistro', 'សាខាកណ្ដាលក្រុង') },
+  { value: 'Uptown Grill', label: tr('Uptown Grill', 'សាខាអាប់ថោន') },
+  { value: 'Riverside Café', label: tr('Riverside Café', 'សាខាមាត់ទន្លេ') },
+  { value: 'Midtown Kitchen', label: tr('Midtown Kitchen', 'សាខាមីដថោន') },
+])
+const roleOptions = computed(() => [
+  { value: 'all', label: tr('All Roles', 'គ្រប់តួនាទី') },
+  { value: 'ADMINISTRATOR', label: tr('ADMINISTRATOR', 'អ្នកគ្រប់គ្រងប្រព័ន្ធ') },
+  { value: 'MANAGER', label: tr('MANAGER', 'អ្នកគ្រប់គ្រង') },
+  { value: 'CHEF', label: tr('CHEF', 'ចុងភៅ') },
+  { value: 'SERVER', label: tr('SERVER', 'អ្នកបម្រើ') },
+  { value: 'HOST', label: tr('HOST', 'អ្នកទទួលភ្ញៀវ') },
+])
 
 // ── Users ──────────────────────────────────────────────
 const avatarColors = ['#00C896', '#818cf8', '#f97316', '#f472b6', '#38bdf8', '#a3e635', '#fb923c', '#c084fc']
@@ -32,8 +49,8 @@ const users = ref([
 
 const filteredUsers = computed(() =>
   users.value.filter(u => {
-    const matchRest   = filters.value.restaurant === 'All Locations' || u.restaurant === filters.value.restaurant
-    const matchRole   = filters.value.role === 'All Roles'           || u.role === filters.value.role
+    const matchRest   = filters.value.restaurant === 'all' || u.restaurant === filters.value.restaurant
+    const matchRole   = filters.value.role === 'all'       || u.role === filters.value.role
     const q           = searchQuery.value.trim().toLowerCase()
     const matchSearch = !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
     return matchRest && matchRole && matchSearch
@@ -94,6 +111,25 @@ function saveUser() {
   modal.value.show = false
 }
 
+function roleLabel(role) {
+  const map = {
+    ADMINISTRATOR: tr('ADMINISTRATOR', 'អ្នកគ្រប់គ្រងប្រព័ន្ធ'),
+    MANAGER: tr('MANAGER', 'អ្នកគ្រប់គ្រង'),
+    CHEF: tr('CHEF', 'ចុងភៅ'),
+    SERVER: tr('SERVER', 'អ្នកបម្រើ'),
+    HOST: tr('HOST', 'អ្នកទទួលភ្ញៀវ'),
+  }
+  return map[role] || role
+}
+
+function pendingRoleLabel(role) {
+  const map = {
+    'Server @ Downtown': tr('Server @ Downtown', 'អ្នកបម្រើ @ សាខាកណ្ដាលក្រុង'),
+    'Chef @ Uptown': tr('Chef @ Uptown', 'ចុងភៅ @ សាខាអាប់ថោន'),
+  }
+  return map[role] || role
+}
+
 defineExpose({ openCreateModal })
 </script>
 
@@ -103,11 +139,11 @@ defineExpose({ openCreateModal })
   <div class="action-bar">
     <div class="search-bar">
       <v-icon size="16" color="#9aabbd">mdi-magnify</v-icon>
-      <input v-model="searchQuery" placeholder="Search across all locations..." />
+      <input v-model="searchQuery" :placeholder="tr('Search across all locations...', 'ស្វែងរកគ្រប់សាខាទាំងអស់...')" />
     </div>
     <button class="btn-create" @click="openCreateModal">
       <v-icon size="17" color="#063824">mdi-account-multiple-plus</v-icon>
-      Create Account
+      {{ tr('Create Account', 'បង្កើតគណនី') }}
     </button>
   </div>
 
@@ -117,27 +153,27 @@ defineExpose({ openCreateModal })
     <!-- Total Users -->
     <div class="stat-card">
       <div class="card-header">
-        <span class="stat-label">Total Users</span>
+        <span class="stat-label">{{ tr('Total Users', 'អ្នកប្រើប្រាស់សរុប') }}</span>
         <v-icon size="20" color="#d1dce4">mdi-account-group-outline</v-icon>
       </div>
       <p class="stat-num">{{ stats.total }}</p>
-      <p class="stat-change">+12% vs last month</p>
+      <p class="stat-change">{{ tr('+12% vs last month', '+12% ប្រៀបនឹងខែមុន') }}</p>
     </div>
 
     <!-- Status Distribution -->
     <div class="stat-card">
       <div class="card-header">
-        <span class="stat-label">Status Distribution</span>
+        <span class="stat-label">{{ tr('Status Distribution', 'បែងចែកតាមស្ថានភាព') }}</span>
         <v-icon size="20" color="#d1dce4">mdi-chart-donut</v-icon>
       </div>
       <div class="d-flex align-end ga-4 mt-1">
         <div>
           <p class="stat-num text-active">{{ stats.active }}</p>
-          <p class="stat-sub-label">Active</p>
+          <p class="stat-sub-label">{{ tr('Active', 'កំពុងប្រើ') }}</p>
         </div>
         <div>
           <p class="stat-num text-inactive">{{ stats.inactive }}</p>
-          <p class="stat-sub-label">Inactive</p>
+          <p class="stat-sub-label">{{ tr('Inactive', 'មិនដំណើរការ') }}</p>
         </div>
       </div>
     </div>
@@ -145,11 +181,11 @@ defineExpose({ openCreateModal })
     <!-- Locations Managed -->
     <div class="stat-card">
       <div class="card-header">
-        <span class="stat-label">Locations Managed</span>
+        <span class="stat-label">{{ tr('Locations Managed', 'សាខាដែលគ្រប់គ្រង') }}</span>
         <v-icon size="20" color="#d1dce4">mdi-map-marker-multiple-outline</v-icon>
       </div>
       <p class="stat-num">{{ stats.locations }}</p>
-      <p class="stat-sub-label">Restaurants active</p>
+      <p class="stat-sub-label">{{ tr('Restaurants active', 'សាខាកំពុងដំណើរការ') }}</p>
     </div>
 
     <!-- Pending Approvals -->
@@ -157,11 +193,11 @@ defineExpose({ openCreateModal })
       <div class="card-header">
         <div class="d-flex align-center ga-2">
           <span class="pending-dot" />
-          <span class="stat-label">Pending Approvals</span>
+          <span class="stat-label">{{ tr('Pending Approvals', 'ការអនុម័តកំពុងរង់ចាំ') }}</span>
         </div>
         <div class="d-flex align-center ga-1">
           <span class="badge-green">{{ pendingApprovals.length }}</span>
-          <span class="new-label">New</span>
+          <span class="new-label">{{ tr('New', 'ថ្មី') }}</span>
         </div>
       </div>
       <div
@@ -171,7 +207,7 @@ defineExpose({ openCreateModal })
         <div class="p-avatar" :style="{ background: p.color }">{{ p.initials }}</div>
         <div>
           <p class="pending-name">{{ p.name }}</p>
-          <p class="pending-role">{{ p.role }}</p>
+          <p class="pending-role">{{ pendingRoleLabel(p.role) }}</p>
         </div>
       </div>
     </div>
@@ -180,18 +216,18 @@ defineExpose({ openCreateModal })
 
   <!-- ── Filter Bar ── -->
   <div class="filter-bar">
-    <span class="filter-label">RESTAURANT:</span>
+    <span class="filter-label">{{ tr('RESTAURANT:', 'ភោជនីយដ្ឋានៈ') }}</span>
     <div class="filter-select">
       <select v-model="filters.restaurant">
-        <option v-for="o in restaurantOptions" :key="o">{{ o }}</option>
+        <option v-for="o in restaurantOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
       </select>
       <v-icon size="18" color="#9aabbd">mdi-chevron-down</v-icon>
     </div>
 
-    <span class="filter-label ml-2">ROLE:</span>
+    <span class="filter-label ml-2">{{ tr('ROLE:', 'តួនាទីៈ') }}</span>
     <div class="filter-select">
       <select v-model="filters.role">
-        <option v-for="o in roleOptions" :key="o">{{ o }}</option>
+        <option v-for="o in roleOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
       </select>
       <v-icon size="18" color="#9aabbd">mdi-chevron-down</v-icon>
     </div>
@@ -200,7 +236,7 @@ defineExpose({ openCreateModal })
 
     <div class="sort-text">
       <v-icon size="15" color="#9aabbd">mdi-tune-variant</v-icon>
-      Sorted by: <strong>Recently Created</strong>
+      {{ tr('Sorted by:', 'តម្រៀបតាម៖') }} <strong>{{ tr('Recently Created', 'បង្កើតថ្មីៗ') }}</strong>
     </div>
   </div>
 
@@ -209,13 +245,13 @@ defineExpose({ openCreateModal })
 
     <!-- Head -->
     <div class="table-head">
-      <div class="th" style="grid-area: identity">User Identity</div>
-      <div class="th" style="grid-area: email">Email Address</div>
-      <div class="th" style="grid-area: restaurant">Restaurant</div>
-      <div class="th" style="grid-area: role">Role &amp; Rank</div>
-      <div class="th" style="grid-area: status">Status</div>
-      <div class="th" style="grid-area: created">Created At</div>
-      <div class="th" style="grid-area: actions">Actions</div>
+      <div class="th" style="grid-area: identity">{{ tr('User Identity', 'អត្តសញ្ញាណអ្នកប្រើ') }}</div>
+      <div class="th" style="grid-area: email">{{ tr('Email Address', 'អាសយដ្ឋានអ៊ីមែល') }}</div>
+      <div class="th" style="grid-area: restaurant">{{ tr('Restaurant', 'ភោជនីយដ្ឋាន') }}</div>
+      <div class="th" style="grid-area: role">{{ tr('Role & Rank', 'តួនាទី') }}</div>
+      <div class="th" style="grid-area: status">{{ tr('Status', 'ស្ថានភាព') }}</div>
+      <div class="th" style="grid-area: created">{{ tr('Created At', 'ថ្ងៃបង្កើត') }}</div>
+      <div class="th" style="grid-area: actions">{{ tr('Actions', 'សកម្មភាព') }}</div>
     </div>
 
     <!-- Rows -->
@@ -233,9 +269,9 @@ defineExpose({ openCreateModal })
       <p class="u-rest"   style="grid-area: restaurant">{{ user.restaurant }}</p>
 
       <div style="grid-area: role">
-        <span v-if="user.role === 'ADMINISTRATOR'" class="role-badge-admin">ADMINISTRATOR</span>
+        <span v-if="user.role === 'ADMINISTRATOR'" class="role-badge-admin">{{ roleLabel('ADMINISTRATOR') }}</span>
         <div v-else class="d-flex align-center ga-1 u-role">
-          {{ user.role }}
+          {{ roleLabel(user.role) }}
           <v-icon size="14" color="#c0cdd7">mdi-chevron-down</v-icon>
         </div>
       </div>
@@ -260,8 +296,8 @@ defineExpose({ openCreateModal })
     <!-- Pagination -->
     <div class="pagination">
       <p class="pag-info">
-        Showing <strong>1</strong> to <strong>{{ filteredUsers.length }}</strong>
-        of <strong>{{ stats.total }}</strong> total system users
+        {{ tr('Showing', 'កំពុងបង្ហាញ') }} <strong>1</strong> {{ tr('to', 'ដល់') }} <strong>{{ filteredUsers.length }}</strong>
+        {{ tr('of', 'នៃ') }} <strong>{{ stats.total }}</strong> {{ tr('total system users', 'អ្នកប្រើប្រាស់ប្រព័ន្ធសរុប') }}
       </p>
       <div class="d-flex align-center ga-1">
         <button class="pag-btn" :disabled="page <= 1" @click="page--">
@@ -282,39 +318,39 @@ defineExpose({ openCreateModal })
   <!-- ── Create / Edit Modal ── -->
   <v-dialog v-model="modal.show" max-width="480" rounded="xl">
     <v-card class="pa-6" rounded="xl" elevation="0">
-      <p class="modal-title">{{ modal.editing ? 'Edit Account' : 'Create New Account' }}</p>
+      <p class="modal-title">{{ modal.editing ? tr('Edit Account', 'កែប្រែគណនី') : tr('Create New Account', 'បង្កើតគណនីថ្មី') }}</p>
 
       <div class="d-flex ga-3 mb-3">
         <div style="flex:1">
-          <label class="form-label">First Name</label>
-          <input class="form-input" v-model="modal.form.firstName" placeholder="John" />
+          <label class="form-label">{{ tr('First Name', 'នាមខ្លួន') }}</label>
+          <input class="form-input" v-model="modal.form.firstName" :placeholder="tr('John', 'ចន')" />
         </div>
         <div style="flex:1">
-          <label class="form-label">Last Name</label>
-          <input class="form-input" v-model="modal.form.lastName" placeholder="Doe" />
+          <label class="form-label">{{ tr('Last Name', 'គោត្តនាម') }}</label>
+          <input class="form-input" v-model="modal.form.lastName" :placeholder="tr('Doe', 'ដូ')" />
         </div>
       </div>
       <div class="mb-3">
-        <label class="form-label">Email Address</label>
+        <label class="form-label">{{ tr('Email Address', 'អាសយដ្ឋានអ៊ីមែល') }}</label>
         <input class="form-input" v-model="modal.form.email" placeholder="user@restomail.com" type="email" />
       </div>
       <div class="d-flex ga-3 mb-5">
         <div style="flex:1">
-          <label class="form-label">Restaurant</label>
+          <label class="form-label">{{ tr('Restaurant', 'ភោជនីយដ្ឋាន') }}</label>
           <select class="form-input" v-model="modal.form.restaurant">
-            <option v-for="r in restaurantOptions.slice(1)" :key="r">{{ r }}</option>
+            <option v-for="r in restaurantOptions.slice(1)" :key="r.value" :value="r.value">{{ r.label }}</option>
           </select>
         </div>
         <div style="flex:1">
-          <label class="form-label">Role</label>
+          <label class="form-label">{{ tr('Role', 'តួនាទី') }}</label>
           <select class="form-input" v-model="modal.form.role">
-            <option v-for="r in roleOptions.slice(1)" :key="r">{{ r }}</option>
+            <option v-for="r in roleOptions.slice(1)" :key="r.value" :value="r.value">{{ r.label }}</option>
           </select>
         </div>
       </div>
       <div class="d-flex justify-end ga-2">
-        <button class="btn-cancel" @click="modal.show = false">Cancel</button>
-        <button class="btn-save"   @click="saveUser">{{ modal.editing ? 'Save Changes' : 'Create Account' }}</button>
+        <button class="btn-cancel" @click="modal.show = false">{{ tr('Cancel', 'បោះបង់') }}</button>
+        <button class="btn-save"   @click="saveUser">{{ modal.editing ? tr('Save Changes', 'រក្សាទុកការផ្លាស់ប្តូរ') : tr('Create Account', 'បង្កើតគណនី') }}</button>
       </div>
     </v-card>
   </v-dialog>

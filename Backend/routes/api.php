@@ -15,13 +15,15 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
+
+Route::patch('/menu/{id}/availability', [MenuItemController::class, 'updateAvailability']);
 Route::apiResource('restaurants', RestaurantController::class);
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('users', UserController::class);
 Route::apiResource('staffs', StaffController::class);
 Route::post('tables/generate-all', [TableController::class, 'generateAll']);
 Route::post('tables/{id}/generate-qr', [TableController::class, 'generateQr']);
-Route::get('tables/{id}/qrcode', [TableController::class, 'getQrCode']);
+Route::get('tables/{id}/download-qr', [TableController::class, 'downloadQrFile']);
 Route::apiResource('tables', TableController::class);
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('menu-items', MenuItemController::class);
