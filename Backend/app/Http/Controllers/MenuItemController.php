@@ -58,4 +58,23 @@ class MenuItemController extends Controller
 
         return response()->noContent();
     }
+
+
+public function updateAvailability(Request $request, string $id)
+{
+    $menuItem = MenuItem::query()->findOrFail($id);
+
+    $validated = $request->validate([
+        'status' => ['required', 'boolean']
+    ]);
+
+    $menuItem->update([
+        'status' => $validated['status']
+    ]);
+
+    return response()->json([
+        'message' => 'Menu availability updated successfully',
+        'data' => $menuItem
+    ]);
+}
 }
