@@ -15,6 +15,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
+
+Route::patch('/menu/{id}/availability', [MenuItemController::class, 'updateAvailability']);
 Route::apiResource('restaurants', RestaurantController::class);
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('users', UserController::class);
