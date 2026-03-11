@@ -27,6 +27,7 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:150', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'phone' => ['nullable', 'string', 'max:20'],
+            'profile' => ['nullable', 'BLOB', 'max:255'],
             'status' => ['nullable', 'boolean'],
             'role_id' => ['nullable', 'exists:roles,role_id'],
             'restaurant_id' => ['nullable', 'exists:restaurants,restaurant_id'],

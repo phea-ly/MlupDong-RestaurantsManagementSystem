@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useMenuStore } from '@/stores'
 import MenuItemCard from '@/components/menu/MenuItemCard.vue'
 import AddMenuItemDialog from '@/components/menu/AddMenuItemDialog.vue'
+import { useI18n } from '@/composables/useI18n'
 
 const menuStore = useMenuStore()
 
@@ -13,8 +14,14 @@ const showDialog       = ref(false)
 const editingItem      = ref(null)
 const showDeleteDialog = ref(false)
 const deletingItemId   = ref(null)
+<<<<<<< HEAD
 const deleting         = ref(false)
 const snackbar         = ref({ show: false, message: '', color: '' })
+=======
+const { locale } = useI18n()
+const isKhmer = computed(() => locale.value === 'km')
+const tr = (en, km) => (isKhmer.value ? km : en)
+>>>>>>> c4255a11263de64539af4715253de56ebbc217b2
 
 // Category management
 const showCatDialog    = ref(false)
@@ -55,6 +62,7 @@ const filteredItems = computed(() => {
   return items
 })
 
+<<<<<<< HEAD
 // ── Stats ─────────────────────────────────────────────────────────
 const stats = computed(() => ({
   total:    menuStore.menuItems.length,
@@ -62,6 +70,14 @@ const stats = computed(() => ({
   inactive: menuStore.menuItems.filter(i => !i.status).length,
   categories: menuStore.categories.length,
 }))
+=======
+const categories = computed(() => [
+  { value: 'all', label: tr('All', 'ទាំងអស់'), icon: 'mdi-view-grid-outline' },
+  { value: 'food', label: tr('Food', 'ម្ហូប'), icon: 'mdi-silverware-fork-knife' },
+  { value: 'drinks', label: tr('Drinks', 'ភេសជ្ជៈ'), icon: 'mdi-cup-outline' },
+  { value: 'promotions', label: tr('Promotions', 'ប្រូម៉ូសិន'), icon: 'mdi-tag-outline' },
+])
+>>>>>>> c4255a11263de64539af4715253de56ebbc217b2
 
 // ── Category tabs ─────────────────────────────────────────────────
 const allTab = { value: 'all', label: 'All Items', icon: 'mdi-view-grid-outline' }
@@ -233,13 +249,28 @@ async function handleDeleteCategory() {
         <div class="filter-select">
           <v-icon size="14" color="#9aabbd">mdi-filter-outline</v-icon>
           <select v-model="statusFilter">
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="all">{{ tr('All Status', 'ស្ថានភាពទាំងអស់') }}</option>
+            <option value="active">{{ tr('Active', 'កំពុងប្រើ') }}</option>
+            <option value="inactive">{{ tr('Inactive', 'មិនដំណើរការ') }}</option>
           </select>
           <v-icon size="14" color="#9aabbd">mdi-chevron-down</v-icon>
         </div>
 
+<<<<<<< HEAD
+=======
+        <!-- Search -->
+        <div class="search-bar">
+          <v-icon size="16" color="#9aabbd">mdi-magnify</v-icon>
+          <input v-model="searchQuery" :placeholder="tr('Search menu items...', 'ស្វែងរកមុខម្ហូប...')" />
+        </div>
+
+        <!-- Add New Item button -->
+        <button class="btn-add" @click="handleAddNew">
+          <v-icon size="17" color="#063824">mdi-plus</v-icon>
+          {{ tr('Add New Item', 'បន្ថែមមុខម្ហូបថ្មី') }}
+        </button>
+
+>>>>>>> c4255a11263de64539af4715253de56ebbc217b2
       </div>
     </div>
 
@@ -283,12 +314,18 @@ async function handleDeleteCategory() {
       <!-- Add New Card -->
       <v-col cols="12" sm="6" md="4" lg="3">
         <div class="add-new-card" @click="handleAddNew">
+<<<<<<< HEAD
           <v-icon size="38" color="#14dc8b">mdi-plus-circle-outline</v-icon>
           <p class="add-new-label">Add New Item</p>
+=======
+          <v-icon size="40" color="#14dc8b">mdi-plus-circle-outline</v-icon>
+          <p class="add-new-label">{{ tr('Add New Menu Item', 'បន្ថែមមុខម្ហូបថ្មី') }}</p>
+>>>>>>> c4255a11263de64539af4715253de56ebbc217b2
         </div>
       </v-col>
     </v-row>
 
+<<<<<<< HEAD
     <!-- ── Empty state ── -->
     <div v-else class="empty-state">
       <div class="empty-icon-wrap">
@@ -303,6 +340,16 @@ async function handleDeleteCategory() {
       <button class="btn-add mt-3" @click="handleAddNew">
         <v-icon size="16" color="#063824">mdi-plus</v-icon>
         Add New Item
+=======
+    <!-- Empty state -->
+    <div v-if="filteredItems.length === 0" class="empty-state">
+      <v-icon size="48" color="#d1dce4">mdi-food-off-outline</v-icon>
+      <p class="empty-title">{{ tr('No menu items found', 'មិនមានមុខម្ហូប') }}</p>
+      <p class="empty-sub">{{ tr('Try adjusting your search or filter, or add a new item.', 'សូមប្ដូរការស្វែងរក ឬ តម្រង ឬ បន្ថែមមុខម្ហូបថ្មី។') }}</p>
+      <button class="btn-add mt-2" @click="handleAddNew">
+        <v-icon size="17" color="#063824">mdi-plus</v-icon>
+        {{ tr('Add New Item', 'បន្ថែមមុខម្ហូបថ្មី') }}
+>>>>>>> c4255a11263de64539af4715253de56ebbc217b2
       </button>
     </div>
 
@@ -320,6 +367,7 @@ async function handleDeleteCategory() {
           <div class="delete-icon-wrap">
             <v-icon size="22" color="#ef4444">mdi-trash-can-outline</v-icon>
           </div>
+<<<<<<< HEAD
           <p class="dlg-title">Delete Menu Item</p>
         </div>
         <p class="dlg-body">
@@ -331,6 +379,16 @@ async function handleDeleteCategory() {
             <v-progress-circular v-if="deleting" size="14" width="2" indeterminate color="#fff" />
             Delete
           </button>
+=======
+          <p class="dialog-title">{{ tr('Delete Menu Item', 'លុបមុខម្ហូប') }}</p>
+        </div>
+        <p class="dialog-body">
+          {{ tr('Are you sure you want to delete this menu item? This action cannot be undone.', 'តើអ្នកប្រាកដទេថាចង់លុបមុខម្ហូបនេះ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។') }}
+        </p>
+        <div class="d-flex justify-end ga-2 mt-5">
+          <button class="btn-cancel" @click="showDeleteDialog = false">{{ tr('Cancel', 'បោះបង់') }}</button>
+          <button class="btn-delete" @click="handleDelete">{{ tr('Delete', 'លុប') }}</button>
+>>>>>>> c4255a11263de64539af4715253de56ebbc217b2
         </div>
       </v-card>
     </v-dialog>
@@ -583,6 +641,7 @@ async function handleDeleteCategory() {
   font-size: 13px; font-weight: 700;
   cursor: pointer; font-family: inherit; transition: background 0.15s;
 }
+<<<<<<< HEAD
 .btn-delete:hover:not(:disabled) { background: #dc2626; }
 .btn-delete:disabled { opacity: 0.6; cursor: not-allowed; }
 
@@ -596,3 +655,7 @@ async function handleDeleteCategory() {
 .btn-save-cat:hover:not(:disabled) { background: #0fcb7e; }
 .btn-save-cat:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>
+=======
+.btn-delete:hover { background: #dc2626; }
+</style>
+>>>>>>> c4255a11263de64539af4715253de56ebbc217b2

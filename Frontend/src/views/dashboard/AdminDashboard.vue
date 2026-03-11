@@ -1,59 +1,81 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { mdiCurrencyUsd, mdiCalendarMonth, mdiTrendingUp, mdiFilter } from '@mdi/js'
+import { useI18n } from '@/composables/useI18n'
 
 const activeRange = ref('7days')
+const { locale } = useI18n()
+const isKhmer = computed(() => locale.value === 'km')
+const tr = (en, km) => (isKhmer.value ? km : en)
 
-const stats = [
+const stats = computed(() => [
   {
-    label: 'DAILY INCOME',
+    label: tr('DAILY INCOME', 'ចំណូលប្រចាំថ្ងៃ'),
     value: '$1,250.00',
-    sub: 'Compared to yesterday ($1,110.00)',
+    sub: tr('Compared to yesterday ($1,110.00)', 'ប្រៀបធៀបនឹងម្សិលមិញ ($1,110.00)'),
     trend: '+12.5%',
     up: true,
     icon: mdiCurrencyUsd,
   },
   {
-    label: 'MONTHLY INCOME',
+    label: tr('MONTHLY INCOME', 'ចំណូលប្រចាំខែ'),
     value: '$38,400.00',
-    sub: 'Compared to last month ($39,340.00)',
+    sub: tr('Compared to last month ($39,340.00)', 'ប្រៀបធៀបនឹងខែមុន ($39,340.00)'),
     trend: '-2.4%',
     up: false,
     icon: mdiCalendarMonth,
   },
   {
-    label: 'YEARLY INCOME',
+    label: tr('YEARLY INCOME', 'ចំណូលប្រចាំឆ្នាំ'),
     value: '$420,000.00',
-    sub: 'Projected $450k by end of Dec',
+    sub: tr('Projected $450k by end of Dec', 'ព្យាករណ៍ $450k ត្រឹមចុងខែធ្នូ'),
     trend: '+15.8%',
     up: true,
     icon: mdiTrendingUp,
   },
-]
+])
 
-const bestSelling = [
-  { name: 'Signature Fish Amok', sold: 452, pct: 100 },
-  { name: 'Iced Coconut Coffee', sold: 310, pct: 69 },
-  { name: 'Kampot Pepper Squid', sold: 285, pct: 63 },
-  { name: 'Mango Sticky Rice', sold: 215, pct: 48 },
-  { name: 'Tamarind Shaked Tea', sold: 198, pct: 44 },
-]
+const bestSelling = computed(() => (
+  isKhmer.value
+    ? [
+      { name: 'អាម៉ុកត្រីពិសេស', sold: 452, pct: 100 },
+      { name: 'កាហ្វេទឹកដូងទឹកកក', sold: 310, pct: 69 },
+      { name: 'មឹកម្រេចកំពត', sold: 285, pct: 63 },
+      { name: 'បាយដំណើបស្វាយ', sold: 215, pct: 48 },
+      { name: 'តែអំពិលក្រឡុក', sold: 198, pct: 44 },
+    ]
+    : [
+      { name: 'Signature Fish Amok', sold: 452, pct: 100 },
+      { name: 'Iced Coconut Coffee', sold: 310, pct: 69 },
+      { name: 'Kampot Pepper Squid', sold: 285, pct: 63 },
+      { name: 'Mango Sticky Rice', sold: 215, pct: 48 },
+      { name: 'Tamarind Shaked Tea', sold: 198, pct: 44 },
+    ]
+))
 
 const peakHours = [
-  { label: '8 AM', height: 30 },
-  { label: '10 AM', height: 45 },
-  { label: '12 PM', height: 85 },
-  { label: '2 PM', height: 55 },
-  { label: '4 PM', height: 40 },
-  { label: '6 PM', height: 95 },
-  { label: '8 PM', height: 75 },
+  { label: '8 AM', height: 30, labelKm: '8 ព្រឹក' },
+  { label: '10 AM', height: 45, labelKm: '10 ព្រឹក' },
+  { label: '12 PM', height: 85, labelKm: '12 ថ្ងៃ' },
+  { label: '2 PM', height: 55, labelKm: '2 រសៀល' },
+  { label: '4 PM', height: 40, labelKm: '4 ល្ងាច' },
+  { label: '6 PM', height: 95, labelKm: '6 ល្ងាច' },
+  { label: '8 PM', height: 75, labelKm: '8 យប់' },
 ]
 
-const recentOrders = [
-  { id: 'MD-9284', initials: 'RC', color: '#e8f5e9', textColor: '#2e7d32', customer: 'Rithy Chann', items: 'Fish Amok x2, Cambodia Beer x4', status: 'COMPLETED', statusColor: 'success', amount: '$124.50' },
-  { id: 'MD-9283', initials: 'SM', color: '#fff3e0', textColor: '#e65100', customer: 'Sokha Meas', items: 'Beef Lok Lak x3, Fresh Juices x3', status: 'PREPARING', statusColor: 'warning', amount: '$86.20' },
-  { id: 'MD-9281', initials: 'JP', color: '#e3f2fd', textColor: '#1565c0', customer: 'John Pierce', items: 'Signature Seafood Platter x1', status: 'COMPLETED', statusColor: 'success', amount: '$55.00' },
-]
+const recentOrders = computed(() => (
+  isKhmer.value
+    ? [
+      { id: 'MD-9284', initials: 'RC', color: '#e8f5e9', textColor: '#2e7d32', customer: 'រិទ្ធី ចាន់', items: 'អាម៉ុកត្រី x2, ស្រាបៀរកម្ពុជា x4', status: 'រួចរាល់', statusColor: 'success', amount: '$124.50' },
+      { id: 'MD-9283', initials: 'SM', color: '#fff3e0', textColor: '#e65100', customer: 'សុខា មាស', items: 'គោឡុកឡាក់ x3, ទឹកផ្លែឈើស្រស់ x3', status: 'កំពុងចម្អិន', statusColor: 'warning', amount: '$86.20' },
+      { id: 'MD-9281', initials: 'JP', color: '#e3f2fd', textColor: '#1565c0', customer: 'ចន ភៀស', items: 'ឈុតសមុទ្រពិសេស x1', status: 'រួចរាល់', statusColor: 'success', amount: '$55.00' },
+    ]
+    : [
+      { id: 'MD-9284', initials: 'RC', color: '#e8f5e9', textColor: '#2e7d32', customer: 'Rithy Chann', items: 'Fish Amok x2, Cambodia Beer x4', status: 'COMPLETED', statusColor: 'success', amount: '$124.50' },
+      { id: 'MD-9283', initials: 'SM', color: '#fff3e0', textColor: '#e65100', customer: 'Sokha Meas', items: 'Beef Lok Lak x3, Fresh Juices x3', status: 'PREPARING', statusColor: 'warning', amount: '$86.20' },
+      { id: 'MD-9281', initials: 'JP', color: '#e3f2fd', textColor: '#1565c0', customer: 'John Pierce', items: 'Signature Seafood Platter x1', status: 'COMPLETED', statusColor: 'success', amount: '$55.00' },
+    ]
+))
 
 // Simple SVG line chart points
 const chartPoints = '50,80 150,60 250,65 350,45 450,30 550,20 650,25'
@@ -72,7 +94,7 @@ const chartPoints = '50,80 150,60 250,65 350,45 450,30 550,20 650,25'
               <p class="stat-sub">{{ stat.sub }}</p>
             </div>
             <div :class="['trend-badge', stat.up ? 'trend-up' : 'trend-down']">
-              {{ stat.trend }} {{ stat.up ? '↑' : '↘' }}
+              {{ stat.trend }} {{ stat.up ? '↑' : '↓' }}
             </div>
           </div>
         </v-card>
@@ -85,8 +107,8 @@ const chartPoints = '50,80 150,60 250,65 350,45 450,30 550,20 650,25'
         <v-card rounded="xl" elevation="0" class="stat-card pa-5">
           <div class="d-flex justify-space-between align-center mb-4">
             <div>
-              <p class="section-title">Order Statistics</p>
-              <p class="section-sub">Total volume over the last 7 days</p>
+              <p class="section-title">{{ tr('Order Statistics', 'ស្ថិតិបញ្ជាទិញ') }}</p>
+              <p class="section-sub">{{ tr('Total volume over the last 7 days', 'បរិមាណសរុបក្នុង 7 ថ្ងៃចុងក្រោយ') }}</p>
             </div>
             <div class="d-flex ga-2">
               <v-btn
@@ -95,14 +117,14 @@ const chartPoints = '50,80 150,60 250,65 350,45 450,30 550,20 650,25'
                 size="small"
                 :color="activeRange === '30days' ? '#0f9e5f' : ''"
                 @click="activeRange = '30days'"
-              >Last 30 Days</v-btn>
+              >{{ tr('Last 30 Days', '30 ថ្ងៃចុងក្រោយ') }}</v-btn>
               <v-btn
                 :variant="activeRange === '7days' ? 'flat' : 'outlined'"
                 rounded="lg"
                 size="small"
                 :color="activeRange === '7days' ? '#0f9e5f' : ''"
                 @click="activeRange = '7days'"
-              >Last 7 Days</v-btn>
+              >{{ tr('Last 7 Days', '7 ថ្ងៃចុងក្រោយ') }}</v-btn>
             </div>
           </div>
           <!-- SVG Line Chart -->
@@ -127,7 +149,7 @@ const chartPoints = '50,80 150,60 250,65 350,45 450,30 550,20 650,25'
             />
           </svg>
           <div class="chart-labels d-flex justify-space-between px-2 mt-1">
-            <span v-for="d in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']" :key="d" class="chart-label">{{ d }}</span>
+            <span v-for="d in (isKhmer ? ['ច','អ','ព','ព្រ','សុ','សៅ','អា'] : ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])" :key="d" class="chart-label">{{ d }}</span>
           </div>
         </v-card>
       </v-col>
@@ -138,13 +160,13 @@ const chartPoints = '50,80 150,60 250,65 350,45 450,30 550,20 650,25'
       <v-col cols="12" md="6">
         <v-card rounded="xl" elevation="0" class="stat-card pa-5" style="height:100%">
           <div class="d-flex justify-space-between align-center mb-4">
-            <p class="section-title">Best Selling Food/Drinks</p>
-            <a class="view-all">View All</a>
+            <p class="section-title">{{ tr('Best Selling Food/Drinks', 'ម្ហូប/ភេសជ្ជៈលក់ដាច់') }}</p>
+            <a class="view-all">{{ tr('View All', 'មើលទាំងអស់') }}</a>
           </div>
           <div v-for="item in bestSelling" :key="item.name" class="mb-3">
             <div class="d-flex justify-space-between mb-1">
               <span class="item-name">{{ item.name }}</span>
-              <span class="item-sold">{{ item.sold }} sold</span>
+              <span class="item-sold">{{ item.sold }} {{ tr('sold', 'បានលក់') }}</span>
             </div>
             <div class="progress-bg">
               <div class="progress-fill" :style="{ width: item.pct + '%' }"></div>
@@ -156,8 +178,8 @@ const chartPoints = '50,80 150,60 250,65 350,45 450,30 550,20 650,25'
       <v-col cols="12" md="6">
         <v-card rounded="xl" elevation="0" class="stat-card pa-5" style="height:100%">
           <div class="d-flex justify-space-between align-center mb-4">
-            <p class="section-title">Peak Hour Analysis</p>
-            <span class="cycle-badge">24H CYCLE</span>
+            <p class="section-title">{{ tr('Peak Hour Analysis', 'វិភាគម៉ោងមមាញឹក') }}</p>
+            <span class="cycle-badge">{{ tr('24H CYCLE', 'វដ្ត 24 ម៉ោង') }}</span>
           </div>
           <!-- Bar chart -->
           <div class="bar-chart d-flex align-end ga-2 mb-2" style="height:100px">
@@ -169,14 +191,14 @@ const chartPoints = '50,80 150,60 250,65 350,45 450,30 550,20 650,25'
             ></div>
           </div>
           <div class="d-flex justify-space-between">
-            <span v-for="bar in peakHours" :key="bar.label" class="chart-label">{{ bar.label }}</span>
+            <span v-for="bar in peakHours" :key="bar.label" class="chart-label">{{ isKhmer ? bar.labelKm : bar.label }}</span>
           </div>
           <div class="observation-box mt-3 pa-3">
             <div class="d-flex align-start ga-2">
               <v-icon color="#0f9e5f" size="16">mdi-map-marker-outline</v-icon>
               <div>
-                <p class="obs-title">Observation</p>
-                <p class="obs-text">Dinner service (6 PM - 8 PM) accounts for 42% of daily revenue. Consider increasing floor staff during this window.</p>
+                <p class="obs-title">{{ tr('Observation', 'ការសង្កេត') }}</p>
+                <p class="obs-text">{{ tr('Dinner service (6 PM - 8 PM) accounts for 42% of daily revenue. Consider increasing floor staff during this window.', 'ការលក់ពេលល្ងាច (6PM - 8PM) ស្មើ 42% នៃចំណូលប្រចាំថ្ងៃ។ គួរបន្ថែមបុគ្គលិកក្នុងម៉ោងនេះ។') }}</p>
               </div>
             </div>
           </div>
@@ -189,17 +211,17 @@ const chartPoints = '50,80 150,60 250,65 350,45 450,30 550,20 650,25'
       <v-col cols="12">
         <v-card rounded="xl" elevation="0" class="stat-card pa-5">
           <div class="d-flex justify-space-between align-center mb-4">
-            <p class="section-title">Recent High-Value Orders</p>
-            <v-btn variant="outlined" rounded="lg" size="small" prepend-icon="mdi-filter-outline">Filter</v-btn>
+            <p class="section-title">{{ tr('Recent High-Value Orders', 'ការបញ្ជាទិញតម្លៃខ្ពស់ថ្មីៗ') }}</p>
+            <v-btn variant="outlined" rounded="lg" size="small" prepend-icon="mdi-filter-outline">{{ tr('Filter', 'តម្រង') }}</v-btn>
           </div>
           <v-table density="comfortable" class="orders-table">
             <thead>
               <tr>
-                <th>ORDER ID</th>
-                <th>CUSTOMER</th>
-                <th>ITEMS</th>
-                <th>STATUS</th>
-                <th>AMOUNT</th>
+                <th>{{ tr('ORDER ID', 'លេខបញ្ជាទិញ') }}</th>
+                <th>{{ tr('CUSTOMER', 'អតិថិជន') }}</th>
+                <th>{{ tr('ITEMS', 'មុខម្ហូប') }}</th>
+                <th>{{ tr('STATUS', 'ស្ថានភាព') }}</th>
+                <th>{{ tr('AMOUNT', 'ចំនួនទឹកប្រាក់') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -223,7 +245,7 @@ const chartPoints = '50,80 150,60 250,65 350,45 450,30 550,20 650,25'
               </tr>
             </tbody>
           </v-table>
-          <p class="footer-copy mt-4 text-center">© 2023 Mlup Dong Restaurant Management System. All rights reserved.</p>
+          <p class="footer-copy mt-4 text-center">{{ tr('© 2023 Mlup Dong Restaurant Management System. All rights reserved.', '© 2023 ប្រព័ន្ធគ្រប់គ្រងភោជនីយដ្ឋាន Mlup Dong។ រក្សាសិទ្ធិគ្រប់យ៉ាង។') }}</p>
         </v-card>
       </v-col>
     </v-row>

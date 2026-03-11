@@ -1,9 +1,13 @@
 <script setup>
+import { computed } from 'vue'
+import { useI18n } from '@/composables/useI18n'
+
 const props = defineProps({
   item: { type: Object, required: true }
 })
 
 const emit = defineEmits(['toggle-status', 'edit', 'delete'])
+<<<<<<< HEAD
 
 const fallbackImg = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400'
 
@@ -13,10 +17,28 @@ function formatPrice(price) {
 
 function getCategoryName(item) {
   return item.category?.category_name ?? ''
+=======
+const { locale } = useI18n()
+const isKhmer = computed(() => locale.value === 'km')
+
+function getDisplayBadge(item) {
+  if (!item.badge) return ''
+  if (!isKhmer.value) return item.badge
+  const badgeMap = {
+    'BEST SELLER': 'លក់ដាច់ជាងគេ',
+    'SOLD OUT': 'អស់ស្តុក',
+    'POPULAR': 'ពេញនិយម',
+    'LIMITED TIME': 'មានពេលកំណត់',
+    'BEST VALUE': 'តម្លៃល្អបំផុត',
+    DAILY: 'ប្រចាំថ្ងៃ',
+  }
+  return badgeMap[item.badge] || item.badge
+>>>>>>> c4255a11263de64539af4715253de56ebbc217b2
 }
 </script>
 
 <template>
+<<<<<<< HEAD
   <div class="menu-card" :class="{ inactive: !item.status }">
 
     <!-- Image area -->
@@ -60,6 +82,33 @@ function getCategoryName(item) {
 
         <!-- Status toggle -->
         <div class="status-toggle-wrap">
+=======
+  <v-card rounded="lg" border class="menu-item-card">
+    <div class="image-container">
+      <v-img :src="item.image" height="200" cover />
+      <v-chip
+        v-if="item.badge"
+        size="small"
+        :color="item.badge === 'SOLD OUT' ? '#ff5757' : '#14d886'"
+        class="badge-chip"
+      >
+        {{ getDisplayBadge(item) }}
+      </v-chip>
+    </div>
+
+    <v-card-text class="pa-4">
+      <div class="d-flex justify-space-between align-start mb-2">
+        <div class="flex-grow-1">
+          <h3 class="item-name">{{ isKhmer && item.nameKm ? item.nameKm : item.name }}</h3>
+          <p class="item-description">{{ isKhmer && item.descriptionKm ? item.descriptionKm : item.description }}</p>
+        </div>
+        <p class="item-price">${{ item.price.toFixed(2) }}</p>
+      </div>
+
+      <div class="d-flex align-center justify-space-between mt-3">
+        <div class="d-flex align-center ga-2">
+          <span class="status-label">{{ isKhmer ? 'ស្ថានភាព' : 'STATUS' }}</span>
+>>>>>>> c4255a11263de64539af4715253de56ebbc217b2
           <v-switch
             :model-value="item.status"
             color="#14dc8b"
