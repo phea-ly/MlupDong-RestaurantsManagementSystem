@@ -21,7 +21,7 @@ Route::apiResource('users', UserController::class);
 Route::apiResource('staffs', StaffController::class);
 Route::post('tables/generate-all', [TableController::class, 'generateAll']);
 Route::post('tables/{id}/generate-qr', [TableController::class, 'generateQr']);
-Route::get('tables/{id}/qrcode', [TableController::class, 'getQrCode']);
+Route::get('tables/{id}/download-qr', [TableController::class, 'downloadQrFile']);
 Route::apiResource('tables', TableController::class);
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('menu-items', MenuItemController::class);
