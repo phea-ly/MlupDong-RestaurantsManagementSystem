@@ -1,10 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import {
-  getDashboardPathByRole,
-  getUserRole,
-  isAuthenticated,
-  syncAuthSession,
-} from '@/utils/auth'
+import { useAuthStore } from '@/stores/auth.store'  // ← ADD this import
 
 const routes = [
   {
@@ -18,45 +13,49 @@ const routes = [
     component: () => import('@/views/Login.vue'),
   },
   {
-    path: '/register',
-    name: 'register',
-    meta: { guestOnly: true },
-    component: () => import('@/views/Register.vue'),
-  },
-  {
     path: '/home',
     meta: { requiresAuth: true },
-    component: () => import('@/views/Home.vue'),
+    component: () => import('@/views/Layout.vue'),
     children: [
-      {
-        path: '',
-        redirect: '/home/dashboard',
-      },
+      { path: '', redirect: '/home/admin-dashboard' },
       {
         path: 'admin-dashboard',
-        name: 'home-admin-dashboard',
-        meta: { requiresAuth: true, roles: ['admin'] },
-        component: () => import('@/views/home/AdminDashboard.vue'),
-      },
-      {
-        path: 'client-dashboard',
-        name: 'home-client-dashboard',
-        meta: { requiresAuth: true, roles: ['client'] },
-        component: () => import('@/views/home/ClientDashboard.vue'),
-      },
-      {
-        path: 'dashboard',
         name: 'home-dashboard',
         meta: { requiresAuth: true },
-        component: () => import('@/views/home/Dashboard.vue'),
+        component: () => import('@/views/dashboard/AdminDashboard.vue'),
+      },
+      {
+        path: 'menu',
+        name: 'home-menu',
+        meta: { requiresAuth: true },
+        component: () => import('@/views/menu/Menu.vue'),
+      },
+      {
+        path: 'staff',
+        name: 'home-staff',
+        meta: { requiresAuth: true },
+        component: () => import('@/views/staff/Staff.vue'),
+      },
+      {
+        path: 'table',
+        name: 'home-table',
+        meta: { requiresAuth: true },
+        component: () => import('@/views/table/Table.vue'),
+      },
+      {
+        path: 'user',
+        name: 'home-user',
+        meta: { requiresAuth: true },
+        component: () => import('@/views/user/User.vue'),
       },
       {
         path: 'sales-report',
         name: 'home-sales-report',
         meta: { requiresAuth: true },
-        component: () => import('@/views/home/SalesReport.vue'),
+        component: () => import('@/views/salesReport/SalesReport.vue'),
       },
       {
+<<<<<<< HEAD
         path: 'menu',
         name: 'home-menu',
         component: () => import('@/views/home/Menu.vue'),
@@ -76,23 +75,18 @@ const routes = [
         path: 'table',
         name: 'home-table',
         component: () => import('@/views/home/Table.vue'),
+=======
+        path: 'settings',
+        name: 'home-settings',
+        meta: { requiresAuth: true },
+        component: () => import('@/views/setting/Settings.vue'),
+>>>>>>> c4255a11263de64539af4715253de56ebbc217b2
       },
     ],
   },
   {
-    path: '/features',
-    name: 'features',
-    meta: { requiresAuth: true },
-    component: () => import('@/views/Features.vue'),
-  },
-  {
-    path: '/dashboard',
-    meta: { requiresAuth: true },
-    redirect: '/home/dashboard',
-  },
-  {
     path: '/:pathMatch(.*)*',
-    component: () => import('@/views/NotFoundView.vue'),
+    redirect: '/login',
   },
 ]
 
@@ -101,47 +95,16 @@ const router = createRouter({
   routes,
 })
 
-let sessionChecked = false
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token')   // ← read directly, most reliable
 
-async function ensureSession() {
-  if (!isAuthenticated()) {
-    sessionChecked = true
-    return false
+  if (to.meta.requiresAuth && !token) {
+    next('/login')
+  } else if (to.meta.guestOnly && token) {
+    next('/home')
+  } else {
+    next()
   }
-
-  if (sessionChecked) {
-    return true
-  }
-
-  const ok = await syncAuthSession()
-  sessionChecked = true
-  return ok
-}
-
-router.beforeEach(async (to) => {
-  const authed = await ensureSession()
-
-  if (to.meta.requiresAuth && !authed) {
-    return {
-      path: '/login',
-      query: { redirect: to.fullPath },
-    }
-  }
-
-  if (to.meta.guestOnly && authed) {
-    return getDashboardPathByRole()
-  }
-
-  if (to.meta.requiresAuth && Array.isArray(to.meta.roles) && to.meta.roles.length > 0) {
-    const role = getUserRole()
-
-    if (!to.meta.roles.includes(role)) {
-      return getDashboardPathByRole()
-    }
-  }
-
-  return true
 })
 
 export default router
-

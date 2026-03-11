@@ -1,5 +1,6 @@
-import client from './api'
+import api from './api'
 
+<<<<<<< HEAD
 export const getUsers = (params = {}) => {
   return client.get('/users', { params })
 }
@@ -15,3 +16,5 @@ export const updateUser = (userId, payload) => {
 export const deleteUser = (userId) => {
   return client.delete(`/users/${userId}`)
 }
+=======
+>>>>>>> c4255a11263de64539af4715253de56ebbc217b2

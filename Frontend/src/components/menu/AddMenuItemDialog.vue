@@ -1,5 +1,6 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -7,6 +8,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue', 'save'])
+const { locale } = useI18n()
+const isKhmer = computed(() => locale.value === 'km')
+const tr = (en, km) => (isKhmer.value ? km : en)
 
 const form = ref({
   name: '',
@@ -46,6 +50,12 @@ function handleClose() {
   emit('update:modelValue', false)
   resetForm()
 }
+
+const categoryOptions = computed(() => [
+  { title: tr('Food', 'ម្ហូប'), value: 'food' },
+  { title: tr('Drinks', 'ភេសជ្ជៈ'), value: 'drinks' },
+  { title: tr('Promotions', 'ប្រូម៉ូសិន'), value: 'promotions' },
+])
 </script>
 
 <template>
@@ -53,7 +63,7 @@ function handleClose() {
     <v-card rounded="lg">
       <v-card-title class="pa-4 d-flex justify-space-between align-center">
         <span class="text-h6 font-weight-bold">
-          {{ editItem ? 'Edit Menu Item' : 'Add New Menu Item' }}
+          {{ editItem ? tr('Edit Menu Item', 'កែប្រែមុខម្ហូប') : tr('Add New Menu Item', 'បន្ថែមមុខម្ហូបថ្មី') }}
         </span>
         <v-btn icon size="small" variant="text" @click="handleClose">
           <v-icon>mdi-close</v-icon>
@@ -63,7 +73,7 @@ function handleClose() {
       <v-card-text class="pa-4">
         <v-text-field
           v-model="form.name"
-          label="Item Name"
+          :label="tr('Item Name', 'ឈ្មោះមុខម្ហូប')"
           variant="outlined"
           density="comfortable"
           class="mb-3"
@@ -71,7 +81,7 @@ function handleClose() {
 
         <v-textarea
           v-model="form.description"
-          label="Description"
+          :label="tr('Description', 'ការពិពណ៌នា')"
           variant="outlined"
           density="comfortable"
           rows="2"
@@ -82,7 +92,7 @@ function handleClose() {
           <v-col cols="6">
             <v-text-field
               v-model="form.price"
-              label="Price"
+              :label="tr('Price', 'តម្លៃ')"
               variant="outlined"
               density="comfortable"
               type="number"
@@ -93,21 +103,17 @@ function handleClose() {
           <v-col cols="6">
             <v-select
               v-model="form.category"
-              label="Category"
+              :label="tr('Category', 'ប្រភេទ')"
               variant="outlined"
               density="comfortable"
-              :items="[
-                { title: 'Food', value: 'food' },
-                { title: 'Drinks', value: 'drinks' },
-                { title: 'Promotions', value: 'promotions' }
-              ]"
+              :items="categoryOptions"
             />
           </v-col>
         </v-row>
 
         <v-text-field
           v-model="form.image"
-          label="Image URL"
+          :label="tr('Image URL', 'តំណភ្ជាប់រូបភាព')"
           variant="outlined"
           density="comfortable"
           class="mb-3"
@@ -115,18 +121,18 @@ function handleClose() {
 
         <v-text-field
           v-model="form.badge"
-          label="Badge (Optional)"
+          :label="tr('Badge (Optional)', 'ស្លាក (ជម្រើស)')"
           variant="outlined"
           density="comfortable"
-          placeholder="e.g., BEST SELLER, NEW"
+          :placeholder="tr('e.g., BEST SELLER, NEW', 'ឧ. លក់ដាច់ជាងគេ, ថ្មី')"
         />
       </v-card-text>
 
       <v-card-actions class="pa-4 pt-0">
         <v-spacer />
-        <v-btn variant="outlined" @click="handleClose">Cancel</v-btn>
+        <v-btn variant="outlined" @click="handleClose">{{ tr('Cancel', 'បោះបង់') }}</v-btn>
         <v-btn color="#14d886" @click="handleSave">
-          {{ editItem ? 'Update' : 'Add Item' }}
+          {{ editItem ? tr('Update', 'ធ្វើបច្ចុប្បន្នភាព') : tr('Add Item', 'បន្ថែមមុខម្ហូប') }}
         </v-btn>
       </v-card-actions>
     </v-card>

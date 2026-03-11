@@ -55,6 +55,7 @@ class UserController extends Controller
             'password' => ['required', 'string', 'min:8'],
             'role' => ['nullable', Rule::in(['admin', 'client'])],
             'phone' => ['nullable', 'string', 'max:20'],
+            'profile' => ['nullable', 'BLOB', 'max:255'],
             'status' => ['nullable', 'boolean'],
             'role_id' => ['nullable', 'exists:roles,role_id'],
             'restaurant_id' => ['nullable', 'exists:restaurants,restaurant_id'],

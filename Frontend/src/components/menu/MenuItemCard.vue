@@ -1,4 +1,7 @@
 <script setup>
+import { computed } from 'vue'
+import { useI18n } from '@/composables/useI18n'
+
 const props = defineProps({
   item: {
     type: Object,
@@ -7,6 +10,22 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['toggle-status', 'edit', 'delete'])
+const { locale } = useI18n()
+const isKhmer = computed(() => locale.value === 'km')
+
+function getDisplayBadge(item) {
+  if (!item.badge) return ''
+  if (!isKhmer.value) return item.badge
+  const badgeMap = {
+    'BEST SELLER': 'លក់ដាច់ជាងគេ',
+    'SOLD OUT': 'អស់ស្តុក',
+    'POPULAR': 'ពេញនិយម',
+    'LIMITED TIME': 'មានពេលកំណត់',
+    'BEST VALUE': 'តម្លៃល្អបំផុត',
+    DAILY: 'ប្រចាំថ្ងៃ',
+  }
+  return badgeMap[item.badge] || item.badge
+}
 </script>
 
 <template>
@@ -19,22 +38,22 @@ const emit = defineEmits(['toggle-status', 'edit', 'delete'])
         :color="item.badge === 'SOLD OUT' ? '#ff5757' : '#14d886'"
         class="badge-chip"
       >
-        {{ item.badge }}
+        {{ getDisplayBadge(item) }}
       </v-chip>
     </div>
 
     <v-card-text class="pa-4">
       <div class="d-flex justify-space-between align-start mb-2">
         <div class="flex-grow-1">
-          <h3 class="item-name">{{ item.name }}</h3>
-          <p class="item-description">{{ item.description }}</p>
+          <h3 class="item-name">{{ isKhmer && item.nameKm ? item.nameKm : item.name }}</h3>
+          <p class="item-description">{{ isKhmer && item.descriptionKm ? item.descriptionKm : item.description }}</p>
         </div>
         <p class="item-price">${{ item.price.toFixed(2) }}</p>
       </div>
 
       <div class="d-flex align-center justify-space-between mt-3">
         <div class="d-flex align-center ga-2">
-          <span class="status-label">STATUS</span>
+          <span class="status-label">{{ isKhmer ? 'ស្ថានភាព' : 'STATUS' }}</span>
           <v-switch
             :model-value="item.status"
             color="#14d886"

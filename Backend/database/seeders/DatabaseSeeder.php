@@ -15,21 +15,22 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         User::updateOrCreate(
-            ['email' => 'admin@test.com'],
+            ['email' => 'mlupdong@gmail.com'],
             [
-                'name' => 'Test Admin',
+                'first_name' => 'Mlup',
+                'last_name' => 'Dong',
                 'role' => 'admin',
-                'password' => Hash::make('Admin@12345'),
+                'password' => Hash::make('mlupdong@12345'),
             ]
         );
 
-        User::updateOrCreate(
-            ['email' => 'client@test.com'],
-            [
-                'name' => 'Test Client',
-                'role' => 'client',
-                'password' => Hash::make('Client@12345'),
-            ]
-        );
+        // User::updateOrCreate(
+        //     ['email' => 'client@test.com'],
+        //     [
+        //         'name' => 'Test Client',
+        //         'role' => 'client',
+        //         'password' => Hash::make('Client@12345'),
+        //     ]
+        // );
     }
 }
