@@ -1,3 +1,4 @@
+// src/stores/auth.store.js
 import { defineStore } from "pinia";
 import api from "@/plugins/axios";
 
@@ -31,6 +32,7 @@ export const useAuthStore = defineStore("auth", {
       api.post("/logout").catch(() => {});
     },
 
+    // Instantly show local preview in AppBar while upload is in-flight
     patchAvatar(avatarUrl) {
       if (!this.user) return;
       this.user = { ...this.user, avatar: avatarUrl };
@@ -43,35 +45,28 @@ export const useAuthStore = defineStore("auth", {
         const form = new FormData();
         if (payload.first_name) form.append("first_name", payload.first_name);
         if (payload.last_name)  form.append("last_name",  payload.last_name);
-        form.append("avatar",   payload.avatar);
-        form.append("_method",  "PUT");
+        form.append("avatar",  payload.avatar);
+        form.append("_method", "PUT"); // ✅ Laravel method spoofing
 
+        // ✅ FIXED: was "/user/update" — correct route is "/user"
         response = await api.post("/user", form, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       } else {
+        // ✅ FIXED: was "/user/update" — correct route is "/user"
         response = await api.put("/user", payload);
       }
 
       const serverUser = response.data.user ?? {};
-      let newAvatar = this.user?.avatar ?? null;
 
-      if (serverUser.avatar) {
-        newAvatar = serverUser.avatar;
-      } else if (serverUser.profile) {
-        const base = import.meta.env.VITE_API_BASE_URL?.replace("/api", "") ?? "";
-        newAvatar = `${base}/storage/${serverUser.profile}?t=${Date.now()}`;
-      }
       const updatedUser = {
         ...this.user,
         ...serverUser,
-        avatar: newAvatar,
+        avatar: serverUser.avatar ?? this.user?.avatar ?? null,
       };
 
       this.user = updatedUser;
-
-      const forStorage = { ...updatedUser, avatar: newAvatar?.split("?t=")[0] ?? null };
-      localStorage.setItem("user", JSON.stringify(forStorage));
+      localStorage.setItem("user", JSON.stringify(updatedUser));
     },
 
     async updatePassword(payload) {

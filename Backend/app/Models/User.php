@@ -9,14 +9,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
     use HasFactory, Notifiable;
 
-    protected $table = 'users';
-
+    protected $table      = 'users';
     protected $primaryKey = 'user_id';
 
     protected $fillable = [
@@ -26,7 +26,7 @@ class User extends Authenticatable implements JWTSubject
         'role',
         'password',
         'phone',
-        'profile',
+        'avatar',  
         'status',
         'role_id',
         'restaurant_id',
@@ -37,12 +37,30 @@ class User extends Authenticatable implements JWTSubject
         'remember_token',
     ];
 
+    protected $appends = ['avatar_url'];
+
     protected function casts(): array
     {
         return [
             'password' => 'hashed',
-            'status' => 'boolean',
+            'status'   => 'boolean',
         ];
+    }
+
+    protected function avatarUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->avatar
+                ? asset('storage/' . $this->avatar)
+                : null,
+        );
+    }
+
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? '')),
+        );
     }
 
     public function role(): BelongsTo
@@ -65,25 +83,12 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Order::class, 'user_id', 'user_id');
     }
 
-    protected function name(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => trim(($this->first_name ?? '').' '.($this->last_name ?? '')),
-        );
-    }
-
-    /**
-     * Get the identifier that will be stored in the JWT token.
-     */
     public function getJWTIdentifier()
     {
         return $this->getKey();
     }
 
-    /**
-     * Return an array with custom claims to be added to the JWT token.
-     */
-    public function getJWTCustomClaims()
+    public function getJWTCustomClaims(): array
     {
         return [];
     }
