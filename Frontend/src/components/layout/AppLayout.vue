@@ -1,15 +1,28 @@
 <script setup>
+<<<<<<< HEAD
 import { ref, computed } from "vue";
 import { useAuthStore } from "@/stores/auth.store";
 import AppBar from "./AppBar.vue";
 import Sidebar from "./Sidebar.vue";
+=======
+import { ref, computed } from 'vue'
+import { useAuthStore } from '@/stores/auth.store'
+import { useI18n } from '@/composables/useI18n'
+import AppBar  from './AppBar.vue'
+import Sidebar from './Sidebar.vue'
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
 
 defineProps({
   title: { type: String, required: true },
   subtitle: { type: String, required: true },
 });
 
+<<<<<<< HEAD
 const auth = useAuthStore();
+=======
+const auth = useAuthStore()
+const { t } = useI18n()
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
 
 const editDialog      = ref(false);
 const editLoading     = ref(false);
@@ -84,6 +97,7 @@ async function saveProfile() {
       await auth.updateProfile({
         first_name: editFirstName.value,
         last_name:  editLastName.value,
+<<<<<<< HEAD
         avatar:     avatarFile.value ?? undefined,
       });
 
@@ -95,9 +109,14 @@ async function saveProfile() {
         avatarPreview.value = null;
       }, 1200);
 
+=======
+      })
+      editSuccess.value = t('profile.profileUpdated')
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
     } else {
       // Password change
       if (newPassword.value !== confirmPassword.value) {
+<<<<<<< HEAD
         editError.value = "Passwords do not match.";
         return;
       }
@@ -114,6 +133,27 @@ async function saveProfile() {
     }
   } catch (e) {
     editError.value = e.response?.data?.message || "Update failed.";
+=======
+        editError.value = t('profile.newPasswordsMismatch')
+        return
+      }
+      if (newPassword.value.length < 6) {
+        editError.value = t('profile.passwordMinLength')
+        return
+      }
+      await auth.updateProfile({
+        current_password:      currentPassword.value,
+        password:              newPassword.value,
+        password_confirmation: confirmPassword.value,
+      })
+      editSuccess.value     = t('profile.passwordChanged')
+      currentPassword.value = ''
+      newPassword.value     = ''
+      confirmPassword.value = ''
+    }
+  } catch (e) {
+    editError.value = e.response?.data?.message || t('profile.updateFailed')
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
   } finally {
     editLoading.value = false;
   }
@@ -138,8 +178,17 @@ async function saveProfile() {
         <!-- Header -->
         <v-card-title class="d-flex align-center justify-space-between px-5 pt-5 pb-0">
           <div>
+<<<<<<< HEAD
             <div style="font-size:16px; font-weight:800; color:#1a2e48">Account Settings</div>
             <div style="font-size:12px; color:#7f90a4">Manage your profile and security</div>
+=======
+            <div style="font-size: 16px; font-weight: 800; color: #1a2e48">
+              {{ t('profile.accountSettings') }}
+            </div>
+            <div style="font-size: 12px; color: #7f90a4">
+              {{ t('profile.manageProfileSecurity') }}
+            </div>
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
           </div>
           <v-btn icon variant="text" size="small" color="#7f90a4" @click="editDialog = false">
             <v-icon>mdi-close</v-icon>
@@ -165,17 +214,58 @@ async function saveProfile() {
               <v-icon size="18" color="white">mdi-camera</v-icon>
             </div>
           </div>
+<<<<<<< HEAD
           <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="onFileChange" />
+=======
+          <!-- Hidden file input -->
+          <input
+            ref="fileInput"
+            type="file"
+            accept="image/*"
+            style="display: none"
+            @change="onFileChange"
+          />
+        </div>
+        <div class="text-center mb-1" style="font-size: 11px; color: #9aabbd">
+          {{ t('profile.changePhoto') }}
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
         </div>
         <div class="text-center mb-1" style="font-size:11px; color:#9aabbd">Click avatar to change photo</div>
 
         <!-- Tabs -->
+<<<<<<< HEAD
         <v-tabs v-model="activeTab" color="#0f9e5f" density="compact" class="px-5 mt-2" hide-slider>
           <v-tab value="profile" rounded="lg" class="tab-item" style="text-transform:none; font-weight:700; font-size:13px">
             <v-icon start size="16">mdi-account-outline</v-icon>Profile
           </v-tab>
           <v-tab value="password" rounded="lg" class="tab-item" style="text-transform:none; font-weight:700; font-size:13px">
             <v-icon start size="16">mdi-shield-lock-outline</v-icon>Password
+=======
+        <v-tabs
+          v-model="activeTab"
+          color="#0f9e5f"
+          density="compact"
+          class="px-5 mt-2"
+          hide-slider
+        >
+          <v-tab
+            value="profile"
+            rounded="lg"
+            class="tab-item"
+            style="text-transform: none; font-weight: 700; font-size: 13px"
+          >
+            <v-icon start size="16">mdi-account-outline</v-icon>
+            {{ t('profile.profile') }}
+          </v-tab>
+          <v-tab
+            value="password"
+            rounded="lg"
+            class="tab-item"
+            style="text-transform: none; font-weight: 700; font-size: 13px"
+          >
+            <v-icon start size="16">mdi-shield-lock-outline</v-icon>
+            {{ t('profile.password') }}
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
           </v-tab>
         </v-tabs>
 
@@ -191,6 +281,7 @@ async function saveProfile() {
             <v-window-item value="profile">
               <v-row dense class="mt-1">
                 <v-col cols="6">
+<<<<<<< HEAD
                   <v-text-field v-model="editFirstName" label="First Name" variant="outlined" rounded="lg" density="comfortable" color="#0f9e5f" prepend-inner-icon="mdi-account-outline" />
                 </v-col>
                 <v-col cols="6">
@@ -198,13 +289,53 @@ async function saveProfile() {
                 </v-col>
               </v-row>
               <v-text-field v-model="editEmail" label="Email Address" variant="outlined" rounded="lg" density="comfortable" color="#0f9e5f" prepend-inner-icon="mdi-email-outline" readonly bg-color="#f7faf9" />
+=======
+                  <v-text-field
+                    v-model="editFirstName"
+                    :label="t('profile.firstName')"
+                    variant="outlined"
+                    rounded="lg"
+                    density="comfortable"
+                    color="#0f9e5f"
+                    prepend-inner-icon="mdi-account-outline"
+                  />
+                </v-col>
+                <v-col cols="6">
+                  <v-text-field
+                    v-model="editLastName"
+                    :label="t('profile.lastName')"
+                    variant="outlined"
+                    rounded="lg"
+                    density="comfortable"
+                    color="#0f9e5f"
+                  />
+                </v-col>
+              </v-row>
+
+              <v-text-field
+                v-model="editEmail"
+                :label="t('profile.emailAddress')"
+                variant="outlined"
+                rounded="lg"
+                density="comfortable"
+                color="#0f9e5f"
+                prepend-inner-icon="mdi-email-outline"
+                readonly
+                bg-color="#f7faf9"
+              />
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
             </v-window-item>
 
             <!-- Password Tab -->
             <v-window-item value="password">
               <div class="mt-1">
                 <v-text-field
+<<<<<<< HEAD
                   v-model="currentPassword" label="Current Password"
+=======
+                  v-model="currentPassword"
+                  :label="t('profile.currentPassword')"
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
                   :type="showCurrent ? 'text' : 'password'"
                   :append-inner-icon="showCurrent ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
                   variant="outlined" rounded="lg" density="comfortable" color="#0f9e5f"
@@ -212,7 +343,12 @@ async function saveProfile() {
                   @click:append-inner="showCurrent = !showCurrent"
                 />
                 <v-text-field
+<<<<<<< HEAD
                   v-model="newPassword" label="New Password"
+=======
+                  v-model="newPassword"
+                  :label="t('profile.newPassword')"
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
                   :type="showNew ? 'text' : 'password'"
                   :append-inner-icon="showNew ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
                   variant="outlined" rounded="lg" density="comfortable" color="#0f9e5f"
@@ -220,13 +356,26 @@ async function saveProfile() {
                   @click:append-inner="showNew = !showNew"
                 />
                 <v-text-field
+<<<<<<< HEAD
                   v-model="confirmPassword" label="Confirm New Password"
+=======
+                  v-model="confirmPassword"
+                  :label="t('profile.confirmNewPassword')"
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
                   :type="showConfirm ? 'text' : 'password'"
                   :append-inner-icon="showConfirm ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
                   variant="outlined" rounded="lg" density="comfortable" color="#0f9e5f"
                   prepend-inner-icon="mdi-lock-check-outline"
                   :error="!!confirmPassword && newPassword !== confirmPassword"
+<<<<<<< HEAD
                   :error-messages="confirmPassword && newPassword !== confirmPassword ? 'Passwords do not match' : ''"
+=======
+                  :error-messages="
+                    confirmPassword && newPassword !== confirmPassword
+                      ? t('profile.passwordMismatch')
+                      : ''
+                  "
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
                   @click:append-inner="showConfirm = !showConfirm"
                 />
               </div>
@@ -238,8 +387,19 @@ async function saveProfile() {
         <v-divider style="border-color:#eaeff2" />
 
         <v-card-actions class="pa-4">
+<<<<<<< HEAD
           <v-btn variant="outlined" rounded="lg" color="#7f90a4" style="text-transform:none; font-weight:600" @click="editDialog = false">
             Cancel
+=======
+          <v-btn
+            variant="outlined"
+            rounded="lg"
+            color="#7f90a4"
+            style="text-transform: none; font-weight: 600"
+            @click="editDialog = false"
+          >
+            {{ t('common.cancel') }}
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
           </v-btn>
           <v-spacer />
           <v-btn
@@ -248,7 +408,7 @@ async function saveProfile() {
             @click="saveProfile"
           >
             <v-icon start size="16">mdi-check</v-icon>
-            {{ activeTab === "profile" ? "Save Profile" : "Update Password" }}
+            {{ activeTab === "profile" ? t('profile.saveProfile') : t('profile.updatePassword') }}
           </v-btn>
         </v-card-actions>
 

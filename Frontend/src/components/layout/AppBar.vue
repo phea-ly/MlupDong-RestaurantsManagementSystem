@@ -3,6 +3,7 @@ import { ref, computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRouter } from "vue-router";
+import { useI18n } from "@/composables/useI18n";
 
 const props = defineProps({
   title: { type: String, required: true },
@@ -13,6 +14,7 @@ const emit = defineEmits(["action", "open-edit"]);
 
 const auth = useAuthStore();
 const router = useRouter();
+const { t } = useI18n();
 
 const { user } = storeToRefs(auth);
 
@@ -27,7 +29,11 @@ const profileName = computed(() => {
 });
 
 const profileRole = computed(() =>
+<<<<<<< HEAD
   user.value?.role_id ? "Administrator" : "Manager"
+=======
+  auth.user?.role_id ? t("common.administrator") : t("common.manager"),
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
 );
 
 const profileInitials = computed(() => {
@@ -111,8 +117,20 @@ function logout() {
               <div style="min-width:0; flex:1">
                 <div class="menu-name text-truncate">{{ profileName }}</div>
                 <div class="menu-role">{{ profileRole }}</div>
+<<<<<<< HEAD
                 <v-chip size="x-small" color="#0f9e5f" variant="tonal" class="mt-1" style="font-size:10px">
                   <v-icon start size="9">mdi-circle</v-icon>Online
+=======
+                <v-chip
+                  size="x-small"
+                  color="#0f9e5f"
+                  variant="tonal"
+                  class="mt-1"
+                  style="font-size: 10px"
+                >
+                  <v-icon start size="9">mdi-circle</v-icon>
+                  {{ t("common.online") }}
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
                 </v-chip>
               </div>
             </div>
@@ -120,13 +138,41 @@ function logout() {
             <v-divider />
 
             <v-list density="compact" nav class="py-2">
+<<<<<<< HEAD
               <v-list-item prepend-icon="mdi-account-edit-outline" title="Edit Profile"    rounded="lg" class="menu-item" @click="openEdit('profile')"  />
+=======
+              <v-list-item
+                prepend-icon="mdi-account-edit-outline"
+                :title="t('profile.editProfile')"
+                rounded="lg"
+                class="menu-item"
+                @click="openEdit('profile')"
+              />
+              <v-list-item
+                prepend-icon="mdi-shield-lock-outline"
+                :title="t('profile.changePassword')"
+                rounded="lg"
+                class="menu-item"
+                @click="openEdit('password')"
+              />
+              <!-- ✅ Preferences removed -->
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
             </v-list>
 
             <v-divider />
 
             <v-list density="compact" nav class="py-2">
+<<<<<<< HEAD
               <v-list-item prepend-icon="mdi-logout" title="Sign Out" rounded="lg" class="menu-item logout-item" @click="logout" />
+=======
+              <v-list-item
+                prepend-icon="mdi-logout"
+                :title="t('profile.signOut')"
+                rounded="lg"
+                class="menu-item logout-item"
+                @click="logout"
+              />
+>>>>>>> caf3139dee2eef85295594955a6455c31a4b22a2
             </v-list>
 
           </v-card>

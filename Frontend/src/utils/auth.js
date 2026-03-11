@@ -19,6 +19,10 @@ export function getSessionUser() {
   }
 }
 
+export function getToken() {
+  return getSessionUser()?.token ?? null
+}
+
 // ── Auth state ──────────────────────────────────────────────────────
 export function isAuthenticated() {
   return !!getSessionUser()

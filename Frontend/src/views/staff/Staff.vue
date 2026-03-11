@@ -1,10 +1,14 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from '@/composables/useI18n'
 
 const search         = ref('')
 const showAddDialog  = ref(false)
 const showEditDialog = ref(false)
 const editTarget     = ref(null)
+const { locale } = useI18n()
+const isKhmer = computed(() => locale.value === 'km')
+const tr = (en, km) => (isKhmer.value ? km : en)
 
 const newStaff = ref({ name: '', email: '', role: '', status: 'Active' })
 const editForm = ref({ name: '', email: '', role: '', status: 'Active' })
@@ -31,7 +35,7 @@ const serviceCount = computed(() => staffList.value.filter(s => s.role === 'WAIT
 
 // ── Add ────────────────────────────────────────────────
 function openAddDialog() {
-  newStaff.value = { name: '', email: '', role: 'Chef', status: 'Active' }
+  newStaff.value = { name: '', email: '', role: 'CHEF', status: 'Active' }
   showAddDialog.value = true
 }
 
@@ -88,6 +92,30 @@ function roleTextColor(role) {
   return map[role] || '#555'
 }
 
+function roleLabel(role) {
+  const map = {
+    CHEF: tr('CHEF', 'ចុងភៅ'),
+    ADMIN: tr('ADMIN', 'រដ្ឋបាល'),
+    WAITER: tr('WAITER', 'អ្នកបម្រើ'),
+    MANAGER: tr('MANAGER', 'អ្នកគ្រប់គ្រង'),
+  }
+  return map[role] || role
+}
+
+function statusLabel(status) {
+  return status === 'Active' ? tr('Active', 'កំពុងប្រើ') : tr('Inactive', 'មិនដំណើរការ')
+}
+
+function formatDate(value) {
+  const dt = new Date(value)
+  if (Number.isNaN(dt.getTime())) return value
+  return dt.toLocaleDateString(isKhmer.value ? 'km-KH' : 'en-US', {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+  })
+}
+
 // ── Pagination ─────────────────────────────────────────
 const page      = ref(1)
 const perPage   = 8
@@ -104,19 +132,19 @@ const pagedStaff = computed(() => {
   <div class="action-bar">
     <div class="search-bar">
       <v-icon size="17" color="#9aabbd">mdi-magnify</v-icon>
-      <input v-model="search" placeholder="Search staff by name or role..." />
+      <input v-model="search" :placeholder="tr('Search staff by name or role...', 'ស្វែងរកបុគ្គលិកតាមឈ្មោះ ឬ តួនាទី...')" />
     </div>
     <button class="btn-filter" @click="() => {}">
       <v-icon size="16">mdi-filter-outline</v-icon>
-      Filters
+      {{ tr('Filters', 'តម្រង') }}
     </button>
     <button class="btn-export" @click="() => {}">
       <v-icon size="16">mdi-download-outline</v-icon>
-      Export
+      {{ tr('Export', 'នាំចេញ') }}
     </button>
     <button class="btn-add" @click="openAddDialog">
       <v-icon size="17" color="#063824">mdi-plus</v-icon>
-      Add Staff
+      {{ tr('Add Staff', 'បន្ថែមបុគ្គលិក') }}
     </button>
   </div>
 
@@ -124,11 +152,11 @@ const pagedStaff = computed(() => {
   <div class="table-card mb-4">
 
     <div class="table-head">
-      <div class="th">Name</div>
-      <div class="th">Role</div>
-      <div class="th">Date Joined</div>
-      <div class="th">Status</div>
-      <div class="th">Actions</div>
+      <div class="th">{{ tr('Name', 'ឈ្មោះ') }}</div>
+      <div class="th">{{ tr('Role', 'តួនាទី') }}</div>
+      <div class="th">{{ tr('Date Joined', 'ថ្ងៃចូលបម្រើ') }}</div>
+      <div class="th">{{ tr('Status', 'ស្ថានភាព') }}</div>
+      <div class="th">{{ tr('Actions', 'សកម្មភាព') }}</div>
     </div>
 
     <div v-for="member in pagedStaff" :key="member.id" class="table-row">
@@ -147,25 +175,25 @@ const pagedStaff = computed(() => {
       <!-- Role -->
       <div>
         <span class="role-chip" :style="{ background: roleColor(member.role), color: roleTextColor(member.role) }">
-          {{ member.role }}
+          {{ roleLabel(member.role) }}
         </span>
       </div>
 
       <!-- Date Joined -->
-      <p class="date-cell">{{ member.dateJoined }}</p>
+      <p class="date-cell">{{ formatDate(member.dateJoined) }}</p>
 
       <!-- Status -->
       <div class="d-flex align-center ga-1">
         <span class="status-dot" :style="{ background: member.status === 'Active' ? '#0f9e5f' : '#b0bec5' }" />
-        <span :class="member.status === 'Active' ? 'status-active' : 'status-inactive'">{{ member.status }}</span>
+        <span :class="member.status === 'Active' ? 'status-active' : 'status-inactive'">{{ statusLabel(member.status) }}</span>
       </div>
 
       <!-- Actions -->
       <div class="d-flex align-center ga-1">
-        <button class="act-btn" @click="openEditDialog(member)" title="Edit">
+        <button class="act-btn" @click="openEditDialog(member)" :title="tr('Edit', 'កែប្រែ')">
           <v-icon size="17">mdi-playlist-edit</v-icon>
         </button>
-        <button class="act-btn del" @click="deleteStaff(member.id)" title="Delete">
+        <button class="act-btn del" @click="deleteStaff(member.id)" :title="tr('Delete', 'លុប')">
           <v-icon size="17">mdi-delete-outline</v-icon>
         </button>
       </div>
@@ -175,14 +203,14 @@ const pagedStaff = computed(() => {
     <!-- Empty state -->
     <div v-if="pagedStaff.length === 0" class="empty-state">
       <v-icon size="36" color="#d1dce4">mdi-account-search-outline</v-icon>
-      <p>No staff found</p>
+      <p>{{ tr('No staff found', 'មិនមានបុគ្គលិក') }}</p>
     </div>
 
     <!-- Pagination -->
     <div class="pagination">
       <span class="showing-text">
-        Showing {{ filteredStaff.length === 0 ? 0 : (page - 1) * perPage + 1 }}–{{ Math.min(page * perPage, filteredStaff.length) }}
-        of {{ filteredStaff.length }} staff members
+        {{ tr('Showing', 'កំពុងបង្ហាញ') }} {{ filteredStaff.length === 0 ? 0 : (page - 1) * perPage + 1 }}-{{ Math.min(page * perPage, filteredStaff.length) }}
+        {{ tr('of', 'នៃ') }} {{ filteredStaff.length }} {{ tr('staff members', 'បុគ្គលិក') }}
       </span>
       <div class="d-flex align-center ga-1">
         <button class="pag-btn" :disabled="page <= 1" @click="page--">
@@ -209,7 +237,7 @@ const pagedStaff = computed(() => {
         <v-icon color="#0f9e5f" size="22">mdi-account-check-outline</v-icon>
       </v-avatar>
       <div>
-        <p class="summary-label">Active Staff</p>
+        <p class="summary-label">{{ tr('Active Staff', 'បុគ្គលិកកំពុងប្រើ') }}</p>
         <p class="summary-value">{{ activeCount }}</p>
       </div>
     </div>
@@ -219,7 +247,7 @@ const pagedStaff = computed(() => {
         <v-icon color="#3c6bc4" size="22">mdi-silverware-fork-knife</v-icon>
       </v-avatar>
       <div>
-        <p class="summary-label">Kitchen Team</p>
+        <p class="summary-label">{{ tr('Kitchen Team', 'ក្រុមចុងភៅ') }}</p>
         <p class="summary-value">{{ kitchenCount }}</p>
       </div>
     </div>
@@ -229,7 +257,7 @@ const pagedStaff = computed(() => {
         <v-icon color="#0f9e5f" size="22">mdi-map-marker-outline</v-icon>
       </v-avatar>
       <div>
-        <p class="summary-label">Service Team</p>
+        <p class="summary-label">{{ tr('Service Team', 'ក្រុមបម្រើ') }}</p>
         <p class="summary-value">{{ serviceCount }}</p>
       </div>
     </div>
@@ -239,36 +267,36 @@ const pagedStaff = computed(() => {
   <!-- ── Add Staff Dialog ── -->
   <v-dialog v-model="showAddDialog" max-width="440" rounded="xl">
     <v-card rounded="xl" class="pa-6" elevation="0">
-      <p class="dialog-title mb-5">Add New Staff</p>
+      <p class="dialog-title mb-5">{{ tr('Add New Staff', 'បន្ថែមបុគ្គលិកថ្មី') }}</p>
       <div class="mb-3">
-        <label class="form-label">Full Name</label>
-        <input class="form-input" v-model="newStaff.name" placeholder="e.g. Marcus Nguyen" />
+        <label class="form-label">{{ tr('Full Name', 'ឈ្មោះពេញ') }}</label>
+        <input class="form-input" v-model="newStaff.name" :placeholder="tr('e.g. Marcus Nguyen', 'ឧ. ម៉ាកុស ង្វៀន')" />
       </div>
       <div class="mb-3">
-        <label class="form-label">Email</label>
-        <input class="form-input" v-model="newStaff.email" placeholder="e.g. marcus@mlupdong.com" type="email" />
+        <label class="form-label">{{ tr('Email', 'អ៊ីមែល') }}</label>
+        <input class="form-input" v-model="newStaff.email" :placeholder="tr('e.g. marcus@mlupdong.com', 'ឧ. marcus@mlupdong.com')" type="email" />
       </div>
       <div class="d-flex ga-3 mb-3">
         <div style="flex:1">
-          <label class="form-label">Role</label>
+          <label class="form-label">{{ tr('Role', 'តួនាទី') }}</label>
           <select class="form-input" v-model="newStaff.role">
-            <option>Chef</option>
-            <option>Waiter</option>
-            <option>Admin</option>
-            <option>Manager</option>
+            <option value="CHEF">{{ tr('Chef', 'ចុងភៅ') }}</option>
+            <option value="WAITER">{{ tr('Waiter', 'អ្នកបម្រើ') }}</option>
+            <option value="ADMIN">{{ tr('Admin', 'រដ្ឋបាល') }}</option>
+            <option value="MANAGER">{{ tr('Manager', 'អ្នកគ្រប់គ្រង') }}</option>
           </select>
         </div>
         <div style="flex:1">
-          <label class="form-label">Status</label>
+          <label class="form-label">{{ tr('Status', 'ស្ថានភាព') }}</label>
           <select class="form-input" v-model="newStaff.status">
-            <option>Active</option>
-            <option>Inactive</option>
+            <option value="Active">{{ tr('Active', 'កំពុងប្រើ') }}</option>
+            <option value="Inactive">{{ tr('Inactive', 'មិនដំណើរការ') }}</option>
           </select>
         </div>
       </div>
       <div class="d-flex justify-end ga-2 mt-4">
-        <button class="btn-cancel" @click="showAddDialog = false">Cancel</button>
-        <button class="btn-save" @click="addStaff">Add Staff</button>
+        <button class="btn-cancel" @click="showAddDialog = false">{{ tr('Cancel', 'បោះបង់') }}</button>
+        <button class="btn-save" @click="addStaff">{{ tr('Add Staff', 'បន្ថែមបុគ្គលិក') }}</button>
       </div>
     </v-card>
   </v-dialog>
@@ -276,36 +304,36 @@ const pagedStaff = computed(() => {
   <!-- ── Edit Staff Dialog ── -->
   <v-dialog v-model="showEditDialog" max-width="440" rounded="xl">
     <v-card rounded="xl" class="pa-6" elevation="0">
-      <p class="dialog-title mb-5">Edit Staff</p>
+      <p class="dialog-title mb-5">{{ tr('Edit Staff', 'កែប្រែបុគ្គលិក') }}</p>
       <div class="mb-3">
-        <label class="form-label">Full Name</label>
-        <input class="form-input" v-model="editForm.name" placeholder="Full name" />
+        <label class="form-label">{{ tr('Full Name', 'ឈ្មោះពេញ') }}</label>
+        <input class="form-input" v-model="editForm.name" :placeholder="tr('Full name', 'ឈ្មោះពេញ')" />
       </div>
       <div class="mb-3">
-        <label class="form-label">Email</label>
-        <input class="form-input" v-model="editForm.email" placeholder="Email" type="email" />
+        <label class="form-label">{{ tr('Email', 'អ៊ីមែល') }}</label>
+        <input class="form-input" v-model="editForm.email" :placeholder="tr('Email', 'អ៊ីមែល')" type="email" />
       </div>
       <div class="d-flex ga-3 mb-3">
         <div style="flex:1">
-          <label class="form-label">Role</label>
+          <label class="form-label">{{ tr('Role', 'តួនាទី') }}</label>
           <select class="form-input" v-model="editForm.role">
-            <option>CHEF</option>
-            <option>WAITER</option>
-            <option>ADMIN</option>
-            <option>MANAGER</option>
+            <option value="CHEF">{{ tr('CHEF', 'ចុងភៅ') }}</option>
+            <option value="WAITER">{{ tr('WAITER', 'អ្នកបម្រើ') }}</option>
+            <option value="ADMIN">{{ tr('ADMIN', 'រដ្ឋបាល') }}</option>
+            <option value="MANAGER">{{ tr('MANAGER', 'អ្នកគ្រប់គ្រង') }}</option>
           </select>
         </div>
         <div style="flex:1">
-          <label class="form-label">Status</label>
+          <label class="form-label">{{ tr('Status', 'ស្ថានភាព') }}</label>
           <select class="form-input" v-model="editForm.status">
-            <option>Active</option>
-            <option>Inactive</option>
+            <option value="Active">{{ tr('Active', 'កំពុងប្រើ') }}</option>
+            <option value="Inactive">{{ tr('Inactive', 'មិនដំណើរការ') }}</option>
           </select>
         </div>
       </div>
       <div class="d-flex justify-end ga-2 mt-4">
-        <button class="btn-cancel" @click="showEditDialog = false">Cancel</button>
-        <button class="btn-save" @click="saveEdit">Save Changes</button>
+        <button class="btn-cancel" @click="showEditDialog = false">{{ tr('Cancel', 'បោះបង់') }}</button>
+        <button class="btn-save" @click="saveEdit">{{ tr('Save Changes', 'រក្សាទុកការផ្លាស់ប្តូរ') }}</button>
       </div>
     </v-card>
   </v-dialog>
