@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
@@ -27,8 +28,13 @@ Route::prefix('api/auth')->group(function () {
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
+        $name = trim($validated['name']);
+        $firstName = Str::of($name)->before(' ')->value();
+        $lastName = trim(Str::of($name)->after(' ')->value());
+
         $user = User::create([
-            'name' => $validated['name'],
+            'first_name' => $firstName,
+            'last_name' => $lastName !== '' ? $lastName : $firstName,
             'email' => $validated['email'],
             'role' => 'admin',
             'password' => Hash::make($validated['password']),
