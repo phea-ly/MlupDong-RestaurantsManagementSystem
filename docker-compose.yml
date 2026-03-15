@@ -3,7 +3,7 @@
 services:
   backend:
     image: ${DOCKER_USERNAME}/image_name:latest
-    container_name: container_name
+    container_name: mlopdong_backend
     restart: always
     networks: [web]
     env_file: ./backend/.env
@@ -22,14 +22,14 @@ services:
 
 
   frontend:
-    image: ${DOCKER_USERNAME}/image_name:latest
-    container_name: container_name
+    image: ${DOCKER_USERNAME}/mlupdong_frontend:latest
+    container_name: mlopdong_frontend
     restart: always
     networks: [web]
 
   webserver:
-    image: ${DOCKER_USERNAME}/image_name:latest
-    container_name: container_name
+    image: ${DOCKER_USERNAME}/mlupdong_webserver:latest
+    container_name: mlopdong_webserver
     restart: unless-stopped
     ports: ["80:80", "443:443"]
     volumes:
@@ -44,12 +44,12 @@ services:
 
   db:
     image: mysql
-    container_name: container_name
+    container_name: mlopdong_container_db
     restart: always
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE}      # Was MYSQL_DB (wrong env var name)
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: mlopdong_db # Was MYSQL_DB (wrong env var name)
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
     volumes:
       - mysql_data:/var/lib/mysql         # Was postgresql path
     networks: [web]
@@ -61,7 +61,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: container_name
+    container_name: mlupdong_container_redis
     restart: always
     command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes: [redis_data:/data]
@@ -74,10 +74,10 @@ services:
 
 networks:
   web:
-    external: true
+    driver: bridge
 
 volumes:
   backend_storage:
-  postgres_data:
+  mysql_data:
   redis_data:
 

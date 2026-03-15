@@ -30,11 +30,5 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 RUN chown -R www-data:www-data storage bootstrap/cache \
  && chmod -R 775 storage bootstrap/cache
 
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
 
 EXPOSE 9000
-
-
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
-
