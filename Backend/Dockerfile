@@ -32,5 +32,5 @@ RUN chown -R www-data:www-data storage bootstrap/cache \
 
 RUN sed -i 's/listen = 9000/listen = 0.0.0.0:9000/' /usr/local/etc/php-fpm.d/zz-docker.conf
 
-EXPOSE 9000 6001
+EXPOSE 9000
 

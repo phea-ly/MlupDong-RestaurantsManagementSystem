@@ -32,7 +32,8 @@ jobs:
           context: ./Frontend
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/mlupdong_backend:latest
+            ${{ secrets.DOCKER_USERNAME }}/mlupdong_frontend:latest
+            ${{ secrets.DOCKER_USERNAME }}/mlupdong_frontend:${{ github.sha }}
 
   deploy:
     needs: build-and-push
