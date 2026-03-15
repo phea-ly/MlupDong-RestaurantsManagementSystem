@@ -2,7 +2,7 @@
 # docker-compose.yml
 services:
   backend:
-    image: ${DOCKER_USERNAME}/image_name:latest
+    image: ${DOCKER_USERNAME}/mlupdong_backend:latest
     container_name: mlopdong_backend
     restart: always
     networks: [web]
