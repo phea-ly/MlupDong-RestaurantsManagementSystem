@@ -1,142 +1,116 @@
 <script setup>
-import { computed } from 'vue'
-import { useI18n } from '@/composables/useI18n'
+import { ref, computed } from 'vue'
 
 const props = defineProps({
-  item: {
-    type: Object,
-    required: true
-  }
+  item: { type: Object, required: true },
+})
+const emit = defineEmits(['toggle-status', 'edit', 'delete'])
+
+const imgError = ref(false)
+
+const imageUrl = computed(() => {
+  const raw = props.item.image
+  
+  // DEBUG — remove after fixing
+  console.log('[MenuItemCard] image raw:', JSON.stringify(raw))
+  
+  if (imgError.value || !raw) return null
+  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw
+
+  const base = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000')
+    .replace(/\/api\/?$/, '')
+    .replace(/\/$/, '')
+
+  const path = '/' + raw.replace(/^\/+/, '')
+  const url  = `${base}${path}`
+  
+  console.log('[MenuItemCard] resolved url:', url)  // DEBUG
+  
+  return url
 })
 
-const emit = defineEmits(['toggle-status', 'edit', 'delete'])
-const { locale } = useI18n()
-const isKhmer = computed(() => locale.value === 'km')
-
-function getDisplayBadge(item) {
-  if (!item.badge) return ''
-  if (!isKhmer.value) return item.badge
-  const badgeMap = {
-    'BEST SELLER': 'លក់ដាច់ជាងគេ',
-    'SOLD OUT': 'អស់ស្តុក',
-    'POPULAR': 'ពេញនិយម',
-    'LIMITED TIME': 'មានពេលកំណត់',
-    'BEST VALUE': 'តម្លៃល្អបំផុត',
-    DAILY: 'ប្រចាំថ្ងៃ',
-  }
-  return badgeMap[item.badge] || item.badge
-}
+const formattedPrice = computed(() => Number(props.item.price).toFixed(2))
+const categoryName   = computed(() => props.item.category?.category_name ?? null)
 </script>
 
 <template>
-  <v-card rounded="lg" border class="menu-item-card">
-    <div class="image-container">
-      <v-img :src="item.image" height="200" cover />
+  <v-card
+    rounded="xl"
+    elevation="0"
+    border
+    :class="{ 'opacity-60': !item.status }"
+    style="transition: box-shadow 0.2s, transform 0.2s"
+    hover
+  >
+    <!-- Image -->
+    <div style="position:relative; height:160px; overflow:hidden; background:#f2f5f8;">
+      <v-img
+        v-if="imageUrl"
+        :src="imageUrl"
+        height="160"
+        cover
+        @error="imgError = true"
+      />
+      <div v-else class="d-flex align-center justify-center" style="height:160px;">
+        <v-icon size="48" color="grey-lighten-2">mdi-image-off-outline</v-icon>
+      </div>
+
+      <!-- Status badge -->
       <v-chip
-        v-if="item.badge"
-        size="small"
-        :color="item.badge === 'SOLD OUT' ? '#ff5757' : '#14d886'"
-        class="badge-chip"
+        :color="item.status ? 'success' : 'error'"
+        variant="tonal"
+        size="x-small"
+        style="position:absolute; top:10px; right:10px;"
       >
-        {{ getDisplayBadge(item) }}
+        <template #prepend><v-icon size="8">mdi-circle</v-icon></template>
+        {{ item.status ? 'Active' : 'Inactive' }}
+      </v-chip>
+
+      <!-- Category badge -->
+      <v-chip
+        v-if="categoryName"
+        color="black"
+        variant="flat"
+        size="x-small"
+        style="position:absolute; bottom:10px; left:10px; opacity:0.75;"
+      >
+        {{ categoryName }}
       </v-chip>
     </div>
 
-    <v-card-text class="pa-4">
-      <div class="d-flex justify-space-between align-start mb-2">
-        <div class="flex-grow-1">
-          <h3 class="item-name">{{ isKhmer && item.nameKm ? item.nameKm : item.name }}</h3>
-          <p class="item-description">{{ isKhmer && item.descriptionKm ? item.descriptionKm : item.description }}</p>
-        </div>
-        <p class="item-price">${{ item.price.toFixed(2) }}</p>
+    <v-card-text class="pb-2">
+      <div class="text-subtitle-2 font-weight-black text-truncate mb-1">{{ item.name }}</div>
+      <div class="text-caption text-medium-emphasis" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:32px;">
+        {{ item.description || 'No description provided.' }}
       </div>
-
-      <div class="d-flex align-center justify-space-between mt-3">
-        <div class="d-flex align-center ga-2">
-          <span class="status-label">{{ isKhmer ? 'ស្ថានភាព' : 'STATUS' }}</span>
-          <v-switch
-            :model-value="item.status"
-            color="#14d886"
-            density="compact"
-            hide-details
-            @update:model-value="emit('toggle-status', item.id)"
-          />
-        </div>
-
-        <div class="d-flex ga-1">
-          <v-btn
-            icon
-            size="small"
-            variant="text"
-            color="#14d886"
-            @click="emit('edit', item)"
-          >
-            <v-icon size="18">mdi-pencil</v-icon>
-          </v-btn>
-          <v-btn
-            icon
-            size="small"
-            variant="text"
-            color="#ff5757"
-            @click="emit('delete', item.id)"
-          >
-            <v-icon size="18">mdi-delete</v-icon>
-          </v-btn>
-        </div>
-      </div>
+      <div class="text-h6 font-weight-black mt-2">${{ formattedPrice }}</div>
     </v-card-text>
+
+    <v-divider />
+
+    <v-card-actions class="px-3 py-2">
+      <!-- Toggle availability -->
+      <v-btn
+        :color="item.status ? 'success' : 'default'"
+        variant="tonal"
+        size="small"
+        rounded="lg"
+        :prepend-icon="item.status ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
+        @click="emit('toggle-status', item.id)"
+      >
+        {{ item.status ? 'Available' : 'Unavailable' }}
+      </v-btn>
+
+      <v-spacer />
+
+      <v-btn icon size="small" variant="text" color="primary" @click="emit('edit', item)">
+        <v-icon size="18">mdi-pencil-outline</v-icon>
+        <v-tooltip activator="parent" location="top">Edit</v-tooltip>
+      </v-btn>
+      <v-btn icon size="small" variant="text" color="error" @click="emit('delete', item.id)">
+        <v-icon size="18">mdi-delete-outline</v-icon>
+        <v-tooltip activator="parent" location="top">Delete</v-tooltip>
+      </v-btn>
+    </v-card-actions>
   </v-card>
 </template>
-
-<style scoped>
-.menu-item-card {
-  height: 100%;
-  transition: all 0.2s;
-}
-
-.menu-item-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.image-container {
-  position: relative;
-}
-
-.badge-chip {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  font-weight: 700;
-  font-size: 10px;
-}
-
-.item-name {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 0 0 4px;
-  color: #0f1d38;
-}
-
-.item-description {
-  font-size: 12px;
-  color: #71839b;
-  margin: 0;
-}
-
-.item-price {
-  font-size: 18px;
-  font-weight: 700;
-  color: #14d886;
-  margin: 0;
-  white-space: nowrap;
-  margin-left: 12px;
-}
-
-.status-label {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  color: #76879f;
-}
-</style>

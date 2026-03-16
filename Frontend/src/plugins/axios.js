@@ -11,17 +11,15 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// src/plugins/axios.js — fix the interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Only auto-redirect on 401 if we're NOT on the login page
     if (error.response?.status === 401 && !error.config.url.includes('/login')) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       window.location.href = '/login'
     }
-    return Promise.reject(error)  // ← always reject so component catch can handle it
+    return Promise.reject(error) 
   }
 )
 
