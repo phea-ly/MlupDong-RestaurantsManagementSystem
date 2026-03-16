@@ -25,6 +25,10 @@ Backend:
 ```bash
 cd Backend
 composer install
+composer require tymon/jwt-auth
+php artisan optimize:clear
+php artisan vendor:publish --provider="Tymon\JWTAuth\Providers\LaravelServiceProvider"
+
 ```
 
 Frontend:

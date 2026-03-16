@@ -43,6 +43,6 @@ Route::middleware('jwt')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::get('/user',  [AuthController::class, 'getUser']);
-    Route::put('/user',  [AuthController::class, 'updateUser']); // plain JSON (no file)
-    Route::post('/user', [AuthController::class, 'updateUser']); // ✅ file upload (avatar)
+    Route::put('/user',  [AuthController::class, 'updateUser']);
+    Route::post('/user', [AuthController::class, 'updateUser']); 
 });

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import api from './api'
 
 <<<<<<< HEAD
@@ -18,3 +19,6 @@ export const deleteUser = (userId) => {
 }
 =======
 >>>>>>> c4255a11263de64539af4715253de56ebbc217b2
+=======
+export { default } from './api'
+>>>>>>> 0662d3b81fcaf3c26c949bdb09290af9959f3eab
