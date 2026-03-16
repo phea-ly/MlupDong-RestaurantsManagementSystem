@@ -52,7 +52,7 @@ services:
     environment:
       MYSQL_DATABASE: mlupdong_db # Was MYSQL_DB (wrong env var name)
       MYSQL_USER: root
-      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
     volumes:
       - mysql_data:/var/lib/mysql         # Was postgresql path
     networks: [web]
