@@ -1,8 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useMenuStore } from '@/stores'
+import { useRouter } from 'vue-router'
+import { useMenuStore, useCartStore } from '@/stores'
 
 const menuStore = useMenuStore()
+const cartStore = useCartStore()
+const router = useRouter()
 
 const searchQuery = ref('')
 const activeCategory = ref('All')
@@ -45,23 +48,9 @@ const popularDishes = computed(() => filteredItems.value.length > 1 ? filteredIt
 
 const fallbackImg = 'https://images.unsplash.com/photo-1548943487-a2e4142f6ab3?q=80&w=600&auto=format&fit=crop'
 
-// Simple Cart State
-const cart = ref([])
-const cartCount = computed(() => cart.value.reduce((acc, item) => acc + item.quantity, 0))
-const cartTotal = computed(() => cart.value.reduce((acc, item) => acc + (item.price * item.quantity), 0))
-
+// Cart logic handled by store now
 function addToCart(item, event) {
-  const existing = cart.value.find(i => i.id === item.id)
-  if (existing) {
-    existing.quantity++
-  } else {
-    cart.value.push({
-      id: item.id,
-      name: item.name,
-      price: parseFloat(item.price || 0),
-      quantity: 1
-    })
-  }
+  cartStore.addToCart(item)
 
   // Animate the button pop
   if (event && event.currentTarget) {
@@ -159,9 +148,9 @@ function addToCart(item, event) {
 
         <template v-else>
           <!-- Featured Dish -->
-          <div v-if="featuredItem" class="px-4 mb-6 mt-2 fade-in">
-            <h2 class="text-subtitle-1 font-weight-bold mb-3 text-grey-darken-3">Featured</h2>
-            <v-card class="featured-card rounded-xl pa-0 elevation-2 pb-4" v-ripple>
+          <div v-if="featuredItem" class="px-4 mb-8 mt-2 fade-in">
+            <h2 class="text-h6 font-weight-black mb-3 text-grey-darken-4">Featured</h2>
+            <v-card class="featured-card rounded-xl pa-0 elevation-0 pb-4 bg-white" v-ripple>
               <v-img
                 :src="featuredItem.image || fallbackImg"
                 height="220"
@@ -191,24 +180,24 @@ function addToCart(item, event) {
 
           <!-- Popular Dishes -->
           <div v-if="popularDishes.length" class="px-4 pb-24 fade-in">
-            <h2 class="text-subtitle-1 font-weight-bold mb-4 text-grey-darken-3">Must Try</h2>
+            <h2 class="text-h6 font-weight-black mb-4 text-grey-darken-4">Must Try</h2>
             
             <v-card 
               v-for="item in popularDishes" 
               :key="item.id" 
-              class="popular-card rounded-xl pa-2 mb-4 elevation-1 d-flex align-stretch" 
+              class="popular-card rounded-xl pa-3 mb-4 d-flex align-stretch bg-white" 
               v-ripple
             >
-              <v-img :src="item.image || fallbackImg" max-width="90" class="rounded-lg mr-4 flex-shrink-0" cover></v-img>
-              <div class="flex-grow-1 py-1 pr-2 d-flex flex-column justify-space-between">
+              <v-img :src="item.image || fallbackImg" width="110" height="110" class="rounded-xl mr-4 flex-shrink-0 bg-grey-lighten-4" cover></v-img>
+              <div class="flex-grow-1 py-1 pr-1 d-flex flex-column justify-space-between">
                 <div>
-                  <div class="font-weight-bold mb-1 line-clamp-1 text-grey-darken-4" style="font-size: 15px;">{{ item.name }}</div>
-                  <div class="text-caption text-grey-darken-1 mb-2 line-clamp-2" style="line-height: 1.3;">{{ item.description || 'Delightful and delicious.' }}</div>
+                  <div class="font-weight-bold mb-1 line-clamp-2 text-grey-darken-4" style="font-size: 16px; line-height: 1.25;">{{ item.name }}</div>
+                  <div class="text-caption text-grey-darken-1 mb-2 line-clamp-1" style="line-height: 1.3;">{{ item.description || 'Taste the best from our chef.' }}</div>
                 </div>
                 <div class="d-flex align-center justify-space-between mt-auto pt-1">
                   <div class="font-weight-black text-subtitle-1 text-green-darken-4">${{ parseFloat(item.price || 0).toFixed(2) }}</div>
-                  <v-btn icon color="#eef5f0" size="34" class="elevation-0 btn-add-animated" @click="addToCart(item, $event)">
-                    <v-icon color="#215732" size="20">mdi-plus</v-icon>
+                  <v-btn icon color="#215732" size="36" class="elevation-2 btn-add-animated" @click="addToCart(item, $event)">
+                    <v-icon color="#ffffff" size="20">mdi-plus</v-icon>
                   </v-btn>
                 </div>
               </div>
@@ -220,19 +209,19 @@ function addToCart(item, event) {
 
     <!-- Floating Cart -->
     <v-fade-transition>
-      <div v-if="cartCount > 0" class="fixed-bottom-cart px-4 pb-6">
-        <v-card class="cart-pill rounded-pill pa-3 px-5 d-flex align-center" color="#215732" elevation="8" v-ripple>
+      <div v-if="cartStore.cartCount > 0" class="fixed-bottom-cart px-4 pb-6">
+        <v-card class="cart-pill rounded-pill pa-3 px-5 d-flex align-center" color="#215732" elevation="8" v-ripple @click="router.push('/customer-order')">
           <div class="position-relative mr-5 cart-icon-box">
             <v-icon color="white" size="28">mdi-shopping-outline</v-icon>
             <!-- Cart counter pop animation dynamically triggers when length changes via :key -->
-            <div :key="cartCount" class="cart-badge scale-pop">{{ cartCount }}</div>
+            <div :key="cartStore.cartCount" class="cart-badge scale-pop">{{ cartStore.cartCount }}</div>
           </div>
           <div class="text-white flex-grow-1">
-            <div class="text-caption font-weight-medium" style="opacity: 0.85; line-height: 1.2;">{{ cartCount }} Items</div>
+            <div class="text-caption font-weight-medium" style="opacity: 0.85; line-height: 1.2;">{{ cartStore.cartCount }} Items</div>
             <div class="font-weight-bold text-subtitle-1" style="line-height: 1.2;">View Order</div>
           </div>
           <div class="text-white text-h6 font-weight-black text-right pt-1 d-flex align-center">
-            ${{ cartTotal.toFixed(2) }}
+            ${{ cartStore.cartTotal.toFixed(2) }}
             <v-icon size="20" class="ml-2" style="opacity: 0.8">mdi-chevron-right</v-icon>
           </div>
         </v-card>
@@ -310,8 +299,8 @@ function addToCart(item, event) {
 .rating-pill { background-color: #f8faf9; border: 1px solid #e8edea; }
 
 .popular-card {
-  box-shadow: 0 6px 20px rgba(0,0,0,0.03) !important;
-  border: 1px solid #f0f4f2;
+  box-shadow: 0 8px 24px rgba(149, 157, 165, 0.1) !important;
+  border: 1px solid rgba(0,0,0,0.02);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .popular-card:active { transform: scale(0.98); }

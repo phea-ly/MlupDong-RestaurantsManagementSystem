@@ -68,6 +68,11 @@ const routes = [
     component: () => import('@/views/costomer/menuView.vue'),
   },
   {
+    path: '/customer-order',
+    name: 'customer-order',
+    component: () => import('@/views/costomer/order.vue'),
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/login',
   },
