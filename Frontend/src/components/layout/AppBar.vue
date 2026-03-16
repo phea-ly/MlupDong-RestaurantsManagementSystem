@@ -3,32 +3,29 @@ import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRouter } from 'vue-router'
-import EditProfileDialog from '@/components/user/Editprofiledialog.vue'
 
 const props = defineProps({
   title:       { type: String, required: true },
   subtitle:    { type: String, required: true },
   actionLabel: { type: String, default: ''    },
 })
-const emit = defineEmits(['action'])
+const emit = defineEmits(['action', 'open-edit'])
 
 const auth   = useAuthStore()
 const router = useRouter()
 
 const { user } = storeToRefs(auth)
 
-const imgError          = ref(false)
-const showProfileDialog = ref(false)
-
-// ── Avatar URL — recomputes when user.avatar changes ──────────────
+const imgError  = ref(false)
 const avatarUrl = computed(() => {
   if (imgError.value) return null
   const url = user.value?.avatar ?? null
   if (!url) return null
-  if (url.startsWith('http://') || url.startsWith('https://')) return url
-  const base = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000')
-    .replace(/\/api\/?$/, '').replace(/\/$/, '')
-  return `${base}/${url.replace(/^\/+/, '')}`
+  if (url.startsWith('/storage/')) {
+    const base = import.meta.env.VITE_API_URL?? 'http://localhost:8000/api'
+    return `${base}${url}`
+  }
+  return url
 })
 
 const profileName = computed(() => {
@@ -38,7 +35,7 @@ const profileName = computed(() => {
 })
 
 const profileRole = computed(() =>
-  user.value?.role === 'ADMINISTRATOR' ? 'Administrator' : 'Manager'
+  auth.user?.role_id ? 'Administrator' : 'Manager'
 )
 
 const profileInitials = computed(() => {
@@ -46,24 +43,6 @@ const profileInitials = computed(() => {
   const l = user.value?.last_name?.[0]  ?? 'U'
   return (f + l).toUpperCase()
 })
-
-// ── Use the store's own updateProfile action ───────────────────────
-// The store does: this.user = { ...this.user, ...serverUser }
-// which replaces the object entirely → storeToRefs re-triggers ✅
-async function handleProfileSaved(payload) {
-  try {
-    await auth.updateProfile({
-      first_name: payload.firstName,
-      last_name:  payload.lastName,
-      email:      payload.email,
-      // Pass the File object if a new avatar was selected
-      ...(payload.avatarFile ? { avatar: payload.avatarFile } : {}),
-    })
-  } catch (e) {
-    console.error('Profile update failed', e)
-  }
-  imgError.value = false
-}
 
 function logout() {
   auth.logout()
@@ -84,7 +63,7 @@ function logout() {
         <v-btn
           v-if="actionLabel"
           color="#0f9e5f" variant="flat" rounded="lg" size="small"
-          prepend-icon="mdi-plus"
+          :prepend-icon="'mdi-plus'"
           @click="emit('action')"
         >
           {{ actionLabel }}
@@ -101,18 +80,17 @@ function logout() {
             <v-avatar
               v-bind="mp"
               size="36"
-              style="cursor:pointer; box-shadow:0 3px 10px rgba(15,158,95,0.28); overflow:hidden;"
+              style="cursor:pointer; box-shadow:0 3px 10px rgba(15,158,95,0.28);"
             >
               <v-img
                 v-if="avatarUrl"
-                :key="avatarUrl"
                 :src="avatarUrl"
                 cover
                 @error="imgError = true"
               />
               <span
                 v-else
-                style="background:linear-gradient(135deg,#19e092,#0f9e5f);width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#063824;"
+                style="background:linear-gradient(135deg,#19e092,#0f9e5f); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#063824;"
               >{{ profileInitials }}</span>
             </v-avatar>
           </template>
@@ -122,16 +100,10 @@ function logout() {
             <v-list-item class="pt-4 pb-3" lines="two">
               <template #prepend>
                 <v-avatar size="44" style="overflow:hidden;">
-                  <v-img
-                    v-if="avatarUrl"
-                    :key="avatarUrl"
-                    :src="avatarUrl"
-                    cover
-                    @error="imgError = true"
-                  />
+                  <v-img v-if="avatarUrl" :src="avatarUrl" cover @error="imgError = true" />
                   <span
                     v-else
-                    style="background:linear-gradient(135deg,#19e092,#0f9e5f);width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#063824;"
+                    style="background:linear-gradient(135deg,#19e092,#0f9e5f); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; color:#063824;"
                   >{{ profileInitials }}</span>
                 </v-avatar>
               </template>
@@ -152,7 +124,7 @@ function logout() {
                 prepend-icon="mdi-account-edit-outline"
                 title="Edit Profile"
                 rounded="lg"
-                @click="showProfileDialog = true"
+                @click="emit('open-edit', 'profile')"
               />
             </v-list>
 
@@ -174,10 +146,4 @@ function logout() {
       </div>
     </template>
   </v-app-bar>
-
-  <EditProfileDialog
-    v-model="showProfileDialog"
-    :user="user"
-    @saved="handleProfileSaved"
-  />
 </template>
