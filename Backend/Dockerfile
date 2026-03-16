@@ -1,4 +1,5 @@
-FROM php:8.3-fpm
+# Backend/Dockerfile
+FROM php:8.4-fpm
 
 WORKDIR /var/www/html
 
@@ -25,7 +26,7 @@ COPY . .
 RUN cp .env.example .env
 
 # Install dependencies without scripts
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --verbose
 
 RUN chown -R www-data:www-data storage bootstrap/cache \
  && chmod -R 775 storage bootstrap/cache
