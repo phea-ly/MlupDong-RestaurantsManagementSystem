@@ -67,7 +67,7 @@
                 -p ${{ secrets.DOCKER_PASSWORD }}
               docker compose pull
               docker compose up -d --remove-orphans
-              docker exec mlopdong_backend php artisan migrate --force
-              docker exec mlopdong_backend php artisan cache:clear
-              docker exec mlopdong_backend php artisan config:cache
+              docker exec mlupdong_backend php artisan migrate --force
+              docker exec mlupdong_backend php artisan cache:clear
+              docker exec mlupdong_backend php artisan config:cache
               echo "✅ Deployment complete!" 

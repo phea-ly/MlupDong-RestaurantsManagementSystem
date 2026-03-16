@@ -3,7 +3,7 @@
 services:
   backend:
     image: mesasmos/mlupdong_backend:latest
-    container_name: mlopdong_backend
+    container_name: mlupdong_backend
     restart: always
     networks: [web]
     env_file: ./backend/.env
@@ -23,13 +23,13 @@ services:
 
   frontend:
     image: mesasmos/mlupdong_frontend:latest
-    container_name: mlopdong_frontend
+    container_name: mlupdong_frontend
     restart: always
     networks: [web]
 
   webserver:
     image: mesasmos/mlupdong_webserver:latest
-    container_name: mlopdong_webserver
+    container_name: mlupdong_webserver
     restart: unless-stopped
     ports: ["80:80", "443:443"]
     volumes:
@@ -44,10 +44,10 @@ services:
 
   db:
     image: mysql
-    container_name: mlopdong_container_db
+    container_name: mlupdong_container_db
     restart: always
     environment:
-      MYSQL_DATABASE: mlopdong_db # Was MYSQL_DB (wrong env var name)
+      MYSQL_DATABASE: mlupdong_db # Was MYSQL_DB (wrong env var name)
       MYSQL_USER: root
       MYSQL_PASSWORD: root
     volumes:
