@@ -63,6 +63,11 @@ const routes = [
     ],
   },
   {
+    path: '/menu/:token',
+    name: 'customer-menu',
+    component: () => import('@/views/customer/menuView.vue'),
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/login',
   },
