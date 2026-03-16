@@ -28,6 +28,9 @@ services:
     networks: [web]
 
   webserver:
+    build:
+      context: ./backend/nginx
+      dockerfile: Dockerfile
     image: mesasmos/mlupdong_webserver:latest
     container_name: mlupdong_webserver
     restart: unless-stopped
