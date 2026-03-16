@@ -18,7 +18,7 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// ── Response interceptor: handle 401 Unauthorized ──────────────────
+// ── Response interceptor: handle 401 Unauthorized hi──────────────────
 api.interceptors.response.use(
   (response) => response,
   (error) => {
