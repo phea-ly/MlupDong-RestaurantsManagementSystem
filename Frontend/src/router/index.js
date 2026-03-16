@@ -63,6 +63,16 @@ const routes = [
     ],
   },
   {
+    path: '/customer-menu',
+    name: 'customer-menu',
+    component: () => import('@/views/customer/menuView.vue'),
+  },
+  {
+    path: '/customer-cart',
+    name: 'customer-cart',
+    component: () => import('@/views/customer/menuOrder.vue'),
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/login',
   },
