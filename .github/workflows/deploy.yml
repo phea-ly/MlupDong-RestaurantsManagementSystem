@@ -39,6 +39,17 @@
               ${{ secrets.DOCKER_USERNAME }}/mlupdong_frontend:latest
               ${{ secrets.DOCKER_USERNAME }}/mlupdong_frontend:${{ github.sha }}
 
+            # ── ADD THIS STEP FOR WEB SERVER ─────────────────────
+        - name: Build & Push Webserver
+          uses: docker/build-push-action@v5
+          with:
+            context: ./Backend/nginx      # ← path to your nginx Dockerfile
+            push: true
+            tags: |
+              ${{ secrets.DOCKER_USERNAME }}/mlupdong_webserver:latest
+              ${{ secrets.DOCKER_USERNAME }}/mlupdong_webserver:${{ github.sha }}
+
+
 
     deploy:
       needs: build-and-push

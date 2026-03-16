@@ -29,7 +29,7 @@ services:
 
   webserver:
     build:
-      context: ./backend/nginx
+      context: ./Backend/nginx
       dockerfile: Dockerfile
     image: mesasmos/mlupdong_webserver:latest
     container_name: mlupdong_webserver
