@@ -1,206 +1,196 @@
 <script setup>
-import { computed, ref } from 'vue'
-import { useUiStore } from '@/stores/ui.store'
-import { useI18n } from '@/composables/useI18n'
+import { ref } from 'vue'
 
-const ui = useUiStore()
-const { t } = useI18n()
+const language       = ref('en')
+const timezone       = ref('(GMT+07:00) Indochina Time')
+const currency       = ref('USD ($)')
+const restaurantName = ref('Mlup Dong')
+const phone          = ref('+855 23 000 000')
+const address        = ref('123 Norodom Blvd, Phnom Penh, Cambodia')
+const cashEnabled    = ref(true)
+const creditEnabled  = ref(true)
+const qrCodeEnabled  = ref(true)
+const snackbar       = ref(false)
 
-const language = computed({
-  get: () => ui.language,
-  set: (value) => ui.setLanguage(value),
-})
-
-const timezone = ref('(GMT-05:00) Eastern Time')
-const currency = ref('USD ($)')
-const restaurantName = ref('The Green Bistro')
-const phone = ref('+1 (555) 000-0000')
-const address = ref('123 Culinary Lane, Food District, City 10101')
-const cashEnabled = ref(true)
-const creditEnabled = ref(true)
-const qrCodeEnabled = ref(true)
-
-const languages = computed(() => [
-  { title: t('language.english'), value: 'en' },
-  { title: t('language.khmer'), value: 'km' },
-  { title: t('language.french'), value: 'fr' },
-  { title: t('language.chinese'), value: 'zh' },
-])
-const timezones = ['(GMT-05:00) Eastern Time', '(GMT+07:00) Indochina Time', '(GMT+00:00) UTC']
+const languages  = [
+  { title: 'English', value: 'en' },
+  { title: 'Khmer',   value: 'km' },
+  { title: 'French',  value: 'fr' },
+  { title: 'Chinese', value: 'zh' },
+]
+const timezones  = ['(GMT+07:00) Indochina Time', '(GMT-05:00) Eastern Time', '(GMT+00:00) UTC']
 const currencies = ['USD ($)', 'KHR (៛)', 'EUR (€)', 'THB (฿)']
+
+function saveSettings() {
+  snackbar.value = true
+}
 </script>
 
 <template>
-  <div class="settings">
-    <v-card rounded="xl" elevation="0" class="settings-card pa-6 mb-4">
-      <div class="section-header mb-4">
-        <span class="dot"></span>
-        <p class="section-title">{{ t('settings.general') }}</p>
-      </div>
-      <v-row>
-        <v-col cols="12" md="4">
-          <v-select
-            v-model="language"
-            :items="languages"
-            item-title="title"
-            item-value="value"
-            :label="t('settings.language')"
-            variant="outlined"
-            rounded="lg"
-            density="comfortable"
-          />
-        </v-col>
-        <v-col cols="12" md="4">
-          <v-select
-            v-model="timezone"
-            :items="timezones"
-            :label="t('settings.timezone')"
-            variant="outlined"
-            rounded="lg"
-            density="comfortable"
-          />
-        </v-col>
-        <v-col cols="12" md="4">
-          <v-select
-            v-model="currency"
-            :items="currencies"
-            :label="t('settings.currency')"
-            variant="outlined"
-            rounded="lg"
-            density="comfortable"
-          />
-        </v-col>
-      </v-row>
+  <div>
+    <!-- ── General ── -->
+    <v-card rounded="xl" elevation="0" border class="mb-4">
+      <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
+        <v-icon color="#0f9e5f" size="18">mdi-cog-outline</v-icon>
+        <span class="text-subtitle-1 font-weight-black text-uppercase" style="color:#0f9e5f;letter-spacing:0.1em">General Settings</span>
+      </v-card-title>
+      <v-card-text class="px-6">
+        <v-row>
+          <v-col cols="12" md="4">
+            <v-select
+              v-model="language"
+              :items="languages"
+              item-title="title"
+              item-value="value"
+              label="Language"
+              variant="outlined" rounded="lg" density="comfortable"
+              prepend-inner-icon="mdi-translate"
+            />
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-select
+              v-model="timezone"
+              :items="timezones"
+              label="Timezone"
+              variant="outlined" rounded="lg" density="comfortable"
+              prepend-inner-icon="mdi-clock-outline"
+            />
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-select
+              v-model="currency"
+              :items="currencies"
+              label="Currency"
+              variant="outlined" rounded="lg" density="comfortable"
+              prepend-inner-icon="mdi-currency-usd"
+            />
+          </v-col>
+        </v-row>
+      </v-card-text>
     </v-card>
 
-    <v-card rounded="xl" elevation="0" class="settings-card pa-6 mb-4">
-      <div class="section-header mb-4">
-        <span class="dot"></span>
-        <p class="section-title">{{ t('settings.restaurantProfile') }}</p>
-      </div>
-
-      <div class="logo-upload mb-5">
-        <div class="logo-placeholder">
-          <v-icon size="28" color="#b0bec5">mdi-camera-outline</v-icon>
-          <p class="logo-label mt-1">{{ t('settings.uploadLogo') }}</p>
+    <!-- ── Restaurant Profile ── -->
+    <v-card rounded="xl" elevation="0" border class="mb-4">
+      <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
+        <v-icon color="#0f9e5f" size="18">mdi-store-outline</v-icon>
+        <span class="text-subtitle-1 font-weight-black text-uppercase" style="color:#0f9e5f;letter-spacing:0.1em">Restaurant Profile</span>
+      </v-card-title>
+      <v-card-text class="px-6">
+        <!-- Logo upload -->
+        <div class="d-flex align-center ga-5 mb-5">
+          <v-hover v-slot="{ isHovering, props }">
+            <v-avatar
+              v-bind="props"
+              size="80" rounded="xl"
+              color="grey-lighten-3"
+              style="border:2px dashed #c8d4dc; cursor:pointer;"
+            >
+              <v-icon v-if="!isHovering" size="28" color="grey-lighten-1">mdi-camera-outline</v-icon>
+              <v-icon v-else size="28" color="primary">mdi-upload-outline</v-icon>
+            </v-avatar>
+          </v-hover>
+          <div>
+            <div class="text-subtitle-2 font-weight-bold">Restaurant Logo</div>
+            <div class="text-caption text-medium-emphasis">PNG or JPG · max 2 MB · 200×200px recommended</div>
+            <v-btn size="small" variant="outlined" rounded="lg" class="mt-2" prepend-icon="mdi-upload">Upload</v-btn>
+          </div>
         </div>
-        <div class="ml-4">
-          <p class="logo-title">{{ t('settings.restaurantLogo') }}</p>
-          <p class="logo-sub">{{ t('settings.logoHint') }}</p>
-        </div>
-      </div>
 
-      <v-row>
-        <v-col cols="12" md="6">
-          <v-text-field
-            v-model="restaurantName"
-            :label="t('settings.restaurantName')"
-            variant="outlined"
-            rounded="lg"
-            density="comfortable"
-          />
-        </v-col>
-        <v-col cols="12" md="6">
-          <v-text-field
-            v-model="phone"
-            :label="t('settings.phoneNumber')"
-            variant="outlined"
-            rounded="lg"
-            density="comfortable"
-          />
-        </v-col>
-        <v-col cols="12">
-          <v-textarea
-            v-model="address"
-            :label="t('settings.fullAddress')"
-            variant="outlined"
-            rounded="lg"
-            rows="3"
-            no-resize
-          />
-        </v-col>
-      </v-row>
+        <v-row>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="restaurantName"
+              label="Restaurant Name"
+              variant="outlined" rounded="lg" density="comfortable"
+              prepend-inner-icon="mdi-store-outline"
+            />
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model="phone"
+              label="Phone Number"
+              variant="outlined" rounded="lg" density="comfortable"
+              prepend-inner-icon="mdi-phone-outline"
+            />
+          </v-col>
+          <v-col cols="12">
+            <v-textarea
+              v-model="address"
+              label="Full Address"
+              variant="outlined" rounded="lg"
+              rows="3" no-resize
+              prepend-inner-icon="mdi-map-marker-outline"
+            />
+          </v-col>
+        </v-row>
+      </v-card-text>
     </v-card>
 
-    <v-card rounded="xl" elevation="0" class="settings-card pa-6 mb-6">
-      <div class="section-header mb-4">
-        <span class="dot"></span>
-        <p class="section-title">{{ t('settings.paymentMethods') }}</p>
-      </div>
-      <v-row>
-        <v-col cols="12" md="6">
-          <div class="payment-card pa-4">
-            <div class="d-flex justify-space-between align-center">
-              <div>
-                <p class="payment-name">{{ t('settings.cash') }}</p>
-                <p class="payment-sub">{{ t('settings.cashSub') }}</p>
-              </div>
-              <v-switch v-model="cashEnabled" color="#0f9e5f" hide-details inset />
-            </div>
-          </div>
-        </v-col>
-        <v-col cols="12" md="6">
-          <div class="payment-card pa-4">
-            <div class="d-flex justify-space-between align-center">
-              <div>
-                <p class="payment-name">{{ t('settings.creditCard') }}</p>
-                <p class="payment-sub">{{ t('settings.creditCardSub') }}</p>
-              </div>
-              <v-switch v-model="creditEnabled" color="#0f9e5f" hide-details inset />
-            </div>
-          </div>
-        </v-col>
-        <v-col cols="12" md="6">
-          <div class="payment-card pa-4">
-            <div class="d-flex justify-space-between align-center">
-              <div>
-                <p class="payment-name">{{ t('settings.qrCode') }}</p>
-                <p class="payment-sub">{{ t('settings.qrCodeSub') }}</p>
-              </div>
-              <v-switch v-model="qrCodeEnabled" color="#0f9e5f" hide-details inset />
-            </div>
-          </div>
-        </v-col>
-      </v-row>
+    <!-- ── Payment Methods ── -->
+    <v-card rounded="xl" elevation="0" border class="mb-6">
+      <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
+        <v-icon color="#0f9e5f" size="18">mdi-credit-card-outline</v-icon>
+        <span class="text-subtitle-1 font-weight-black text-uppercase" style="color:#0f9e5f;letter-spacing:0.1em">Payment Methods</span>
+      </v-card-title>
+      <v-card-text class="px-6">
+        <v-row>
+          <v-col cols="12" md="4">
+            <v-card rounded="xl" variant="outlined" color="grey-lighten-3">
+              <v-card-text class="d-flex align-center ga-3">
+                <v-avatar color="success" variant="tonal" size="40" rounded="lg">
+                  <v-icon>mdi-cash</v-icon>
+                </v-avatar>
+                <div class="flex-grow-1">
+                  <div class="text-subtitle-2 font-weight-bold">Cash</div>
+                  <div class="text-caption text-medium-emphasis">Accept cash at counter</div>
+                </div>
+                <v-switch v-model="cashEnabled" color="#0f9e5f" hide-details inset />
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-card rounded="xl" variant="outlined" color="grey-lighten-3">
+              <v-card-text class="d-flex align-center ga-3">
+                <v-avatar color="blue" variant="tonal" size="40" rounded="lg">
+                  <v-icon>mdi-credit-card-outline</v-icon>
+                </v-avatar>
+                <div class="flex-grow-1">
+                  <div class="text-subtitle-2 font-weight-bold">Credit / Debit Card</div>
+                  <div class="text-caption text-medium-emphasis">Visa, Mastercard, Amex</div>
+                </div>
+                <v-switch v-model="creditEnabled" color="#0f9e5f" hide-details inset />
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-card rounded="xl" variant="outlined" color="grey-lighten-3">
+              <v-card-text class="d-flex align-center ga-3">
+                <v-avatar color="orange" variant="tonal" size="40" rounded="lg">
+                  <v-icon>mdi-qrcode</v-icon>
+                </v-avatar>
+                <div class="flex-grow-1">
+                  <div class="text-subtitle-2 font-weight-bold">QR Code</div>
+                  <div class="text-caption text-medium-emphasis">ABA Pay, Wing, KHQR</div>
+                </div>
+                <v-switch v-model="qrCodeEnabled" color="#0f9e5f" hide-details inset />
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-card-text>
     </v-card>
 
+    <!-- ── Actions ── -->
     <div class="d-flex justify-end ga-3">
-      <v-btn variant="outlined" rounded="lg" size="large">{{ t('common.cancel') }}</v-btn>
-      <v-btn color="#0f9e5f" rounded="lg" size="large" flat>{{ t('common.saveChanges') }}</v-btn>
+      <v-btn variant="outlined" rounded="lg" size="large">Cancel</v-btn>
+      <v-btn color="#0f9e5f" rounded="lg" size="large" variant="flat" @click="saveSettings">
+        Save Changes
+      </v-btn>
     </div>
+
+    <v-snackbar v-model="snackbar" color="success" rounded="lg" :timeout="3000" location="bottom right">
+      <v-icon class="mr-2">mdi-check-circle-outline</v-icon>
+      Settings saved successfully.
+    </v-snackbar>
   </div>
 </template>
-
-<style scoped>
-.settings-card { background: #fff; border: 1px solid #e4eaec; }
-
-.section-header { display: flex; align-items: center; gap: 8px; }
-.dot { width: 8px; height: 8px; background: #0f9e5f; border-radius: 50%; display: inline-block; }
-.section-title { font-size: 12px; font-weight: 800; color: #0f9e5f; letter-spacing: 0.12em; margin: 0; }
-
-.logo-upload { display: flex; align-items: center; }
-.logo-placeholder {
-  width: 72px;
-  height: 72px;
-  border: 2px dashed #d0dce4;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: #f7faf9;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.logo-label { font-size: 10px; color: #9aabbd; font-weight: 600; margin: 0; }
-.logo-title { font-size: 14px; font-weight: 700; color: #1a2e48; margin: 0 0 4px; }
-.logo-sub { font-size: 12px; color: #9aabbd; margin: 0; }
-
-.payment-card {
-  border: 1px solid #e4eaec;
-  border-radius: 12px;
-  background: #f7faf9;
-}
-.payment-name { font-size: 14px; font-weight: 700; color: #1a2e48; margin: 0 0 2px; }
-.payment-sub { font-size: 12px; color: #9aabbd; margin: 0; }
-</style>
