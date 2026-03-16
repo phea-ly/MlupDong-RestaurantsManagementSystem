@@ -51,15 +51,15 @@ services:
     restart: always
     environment:
       MYSQL_DATABASE: mlupdong_db # Was MYSQL_DB (wrong env var name)
-      MYSQL_USER: root
       MYSQL_ROOT_PASSWORD: root
     volumes:
       - mysql_data:/var/lib/mysql         # Was postgresql path
     networks: [web]
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USERNAME}", "-p${DB_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
       interval: 10s
       retries: 5
+      start_period: 30s  # give MySQL time to initialize on first boot
 
 
   redis:
