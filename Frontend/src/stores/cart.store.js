@@ -5,6 +5,8 @@ import { orderApi } from '@/api/order.api'
 export const useCartStore = defineStore('cart', () => {
   const items = ref([])
   const specialInstructions = ref('')
+  const tableId = ref(null)
+  const tableNumber = ref(null)
 
   // Load from local storage
   const savedCart = localStorage.getItem('cart_items')
@@ -14,6 +16,14 @@ export const useCartStore = defineStore('cart', () => {
   const savedInstructions = localStorage.getItem('cart_instructions')
   if (savedInstructions) {
     specialInstructions.value = savedInstructions
+  }
+  const savedTableId = localStorage.getItem('cart_table_id')
+  if (savedTableId) {
+    tableId.value = savedTableId
+  }
+  const savedTableNumber = localStorage.getItem('cart_table_number')
+  if (savedTableNumber) {
+    tableNumber.value = savedTableNumber
   }
 
   // Watch for changes and save to localStorage
@@ -25,6 +35,16 @@ export const useCartStore = defineStore('cart', () => {
     localStorage.setItem('cart_instructions', newVal)
   })
 
+  watch(tableId, (newVal) => {
+    if (newVal) localStorage.setItem('cart_table_id', newVal)
+    else localStorage.removeItem('cart_table_id')
+  })
+
+  watch(tableNumber, (newVal) => {
+    if (newVal) localStorage.setItem('cart_table_number', newVal)
+    else localStorage.removeItem('cart_table_number')
+  })
+
   const cartCount = computed(() => items.value.reduce((sum, item) => sum + item.quantity, 0))
   const cartSubtotal = computed(() => items.value.reduce((sum, item) => sum + ((item.price || 0) * item.quantity), 0))
   const taxRate = 0.10 // 10% tax
@@ -32,12 +52,12 @@ export const useCartStore = defineStore('cart', () => {
   const cartTotal = computed(() => cartSubtotal.value + cartTax.value)
 
   function addToCart(product) {
-    const existing = items.value.find(i => i.id === product.id)
+    const existing = items.value.find(i => i.id === product.id || i.id === product.menu_item_id)
     if (existing) {
       existing.quantity++
     } else {
       items.value.push({
-        id: product.id,
+        id: product.id || product.menu_item_id,
         name: product.name,
         price: parseFloat(product.price || 0),
         image: product.image,
@@ -66,6 +86,12 @@ export const useCartStore = defineStore('cart', () => {
     specialInstructions.value = ''
     localStorage.removeItem('cart_items')
     localStorage.removeItem('cart_instructions')
+    // tableId stays as it corresponds to the physical table
+  }
+
+  function setTableId(id, number = null) {
+    tableId.value = id
+    if (number) tableNumber.value = number
   }
 
   async function placeOrder(details = {}) {
@@ -73,7 +99,7 @@ export const useCartStore = defineStore('cart', () => {
 
     const payload = {
       order_type: details.order_type || 'dine_in',
-      table_id: details.table_id || 1, // Default to table 1 if not specified
+      table_id: details.table_id || tableId.value || 1, 
       total_amount: cartSubtotal.value,
       tax: cartTax.value,
       final_amount: cartTotal.value,
@@ -103,6 +129,9 @@ export const useCartStore = defineStore('cart', () => {
   return {
     items,
     specialInstructions,
+    tableId,
+    tableNumber,
+    setTableId,
     cartCount,
     cartSubtotal,
     cartTax,
@@ -114,3 +143,4 @@ export const useCartStore = defineStore('cart', () => {
     placeOrder
   }
 })
+

@@ -1,11 +1,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useMenuStore, useCartStore } from '@/stores'
+import api from '@/api/api'
 
 const menuStore = useMenuStore()
 const cartStore = useCartStore()
 const route = useRoute()
+const router = useRouter()
 
 const searchQuery = ref('')
 const activeCategory = ref('All')
@@ -26,6 +28,9 @@ onMounted(async () => {
       // Find table by QR code URL token
       const response = await api.get(`/tables/by-token/${tableToken.value}`)
       tableInfo.value = response.data
+      if (tableInfo.value && tableInfo.value.table_id) {
+        cartStore.setTableId(tableInfo.value.table_id, tableInfo.value.table_number)
+      }
     } catch (error) {
       console.error('Failed to fetch table info:', error)
     }
@@ -60,8 +65,9 @@ const filteredItems = computed(() => {
   return items
 })
 
-const featuredItem = computed(() => filteredItems.value.length ? filteredItems.value[0] : null)
+const featuredItem = computed(() => filteredItems.value.length > 0 ? filteredItems.value[0] : null)
 const popularDishes = computed(() => filteredItems.value.length > 1 ? filteredItems.value.slice(1) : [])
+const allFilteredItems = computed(() => filteredItems.value) // For clarity if needed elsewhere
 
 const fallbackImg = 'https://images.unsplash.com/photo-1548943487-a2e4142f6ab3?q=80&w=600&auto=format&fit=crop'
 
@@ -95,7 +101,6 @@ function addToCart(item, event) {
         <div>
           <div class="text-h6 font-weight-bold text-white mb-1">Mlup Dong Restaurant</div>
           <div class="text-caption text-white opacity-90">Table Menu • Scan QR to Order</div>
-          <div v-if="tableToken" class="text-caption text-white opacity-75 mt-1">Token: {{ tableToken }}</div>
           <div v-if="tableInfo" class="text-caption text-white opacity-75 mt-1">
             Table {{ tableInfo.table_number }} • {{ tableInfo.location }} • {{ tableInfo.capacity }} Seats
           </div>
@@ -104,7 +109,7 @@ function addToCart(item, event) {
       <v-chip color="white" variant="elevated" class="font-weight-bold text-green-darken-4 elevation-2 rounded-xl"
         size="small">
         <v-icon start size="14">mdi-table-furniture</v-icon>
-        Table 05
+        Table {{ tableInfo?.table_number || '...' }}
       </v-chip>
     </div>
 
@@ -140,14 +145,25 @@ function addToCart(item, event) {
           <div class="pa-3">
             <v-skeleton-loader type="list-item-two-line" class="mb-2"></v-skeleton-loader>
             <v-skeleton-loader type="text" width="60%" height="20" class="mb-1"></v-skeleton-loader>
-            <div class="d-flex align-center justify-space-between">
-              <div class="d-flex align-center rating-pill pa-1 pr-3 rounded-pill">
-                <v-icon color="#FFB300" size="18" class="mr-1">mdi-star</v-icon>
-                <span class="font-weight-bold mr-1 text-grey-darken-3 text-caption">5.0</span>
-                <span class="text-grey-darken-1 text-caption">(0 reviews)</span>
+          </div>
+        </v-card>
+      </div>
+
+      <!-- Featured Item -->
+      <div v-if="featuredItem && !menuStore.loading" class="px-4 mb-6">
+        <h2 class="text-h6 font-weight-black mb-4 text-grey-darken-4">Featured Dish</h2>
+        <v-card class="featured-card rounded-xl overflow-hidden elevation-3" @click="addToCart(featuredItem, $event)">
+          <v-img :src="featuredItem.image || fallbackImg" height="200" cover class="position-relative">
+            <div class="price-badge font-weight-bold">${{ parseFloat(featuredItem.price).toFixed(2) }}</div>
+            <div class="gradient-overlay"></div>
+          </v-img>
+          <div class="pa-4 bg-white">
+            <div class="d-flex justify-space-between align-start mb-2">
+              <div>
+                <div class="text-h6 font-weight-bold text-grey-darken-4">{{ featuredItem.name }}</div>
+                <div class="text-caption text-grey-darken-1">{{ featuredItem.description || 'Our chef\'s special recommendation.' }}</div>
               </div>
-              <v-btn icon color="#215732" size="44" class="text-white elevation-2 btn-add-animated"
-                @click="addToCart(featuredItem, $event)">
+              <v-btn icon color="#215732" size="44" class="text-white elevation-2 btn-add-animated">
                 <v-icon size="24">mdi-plus</v-icon>
               </v-btn>
             </div>
@@ -157,8 +173,8 @@ function addToCart(item, event) {
 
 
       <!-- Popular Dishes -->
-      <div v-if="popularDishes.length" class="px-4 pb-24 fade-in">
-        <h2 class="text-h6 font-weight-black mb-4 text-grey-darken-4">Must Try</h2>
+      <div v-if="popularDishes.length && !menuStore.loading" class="px-4 pb-24 fade-in">
+        <h2 class="text-h6 font-weight-black mb-4 text-grey-darken-4">Menu Selection</h2>
 
         <v-card v-for="item in popularDishes" :key="item.id"
           class="popular-card rounded-xl pa-3 mb-4 d-flex align-stretch bg-white" v-ripple>
@@ -182,34 +198,39 @@ function addToCart(item, event) {
           </div>
         </v-card>
       </div>
-</template>
-</div>
-</div>
 
-<!-- Floating Cart -->
-<v-fade-transition>
-  <div v-if="cartStore.cartCount > 0" class="fixed-bottom-cart px-4 pb-6">
-    <v-card class="cart-pill rounded-pill pa-3 px-5 d-flex align-center" color="#215732" elevation="8" v-ripple
-      @click="router.push('/customer-order')">
-      <div class="position-relative mr-5 cart-icon-box">
-        <v-icon color="white" size="28">mdi-shopping-outline</v-icon>
-        <!-- Cart counter pop animation dynamically triggers when length changes via :key -->
-        <div :key="cartStore.cartCount" class="cart-badge scale-pop">{{ cartStore.cartCount }}</div>
+      <!-- Empty State -->
+       <div v-if="!menuStore.loading && filteredItems.length === 0" class="text-center py-12 px-6">
+          <v-icon size="64" color="grey-lighten-1">mdi-silverware-clean</v-icon>
+          <div class="text-h6 font-weight-bold text-grey-darken-1 mt-4">No items found</div>
+          <p class="text-body-2 text-grey-darken-1">Try adjusting your search or category filter.</p>
+       </div>
+    </div>
+
+    <!-- Floating Cart -->
+    <v-fade-transition>
+      <div v-if="cartStore.cartCount > 0" class="fixed-bottom-cart px-4 pb-6">
+        <v-card class="cart-pill rounded-pill pa-3 px-5 d-flex align-center" color="#215732" elevation="8" v-ripple
+          @click="router.push('/customer-order')">
+          <div class="position-relative mr-5 cart-icon-box">
+            <v-icon color="white" size="28">mdi-shopping-outline</v-icon>
+            <!-- Cart counter pop animation dynamically triggers when length changes via :key -->
+            <div :key="cartStore.cartCount" class="cart-badge scale-pop">{{ cartStore.cartCount }}</div>
+          </div>
+          <div class="text-white flex-grow-1">
+            <div class="text-caption font-weight-medium" style="opacity: 0.85; line-height: 1.2;">{{ cartStore.cartCount
+              }}
+              Items</div>
+            <div class="font-weight-bold text-subtitle-1" style="line-height: 1.2;">View Order</div>
+          </div>
+          <div class="text-white text-h6 font-weight-black text-right pt-1 d-flex align-center">
+            ${{ cartStore.cartTotal.toFixed(2) }}
+            <v-icon size="20" class="ml-2" style="opacity: 0.8">mdi-chevron-right</v-icon>
+          </div>
+        </v-card>
       </div>
-      <div class="text-white flex-grow-1">
-        <div class="text-caption font-weight-medium" style="opacity: 0.85; line-height: 1.2;">{{ cartStore.cartCount
-          }}
-          Items</div>
-        <div class="font-weight-bold text-subtitle-1" style="line-height: 1.2;">View Order</div>
-      </div>
-      <div class="text-white text-h6 font-weight-black text-right pt-1 d-flex align-center">
-        ${{ cartStore.cartTotal.toFixed(2) }}
-        <v-icon size="20" class="ml-2" style="opacity: 0.8">mdi-chevron-right</v-icon>
-      </div>
-    </v-card>
+    </v-fade-transition>
   </div>
-</v-fade-transition>
-</div>
 </template>
 
 <style scoped>
@@ -455,3 +476,4 @@ function addToCart(item, event) {
   overflow: hidden;
 }
 </style>
+

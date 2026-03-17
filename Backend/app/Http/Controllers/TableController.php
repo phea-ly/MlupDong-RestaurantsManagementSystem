@@ -28,28 +28,33 @@ class TableController extends Controller
             $token = $table->qr_code_url ?? Str::random(32);
 
             // Construct the URL (e.g. frontend menu URL)
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5174');
+            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
             $data = "{$frontendUrl}/menu/{$token}";
 
-            // Configure QR Code — SVG output
+            // Configure QR Code
             $options = new QROptions([
-                'outputType' => 'svg',
-                'eccLevel'   => 'L',
+                'outputType'   => 'svg',
+                'eccLevel'     => 'L',
                 'addQuietzone' => true,
-                'returnRaw' => true, // Return raw SVG, not data URI
+                'returnRaw'    => true, 
             ]);
 
-            $qrcode  = new QRCode($options);
-            $svg = $qrcode->render($data);
+            $qrcode = new QRCode($options);
+            $svgContent = $qrcode->render($data);
 
-            // Ensure directory exists
+            // If the library returns a data URI despite returnRaw=true, we decode it
+            if (str_starts_with($svgContent, 'data:image/svg+xml;base64,')) {
+                $svgContent = base64_decode(str_replace('data:image/svg+xml;base64,', '', $svgContent));
+            }
+
+            // Ensure directory exists in public disk
             if (!Storage::disk('public')->exists('qrcodes')) {
                 Storage::disk('public')->makeDirectory('qrcodes');
             }
 
-            // Save raw SVG to storage
+            // Save SVG to storage
             $filename = "qrcodes/table-{$id}.svg";
-            Storage::disk('public')->put($filename, $svg);
+            Storage::disk('public')->put($filename, $svgContent);
 
             // Update table record
             $table->update([
@@ -57,7 +62,10 @@ class TableController extends Controller
                 'qr_code_url' => $token,
             ]);
 
-            return response()->json($table->load('restaurant'));
+            return response()->json([
+                'message' => 'QR code generated successfully',
+                'table' => $table->load('restaurant')
+            ]);
         } catch (\Exception $e) {
             \Log::error('QR Generation Error: ' . $e->getMessage());
             return response()->json([
@@ -70,41 +78,46 @@ class TableController extends Controller
     public function generateAll()
     {
         $tables = RestaurantTable::all();
+        $count = 0;
         foreach ($tables as $table) {
-            $this->generateQr((string) $table->table_id);
+            try {
+                $this->generateQr((string) $table->table_id);
+                $count++;
+            } catch (\Exception $e) {
+                \Log::error("Failed to generate QR for table {$table->table_id}: " . $e->getMessage());
+            }
         }
 
-        return response()->json(['message' => 'All QR codes generated successfully.']);
-    }
-
-    public function getQrCode(string $id)
-    {
-        $table = RestaurantTable::query()->findOrFail($id);
-
         return response()->json([
-            'table_id'     => $table->table_id,
-            'table_number' => $table->table_number,
-            'qr_code'      => $table->qr_code,
-            'qr_code_url'  => $table->qr_code_url,
-            'full_url'     => $table->qr_code ? asset($table->qr_code) : null,
+            'message' => "QR codes generated for {$count} tables.",
+            'count' => $count
         ]);
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'table_number'  => ['required', 'integer', 'min:1'],
+            'table_number'  => [
+                'required', 
+                'integer', 
+                'min:1',
+                // Unique table number per restaurant
+                Rule::unique('tables')->where(function ($query) use ($request) {
+                    return $query->where('restaurant_id', $request->restaurant_id);
+                })
+            ],
             'capacity'      => ['required', 'integer', 'min:1'],
             'status'        => ['nullable', Rule::in(['available', 'unavailable'])],
             'location'      => ['nullable', 'string', 'max:100'],
-            'qr_code'       => ['nullable', 'string', 'max:255', 'unique:tables,qr_code'],
-            'qr_code_url'   => ['nullable', 'string', 'max:255'],
             'restaurant_id' => ['nullable', 'exists:restaurants,restaurant_id'],
         ]);
 
         $table = RestaurantTable::query()->create($validated);
 
-        return response()->json($table->load('restaurant'), 201);
+        return response()->json([
+            'message' => 'Table registered successfully',
+            'table' => $table->load('restaurant')
+        ], 201);
     }
 
     public function show(string $id)
@@ -119,23 +132,27 @@ class TableController extends Controller
         $table = RestaurantTable::query()->findOrFail($id);
 
         $validated = $request->validate([
-            'table_number'  => ['sometimes', 'required', 'integer', 'min:1'],
+            'table_number'  => [
+                'sometimes', 
+                'required', 
+                'integer', 
+                'min:1',
+                Rule::unique('tables')->ignore($id, 'table_id')->where(function ($query) use ($request, $table) {
+                    return $query->where('restaurant_id', $request->restaurant_id ?? $table->restaurant_id);
+                })
+            ],
             'capacity'      => ['sometimes', 'required', 'integer', 'min:1'],
             'status'        => ['nullable', Rule::in(['available', 'unavailable'])],
             'location'      => ['nullable', 'string', 'max:100'],
-            'qr_code'       => [
-                'nullable',
-                'string',
-                'max:255',
-                Rule::unique('tables', 'qr_code')->ignore($id, 'table_id'),
-            ],
-            'qr_code_url'   => ['nullable', 'string', 'max:255'],
             'restaurant_id' => ['nullable', 'exists:restaurants,restaurant_id'],
         ]);
 
         $table->update($validated);
 
-        return response()->json($table->load('restaurant'));
+        return response()->json([
+            'message' => 'Table updated successfully',
+            'table' => $table->load('restaurant')
+        ]);
     }
 
     public function downloadQrFile(string $id)
@@ -146,7 +163,6 @@ class TableController extends Controller
             return response()->json(['message' => 'QR code not generated for this table'], 404);
         }
 
-        // Path is "storage/qrcodes/table-X.svg"
         $relativePath = str_replace('storage/', '', $table->qr_code);
 
         if (!Storage::disk('public')->exists($relativePath)) {
@@ -174,8 +190,16 @@ class TableController extends Controller
     public function destroy(string $id)
     {
         $table = RestaurantTable::query()->findOrFail($id);
+        
+        // Clean up QR code file if it exists
+        if ($table->qr_code) {
+            $relativePath = str_replace('storage/', '', $table->qr_code);
+            Storage::disk('public')->delete($relativePath);
+        }
+        
         $table->delete();
 
-        return response()->noContent();
+        return response()->json(['message' => 'Table deleted successfully']);
     }
 }
+

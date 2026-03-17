@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\OrderItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
@@ -12,7 +15,7 @@ class OrderController extends Controller
     {
         return response()->json(
             Order::query()
-                ->with(['user', 'table', 'discount', 'restaurant', 'orderItems', 'payments', 'statusLogs'])
+                ->with(['user', 'table', 'discount', 'restaurant', 'orderItems.menuItem', 'payments', 'statusLogs'])
                 ->latest('order_id')
                 ->get()
         );
@@ -23,29 +26,64 @@ class OrderController extends Controller
         $validated = $request->validate([
             'order_number' => ['nullable', 'string', 'max:50', 'unique:orders,order_number'],
             'order_type' => ['required', Rule::in(['dine_in', 'takeaway', 'delivery'])],
-            'total_amount' => ['nullable', 'numeric', 'min:0'],
+            'total_amount' => ['required', 'numeric', 'min:0'],
             'tax' => ['nullable', 'numeric', 'min:0'],
-            'final_amount' => ['nullable', 'numeric', 'min:0'],
+            'final_amount' => ['required', 'numeric', 'min:0'],
             'payment_status' => ['nullable', Rule::in(['pending', 'paid', 'cancelled'])],
             'order_status' => ['nullable', Rule::in(['new', 'preparing', 'completed', 'cancelled'])],
             'user_id' => ['nullable', 'exists:users,user_id'],
             'table_id' => ['nullable', 'exists:tables,table_id'],
             'discount_id' => ['nullable', 'exists:discounts,discount_id'],
             'restaurant_id' => ['nullable', 'exists:restaurants,restaurant_id'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.menu_item_id' => ['required', 'exists:menu_items,menu_item_id'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'items.*.note' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $order = Order::query()->create($validated);
+        try {
+            return DB::transaction(function () use ($validated) {
+                // Generate order number if not provided
+                if (empty($validated['order_number'])) {
+                    $validated['order_number'] = 'ORD-' . strtoupper(Str::random(8));
+                }
 
-        return response()->json(
-            $order->load(['user', 'table', 'discount', 'restaurant', 'orderItems', 'payments', 'statusLogs']),
-            201
-        );
+                // Default values
+                $validated['order_status'] = $validated['order_status'] ?? 'new';
+                $validated['payment_status'] = $validated['payment_status'] ?? 'pending';
+
+                // Create the order
+                $order = Order::query()->create($validated);
+
+                // Create order items
+                foreach ($validated['items'] as $item) {
+                    $order->orderItems()->create([
+                        'menu_item_id' => $item['menu_item_id'],
+                        'quantity' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'subtotal' => $item['quantity'] * $item['unit_price'],
+                        'note' => $item['note'] ?? null,
+                    ]);
+                }
+
+                return response()->json(
+                    $order->load(['user', 'table', 'discount', 'restaurant', 'orderItems.menuItem', 'payments', 'statusLogs']),
+                    201
+                );
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to create order',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function show(string $id)
     {
         $order = Order::query()
-            ->with(['user', 'table', 'discount', 'restaurant', 'orderItems', 'payments', 'statusLogs'])
+            ->with(['user', 'table', 'discount', 'restaurant', 'orderItems.menuItem', 'payments', 'statusLogs'])
             ->findOrFail($id);
 
         return response()->json($order);
@@ -77,15 +115,19 @@ class OrderController extends Controller
         $order->update($validated);
 
         return response()->json(
-            $order->load(['user', 'table', 'discount', 'restaurant', 'orderItems', 'payments', 'statusLogs'])
+            $order->load(['user', 'table', 'discount', 'restaurant', 'orderItems.menuItem', 'payments', 'statusLogs'])
         );
     }
 
     public function destroy(string $id)
     {
         $order = Order::query()->findOrFail($id);
+        
+        // Items are usually deleted by cascade or manually if not set up in DB
+        $order->orderItems()->delete();
         $order->delete();
 
         return response()->noContent();
     }
 }
+

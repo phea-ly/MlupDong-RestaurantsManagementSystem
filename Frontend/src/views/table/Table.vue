@@ -110,18 +110,19 @@
     if (!path) return null
     const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
     const baseUrl = apiBase.replace(/\/api$/, '')
-    return `${baseUrl}/${path}`
+    // Ensure path is relative to baseUrl
+    const cleanPath = path.replace(/^\/+/, '')
+    // Add cache buster to force reload after fix
+    return `${baseUrl}/${cleanPath}?v=${Date.now()}`
   }
 
   async function downloadQr(table) {
     try {
       const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
       const downloadUrl = `${apiBase.replace(/\/$/, '')}/tables/${table.table_id}/download-qr`
-
       window.location.href = downloadUrl
     } catch (e) {
       console.error('Download failed', e)
-      alert("Failed to download QR code. Please ensure it is generated first.")
     }
   }
 
@@ -213,6 +214,13 @@
             {{ s }}
           </v-chip>
         </v-chip-group>
+
+        <v-spacer></v-spacer>
+
+        <!-- Search Input -->
+        <v-text-field v-model="search" placeholder="Search table or location..." prepend-inner-icon="mdi-magnify"
+          variant="outlined" density="comfortable" hide-details rounded="lg" bg-color="white" color="#16c65b"
+          class="modern-search" style="max-width: 300px;" clearable></v-text-field>
       </v-sheet>
 
       <!-- Grid of Unit Cards -->
@@ -855,6 +863,21 @@
     opacity: 1;
     text-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
   }
+}
+
+/* Search Bar Polish */
+.modern-search :deep(.v-field__outline) {
+  border-color: #e2e8f0 !important;
+}
+
+.modern-search :deep(.v-field--focused .v-field__outline) {
+  border-color: #16c65b !important;
+  border-width: 2px !important;
+}
+
+.modern-search :deep(.v-field) {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.2s ease;
 }
 
 /* Dialog Polish */
