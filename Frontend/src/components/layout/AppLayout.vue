@@ -72,7 +72,9 @@ async function saveProfile() {
   try {
     if (activeTab.value === 'profile') {
       if (avatarFile.value && avatarPreview.value) auth.patchAvatar(avatarPreview.value)
-      await auth.updateProfile({ first_name: editFirstName.value, last_name: editLastName.value })
+      const profilePayload = { first_name: editFirstName.value, last_name: editLastName.value }
+      if (avatarFile.value) profilePayload.avatar = avatarFile.value
+      await auth.updateProfile(profilePayload)
       editSuccess.value = 'Profile updated successfully.'
     } else {
       if (newPassword.value !== confirmPassword.value) { editError.value = 'New passwords do not match.'; return }
@@ -101,8 +103,10 @@ async function saveProfile() {
     <AppBar :title="title" :subtitle="subtitle" @open-edit="openEdit" />
 
     <v-main style="background:#edf2f1">
-      <v-container fluid class="pa-5">
-        <slot />
+      <v-container fluid class="pa-0">
+        <div class="page-shell">
+          <slot />
+        </div>
       </v-container>
     </v-main>
 
@@ -132,7 +136,7 @@ async function saveProfile() {
               <v-img v-if="dialogAvatarSrc" :src="dialogAvatarSrc" cover />
               <span
                 v-else
-                style="background:linear-gradient(135deg,#19e092,#0f9e5f); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:900; color:#063824;"
+                style="background:linear-gradient(135deg,var(--app-primary),var(--app-primary-600)); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:900; color:#063824;"
               >{{ profileInitials }}</span>
               <v-overlay :model-value="isHovering" contained class="d-flex align-center justify-center" style="border-radius:50%">
                 <v-icon color="white">mdi-camera</v-icon>
@@ -144,7 +148,7 @@ async function saveProfile() {
         </div>
 
         <!-- Tabs -->
-        <v-tabs v-model="activeTab" color="#0f9e5f" density="compact" class="px-5 mt-2">
+        <v-tabs v-model="activeTab" color="var(--app-primary-600)" density="compact" class="px-5 mt-2">
           <v-tab value="profile" rounded="lg">
             <v-icon start size="16">mdi-account-outline</v-icon>
             Profile
@@ -213,7 +217,7 @@ async function saveProfile() {
           <v-btn variant="outlined" rounded="lg" @click="editDialog = false">Cancel</v-btn>
           <v-spacer />
           <v-btn
-            color="#0f9e5f" rounded="lg" variant="flat"
+            color="var(--app-primary-600)" rounded="lg" variant="flat"
             :loading="editLoading"
             prepend-icon="mdi-check"
             @click="saveProfile"
@@ -226,3 +230,4 @@ async function saveProfile() {
     </v-dialog>
   </v-app>
 </template>
+

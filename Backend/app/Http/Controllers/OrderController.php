@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Support\KdsPayload;
+use App\Events\KdsOrderEvent;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -27,7 +29,7 @@ class OrderController extends Controller
             'tax' => ['nullable', 'numeric', 'min:0'],
             'final_amount' => ['nullable', 'numeric', 'min:0'],
             'payment_status' => ['nullable', Rule::in(['pending', 'paid', 'cancelled'])],
-            'order_status' => ['nullable', Rule::in(['new', 'preparing', 'completed', 'cancelled'])],
+            'order_status' => ['nullable', Rule::in(['new', 'received', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'])],
             'user_id' => ['nullable', 'exists:users,user_id'],
             'table_id' => ['nullable', 'exists:tables,table_id'],
             'discount_id' => ['nullable', 'exists:discounts,discount_id'],
@@ -35,6 +37,9 @@ class OrderController extends Controller
         ]);
 
         $order = Order::query()->create($validated);
+
+        $payload = KdsPayload::fromOrder($order);
+        event(new KdsOrderEvent('order.created', $payload));
 
         return response()->json(
             $order->load(['user', 'table', 'discount', 'restaurant', 'orderItems', 'payments', 'statusLogs']),
@@ -67,7 +72,7 @@ class OrderController extends Controller
             'tax' => ['nullable', 'numeric', 'min:0'],
             'final_amount' => ['nullable', 'numeric', 'min:0'],
             'payment_status' => ['nullable', Rule::in(['pending', 'paid', 'cancelled'])],
-            'order_status' => ['nullable', Rule::in(['new', 'preparing', 'completed', 'cancelled'])],
+            'order_status' => ['nullable', Rule::in(['new', 'received', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'])],
             'user_id' => ['nullable', 'exists:users,user_id'],
             'table_id' => ['nullable', 'exists:tables,table_id'],
             'discount_id' => ['nullable', 'exists:discounts,discount_id'],
@@ -75,6 +80,9 @@ class OrderController extends Controller
         ]);
 
         $order->update($validated);
+
+        $payload = KdsPayload::fromOrder($order);
+        event(new KdsOrderEvent('order.status.updated', $payload));
 
         return response()->json(
             $order->load(['user', 'table', 'discount', 'restaurant', 'orderItems', 'payments', 'statusLogs'])

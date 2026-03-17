@@ -8,16 +8,14 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'saved'])
 
 const form          = ref({ firstName: '', lastName: '', email: '' })
-const avatarFile    = ref(null)   // the raw File object — passed up to AppBar
-const avatarPreview = ref(null)   // base64 data URL for preview only
+const avatarFile    = ref(null)   
+const avatarPreview = ref(null)   
 const imgError      = ref(false)
 const fileInput     = ref(null)
 const errors        = ref({})
 const isDragging    = ref(false)
 
 // ── Normalise user prop ────────────────────────────────────────────
-// Handles both auth store shape { id, first_name, last_name, avatar }
-// and User.vue mapped shape     { rawId, name, email, avatar }
 const normUser = computed(() => {
   const u = props.user
   if (!u) return null
@@ -29,7 +27,7 @@ const normUser = computed(() => {
     name:        `${firstName} ${lastName}`.trim(),
     email:       u.email ?? '',
     avatar:      resolveAvatarUrl(u.avatar),
-    avatarColor: '#14dc8b',
+    avatarColor: 'var(--app-primary)',
     initials:    ((firstName[0] ?? '') + (lastName[0] ?? '')).toUpperCase() || 'AU',
   }
 })
@@ -68,7 +66,7 @@ const initials    = computed(() => {
   const l = form.value.lastName?.[0]  ?? ''
   return (f + l).toUpperCase() || normUser.value?.initials || '??'
 })
-const avatarColor = computed(() => normUser.value?.avatarColor ?? '#14dc8b')
+const avatarColor = computed(() => normUser.value?.avatarColor ?? 'var(--app-primary)')
 
 function close() { emit('update:modelValue', false) }
 function triggerFileInput() { fileInput.value?.click() }
@@ -228,7 +226,7 @@ function handleSave() {
       <v-card-actions class="px-6 pb-6 pt-0">
         <v-spacer />
         <v-btn variant="outlined" rounded="lg" @click="close">Cancel</v-btn>
-        <v-btn color="#14dc8b" variant="flat" rounded="lg" @click="handleSave">
+        <v-btn color="var(--app-primary)" variant="flat" rounded="lg" @click="handleSave">
           <span style="color:#063824;font-weight:800">Save Profile</span>
         </v-btn>
       </v-card-actions>
@@ -243,7 +241,7 @@ function handleSave() {
   border-radius: 16px; cursor: pointer; overflow: hidden;
   border: 2px dashed #dbe3e7; transition: border-color 0.2s;
 }
-.avatar-drop:hover, .avatar-drop.dragging { border-color: #14dc8b; }
+.avatar-drop:hover, .avatar-drop.dragging { border-color: var(--app-primary); }
 .avatar-overlay {
   position: absolute; inset: 0; background: rgba(0,0,0,0.45);
   display: flex; flex-direction: column; align-items: center;

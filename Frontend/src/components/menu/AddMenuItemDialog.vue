@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useMenuStore } from '@/stores'
 
 const props = defineProps({
@@ -15,9 +15,13 @@ const defaultForm = () => ({ item_name: '', price: '', description: '', category
 const form         = ref(defaultForm())
 const imageFile    = ref(null)
 const imagePreview = ref(null)
+const imageSource  = ref('upload') // upload | url
+const imageUrl     = ref('')
+const objectUrl    = ref(null)
 const saving       = ref(false)
 const errors       = ref({})
 const fileInput    = ref(null)
+const imageUrlInput = ref(null)
 
 const isEdit = computed(() => !!props.editItem)
 const title  = computed(() => isEdit.value ? 'Edit Menu Item' : 'Add Menu Item')
@@ -32,6 +36,8 @@ watch(
     if (!open) return
     errors.value    = {}
     imageFile.value = null
+    imageUrl.value  = ''
+    imageSource.value = 'upload'
     if (props.editItem) {
       form.value = {
         item_name:   props.editItem.name,
@@ -41,6 +47,10 @@ watch(
         status:      props.editItem.status ?? true,
       }
       imagePreview.value = props.editItem.image ? resolveImageUrl(props.editItem.image) : null
+      if (props.editItem.image?.startsWith('http')) {
+        imageSource.value = 'url'
+        imageUrl.value = props.editItem.image
+      }
     } else {
       form.value         = defaultForm()
       imagePreview.value = null
@@ -59,27 +69,60 @@ function resolveImageUrl(path) {
 function close() { emit('update:modelValue', false) }
 
 function triggerFileInput() { fileInput.value?.click() }
+function selectUpload() { imageSource.value = 'upload' }
+function selectUrl() {
+  imageSource.value = 'url'
+  nextTick(() => imageUrlInput.value?.focus?.())
+}
 
 function onFileChange(e) {
   const file = e.target.files?.[0]
   if (!file) return
+  imageSource.value = 'upload'
   imageFile.value = file
-  const reader   = new FileReader()
-  reader.onload  = ev => { imagePreview.value = ev.target.result }
-  reader.readAsDataURL(file)
+  if (objectUrl.value) URL.revokeObjectURL(objectUrl.value)
+  objectUrl.value = URL.createObjectURL(file)
+  imagePreview.value = objectUrl.value
 }
 
 function removeImage() {
   imageFile.value    = null
   imagePreview.value = null
+  imageUrl.value     = ''
+  if (objectUrl.value) {
+    URL.revokeObjectURL(objectUrl.value)
+    objectUrl.value = null
+  }
   if (fileInput.value) fileInput.value.value = ''
 }
+
+watch(imageSource, (val) => {
+  if (val === 'url') {
+    imageFile.value = null
+    if (fileInput.value) fileInput.value.value = ''
+  } else {
+    imageUrl.value = ''
+  }
+})
+
+watch(imageUrl, (val) => {
+  if (imageSource.value !== 'url') return
+  imagePreview.value = val?.trim() ? val.trim() : null
+})
 
 function validate() {
   const e = {}
   if (!form.value.item_name.trim())                          e.item_name = 'Name is required.'
   if (form.value.price === '' || form.value.price === null)  e.price     = 'Price is required.'
   if (isNaN(Number(form.value.price)) || Number(form.value.price) < 0) e.price = 'Enter a valid price.'
+  const hasExistingImage = isEdit.value && !!props.editItem?.image
+  if (imageSource.value === 'upload') {
+    if (!imageFile.value && !hasExistingImage) e.image = 'Please upload an image.'
+  } else if (imageSource.value === 'url') {
+    const val = imageUrl.value.trim()
+    if (!val) e.image = 'Please enter an image URL.'
+    else if (!/^https?:\/\//i.test(val)) e.image = 'Image URL must start with http:// or https://'
+  }
   errors.value = e
   return Object.keys(e).length === 0
 }
@@ -89,7 +132,7 @@ async function handleSave() {
   saving.value = true
 
   let payload
-  if (imageFile.value) {
+  if (imageSource.value === 'upload' && imageFile.value) {
     payload = new FormData()
     payload.append('item_name',   form.value.item_name.trim())
     payload.append('price',       form.value.price)
@@ -105,6 +148,7 @@ async function handleSave() {
       status:      form.value.status,
       category_id: form.value.category_id ?? null,
     }
+    if (imageSource.value === 'url' && imageUrl.value.trim()) payload.image = imageUrl.value.trim()
     if (isEdit.value && !imagePreview.value && props.editItem?.image) payload.image = null
   }
 
@@ -140,8 +184,8 @@ async function handleSave() {
       <!-- Header -->
       <v-card-title class="d-flex align-center justify-space-between pt-6 px-6">
         <div class="d-flex align-center ga-3">
-          <v-avatar color="#14dc8b" variant="tonal" size="40" rounded="lg">
-            <v-icon size="20" color="#0f9e5f">{{ isEdit ? 'mdi-pencil-outline' : 'mdi-silverware-fork-knife' }}</v-icon>
+          <v-avatar color="var(--app-primary)" variant="tonal" size="40" rounded="lg">
+            <v-icon size="20" color="var(--app-primary-600)">{{ isEdit ? 'mdi-pencil-outline' : 'mdi-silverware-fork-knife' }}</v-icon>
           </v-avatar>
           <span class="text-h6 font-weight-black">{{ title }}</span>
         </div>
@@ -151,31 +195,75 @@ async function handleSave() {
       </v-card-title>
 
       <v-card-text class="px-6 pt-3">
-
-        <!-- Image Upload -->
-        <div
-          class="d-flex align-center justify-center mb-4"
-          style="height:150px; border:2px dashed #dbe3e7; border-radius:12px; cursor:pointer; overflow:hidden; position:relative; transition:border-color 0.2s, background 0.2s;"
-          :style="imagePreview ? {} : {}"
-          @click="triggerFileInput"
-        >
-          <v-img v-if="imagePreview" :src="imagePreview" height="150" cover />
-          <div v-else class="d-flex flex-column align-center ga-1">
-            <v-icon size="32" color="grey-lighten-1">mdi-image-plus-outline</v-icon>
-            <span class="text-caption font-weight-bold text-medium-emphasis">Click to upload image</span>
-            <span class="text-caption text-disabled">PNG, JPG, WEBP — max 2 MB</span>
-          </div>
+        <!-- Image Source -->
+        <div class="d-flex align-center ga-2 mb-1">
           <v-btn
-            v-if="imagePreview"
-            icon size="x-small"
-            color="white"
-            style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.5);"
-            @click.stop="removeImage"
+            size="small"
+            rounded="lg"
+            prepend-icon="mdi-upload"
+            :variant="imageSource === 'upload' ? 'flat' : 'outlined'"
+            color="var(--app-primary)"
+            @click="selectUpload"
           >
-            <v-icon size="14">mdi-close</v-icon>
+            Upload (Local)
+          </v-btn>
+          <v-btn
+            size="small"
+            rounded="lg"
+            prepend-icon="mdi-link-variant"
+            :variant="imageSource === 'url' ? 'flat' : 'outlined'"
+            color="var(--app-primary)"
+            @click="selectUrl"
+          >
+            Paste Image URL
           </v-btn>
         </div>
-        <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="onFileChange" />
+
+        <!-- Image Upload / URL -->
+        <template v-if="imageSource === 'upload'">
+          <div
+            class="d-flex align-center justify-center mb-4"
+            style="height:58px; border:2px dashed #dbe3e7; border-radius:12px; cursor:pointer; overflow:hidden; position:relative; transition:border-color 0.2s, background 0.2s;"
+            @click="triggerFileInput"
+          >
+            <v-img v-if="imagePreview" :src="imagePreview" height="58" cover />
+            <div v-else class="d-flex flex-column align-center ga-1">
+              <v-icon size="24" color="grey-lighten-1">mdi-image-plus-outline</v-icon>
+              <span class="text-caption font-weight-bold text-medium-emphasis">Click to upload from local storage</span>
+              <span class="text-caption text-disabled">PNG, JPG, WEBP - max 2 MB</span>
+            </div>
+            <v-btn
+              v-if="imagePreview"
+              icon size="x-small"
+              color="white"
+              style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.5);"
+              @click.stop="removeImage"
+            >
+              <v-icon size="14">mdi-close</v-icon>
+            </v-btn>
+          </div>
+          <div v-if="errors.image" class="text-caption text-error mt-1">{{ errors.image }}</div>
+          <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="onFileChange" />
+        </template>
+
+        <template v-else>
+          <div class="mb-3">
+            <v-text-field
+              v-model="imageUrl"
+              ref="imageUrlInput"
+              label="Image URL"
+              placeholder="https://example.com/image.jpg"
+              prepend-inner-icon="mdi-link-variant"
+              variant="outlined"
+              rounded="lg"
+              density="comfortable"
+              :error-messages="errors.image"
+            />
+            <v-card v-if="imagePreview" rounded="lg" border flat style="overflow:hidden">
+              <v-img :src="imagePreview" height="58" cover />
+            </v-card>
+          </div>
+        </template>
 
         <!-- Fields -->
         <v-text-field
@@ -212,7 +300,7 @@ async function handleSave() {
           v-model="form.description"
           label="Description"
           variant="outlined" rounded="lg"
-          rows="3" no-resize
+          rows="2" no-resize
           class="mb-3"
         />
 
@@ -222,7 +310,7 @@ async function handleSave() {
               <div class="text-body-2 font-weight-bold">Availability</div>
               <div class="text-caption text-medium-emphasis">{{ form.status ? 'Visible on menu' : 'Hidden from menu' }}</div>
             </div>
-            <v-switch v-model="form.status" color="#14dc8b" hide-details inset density="compact" />
+            <v-switch v-model="form.status" color="var(--app-primary)" hide-details inset density="compact" />
           </v-card-text>
         </v-card>
 
@@ -231,7 +319,7 @@ async function handleSave() {
       <v-card-actions class="px-6 pb-6">
         <v-spacer />
         <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="close">Cancel</v-btn>
-        <v-btn color="#14dc8b" rounded="lg" :loading="saving" @click="handleSave">
+        <v-btn color="var(--app-primary)" rounded="lg" :loading="saving" @click="handleSave">
           <span style="color:#063824;font-weight:800">{{ isEdit ? 'Save Changes' : 'Add Item' }}</span>
         </v-btn>
       </v-card-actions>
@@ -239,3 +327,5 @@ async function handleSave() {
     </v-card>
   </v-dialog>
 </template>
+
+

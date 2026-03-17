@@ -1,206 +1,37 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import api from '@/api/api'
-import EditProfileDialog from '@/components/user/Editprofiledialog.vue'
+import { onMounted } from "vue";
+import { storeToRefs } from "pinia";
+import { useUserStore } from "@/stores";
+import EditProfileDialog from "@/components/avatar/Editprofiledialog.vue";
 
-// ── State ──────────────────────────────────────────────────────────────────
-const search           = ref('')
-const filterRole       = ref('all')
-const filterRestaurant = ref('all')
-const showAddDialog    = ref(false)
-const showEditDialog   = ref(false)
-const showDeleteDialog = ref(false)
-const showProfileDialog = ref(false)
-const deletingId       = ref(null)
-const editTarget       = ref(null)
-const profileTarget    = ref(null)
-const users            = ref([])
-const loading          = ref(false)
-const saving           = ref(false)
-const deleting         = ref(false)
-const snackbar         = ref({ show: false, message: '', color: 'success' })
+const userStore = useUserStore();
 
-const modal = ref({
-  form: { firstName: '', lastName: '', email: '', restaurant: 'Downtown Bistro', role: 'SERVER' },
-})
+const {
+  search,
+  filterRole,
+  filterRestaurant,
+  showAddDialog,
+  showEditDialog,
+  showDeleteDialog,
+  showProfileDialog,
+  users,
+  loading,
+  saving,
+  deleting,
+  snackbar,
+  modal,
+  profileTarget,
+  stats,
+  filteredUsers,
+} = storeToRefs(userStore);
 
-// ── Constants ──────────────────────────────────────────────────────────────
-const avatarColors      = ['#22c55e', '#6366f1', '#f97316', '#ec4899', '#06b6d4', '#84cc16', '#f43f5e', '#a855f7']
-const restaurantOptions = ['All Locations', 'Downtown Bistro', 'Uptown Grill', 'Riverside Café', 'Midtown Kitchen']
-const roleOptions       = ['All Roles', 'ADMINISTRATOR', 'MANAGER', 'CHEF', 'SERVER', 'HOST']
+const { restaurantOptions, roleOptions, roleConfig, init, openAdd, saveUser, openEdit, saveEdit, toggleActive, confirmDelete, handleDelete, openEditProfile, handleProfileSaved } = userStore;
 
-const roleConfig = {
-  ADMINISTRATOR: { color: '#14dc8b', bg: '#e6fff5', text: '#063824' },
-  MANAGER:       { color: '#3b82f6', bg: '#eff6ff', text: '#1e40af' },
-  CHEF:          { color: '#f97316', bg: '#fff7ed', text: '#9a3412' },
-  SERVER:        { color: '#14b8a6', bg: '#f0fdfa', text: '#134e4a' },
-  HOST:          { color: '#a855f7', bg: '#faf5ff', text: '#6b21a8' },
-}
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-function notify(message, color = 'success') {
-  snackbar.value = { show: true, message, color }
-}
-
-function resolveAvatar(url) {
-  if (!url) return null
-  if (url.startsWith('http://') || url.startsWith('https://')) return url
-  const base = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000')
-    .replace(/\/api\/?$/, '').replace(/\/$/, '')
-  return `${base}/${url.replace(/^\/+/, '')}`
-}
-
-function mapUser(u, index = 0) {
-  const firstName = u.first_name ?? ''
-  const lastName  = u.last_name  ?? ''
-  const fullName  = `${firstName} ${lastName}`.trim() || u.name || '—'
-  const initials  = ((firstName[0] ?? '') + (lastName[0] ?? '')).toUpperCase() || '??'
-
-  return {
-    id:         `#USR-${String(u.id).padStart(4, '0')}`,
-    rawId:      u.id,
-    name:       fullName,
-    initials,
-    avatarColor: avatarColors[index % avatarColors.length],
-    avatar:     resolveAvatar(u.avatar ?? null),
-    email:      u.email       ?? '',
-    restaurant: u.restaurant  ?? '',
-    role:       u.role        ?? 'SERVER',
-    active:     u.is_active   ?? true,
-    created:    u.created_at
-      ? new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
-      : '—',
-  }
-}
-
-// ── Computed ───────────────────────────────────────────────────────────────
-const stats = computed(() => ({
-  total:    users.value.length,
-  active:   users.value.filter(u => u.active).length,
-  inactive: users.value.filter(u => !u.active).length,
-}))
-
-const filteredUsers = computed(() =>
-  users.value.filter(u => {
-    const matchRest   = ['All Locations', 'all'].includes(filterRestaurant.value) || u.restaurant === filterRestaurant.value
-    const matchRole   = ['All Roles', 'all'].includes(filterRole.value)           || u.role === filterRole.value
-    const q           = search.value.trim().toLowerCase()
-    const matchSearch = !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
-    return matchRest && matchRole && matchSearch
-  })
-)
-
-// ── API ────────────────────────────────────────────────────────────────────
-async function fetchUsers() {
-  loading.value = true
-  try {
-    const { data } = await api.get('/users')
-    const list = Array.isArray(data) ? data : (data.data ?? [])
-    users.value = list.map(mapUser)
-  } catch (err) {
-    notify('Failed to load users.', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
-function openAdd() {
-  modal.value.form = { firstName: '', lastName: '', email: '', restaurant: 'Downtown Bistro', role: 'SERVER' }
-  showAddDialog.value = true
-}
-
-async function saveUser() {
-  saving.value = true
-  try {
-    const f = modal.value.form
-    const { data } = await api.post('/users', {
-      first_name: f.firstName, last_name: f.lastName,
-      email: f.email, restaurant: f.restaurant, role: f.role,
-    })
-    users.value.push(mapUser(data, users.value.length))
-    showAddDialog.value = false
-    notify('User created successfully.')
-  } catch (err) {
-    notify(err.response?.data?.message ?? 'Failed to create user.', 'error')
-  } finally {
-    saving.value = false
-  }
-}
-
-function openEdit(user) {
-  editTarget.value = user
-  const [fn, ...ln] = user.name.split(' ')
-  modal.value.form = { firstName: fn, lastName: ln.join(' '), email: user.email, restaurant: user.restaurant, role: user.role }
-  showEditDialog.value = true
-}
-
-async function saveEdit() {
-  saving.value = true
-  try {
-    const f = modal.value.form
-    const { data } = await api.put(`/users/${editTarget.value.rawId}`, {
-      first_name: f.firstName, last_name: f.lastName,
-      email: f.email, restaurant: f.restaurant, role: f.role,
-    })
-    const updated = mapUser(data, users.value.findIndex(u => u.rawId === editTarget.value.rawId))
-    Object.assign(editTarget.value, updated)
-    showEditDialog.value = false
-    notify('User updated successfully.')
-  } catch (err) {
-    notify(err.response?.data?.message ?? 'Failed to update user.', 'error')
-  } finally {
-    saving.value = false
-  }
-}
-
-async function toggleActive(user) {
-  const previous = user.active
-  user.active = !previous
-  try {
-    await api.patch(`/users/${user.rawId}`, { is_active: user.active })
-  } catch {
-    user.active = previous
-    notify('Failed to update status.', 'error')
-  }
-}
-
-function confirmDelete(id) {
-  deletingId.value       = id
-  showDeleteDialog.value = true
-}
-
-async function handleDelete() {
-  deleting.value = true
-  const target = users.value.find(u => u.id === deletingId.value)
-  try {
-    await api.delete(`/users/${target.rawId}`)
-    users.value            = users.value.filter(u => u.id !== deletingId.value)
-    showDeleteDialog.value = false
-    notify('User deleted.')
-  } catch (err) {
-    notify(err.response?.data?.message ?? 'Failed to delete user.', 'error')
-  } finally {
-    deleting.value = false
-  }
-}
-
-function openEditProfile(user) {
-  profileTarget.value    = user
-  showProfileDialog.value = true
-}
-
-function handleProfileSaved(updatedUser) {
-  if (profileTarget.value) {
-    Object.assign(profileTarget.value, updatedUser)
-  }
-  notify('Profile updated successfully.')
-}
-
-onMounted(fetchUsers)
+onMounted(init);
 </script>
 
 <template>
-  <v-container fluid class="pa-6">
+  <v-container fluid class="pa-0">
 
     <!-- ── Top stats row ── -->
     <v-row dense class="mb-5">
@@ -225,11 +56,11 @@ onMounted(fetchUsers)
           <v-card-text class="pa-5">
             <div class="d-flex justify-space-between align-start mb-3">
               <span class="text-caption font-weight-bold text-uppercase text-medium-emphasis" style="letter-spacing:.08em">Status Distribution</span>
-              <v-progress-circular :model-value="stats.total ? (stats.active/stats.total)*100 : 0" color="#14dc8b" size="18" width="2" />
+              <v-progress-circular :model-value="stats.total ? (stats.active/stats.total)*100 : 0" color="var(--app-primary)" size="18" width="2" />
             </div>
             <div class="d-flex align-end ga-3">
               <div>
-                <div class="text-h3 font-weight-black" style="color:#14dc8b">{{ stats.active }}</div>
+                <div class="text-h3 font-weight-black" style="color:var(--app-primary)">{{ stats.active }}</div>
                 <div class="text-caption text-medium-emphasis">Active</div>
               </div>
               <div class="pb-1">
@@ -334,7 +165,7 @@ onMounted(fetchUsers)
             style="max-width:260px; min-width:200px"
           />
           <v-btn
-            color="#14dc8b"
+            color="var(--app-primary)"
             rounded="lg"
             elevation="0"
             prepend-icon="mdi-account-multiple-plus"
@@ -411,7 +242,7 @@ onMounted(fetchUsers)
         <template #item.active="{ item }">
           <v-switch
             :model-value="item.active"
-            color="#14dc8b"
+            color="var(--app-primary)"
             hide-details
             density="compact"
             inset
@@ -482,7 +313,7 @@ onMounted(fetchUsers)
         <v-card-actions class="px-6 pb-6 pt-0">
           <v-spacer />
           <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="showAddDialog = false">Cancel</v-btn>
-          <v-btn color="#14dc8b" rounded="lg" :loading="saving" @click="saveUser">
+          <v-btn color="var(--app-primary)" rounded="lg" :loading="saving" @click="saveUser">
             <span style="color:#063824;font-weight:800">Create Account</span>
           </v-btn>
         </v-card-actions>
@@ -553,3 +384,5 @@ onMounted(fetchUsers)
 
   </v-container>
 </template>
+
+

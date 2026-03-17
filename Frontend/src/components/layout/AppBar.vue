@@ -51,10 +51,10 @@ function logout() {
 </script>
 
 <template>
-  <v-app-bar flat height="80" color="white" border="b">
+  <v-app-bar flat height="88" color="white" border="b" class="appbar">
     <v-app-bar-title>
-      <div class="text-subtitle-1 font-weight-black" style="color:#1a2e48">{{ title }}</div>
-      <div class="text-caption text-medium-emphasis">{{ subtitle }}</div>
+      <div class="appbar-title">{{ title }}</div>
+      <div class="appbar-subtitle">{{ subtitle }}</div>
     </v-app-bar-title>
 
     <template #append>
@@ -62,14 +62,14 @@ function logout() {
 
         <v-btn
           v-if="actionLabel"
-          color="#0f9e5f" variant="flat" rounded="lg" size="small"
+          color="var(--app-primary-600)" variant="flat" rounded="lg" size="small"
           :prepend-icon="'mdi-plus'"
           @click="emit('action')"
         >
           {{ actionLabel }}
         </v-btn>
 
-        <v-btn icon variant="text" size="small">
+        <v-btn icon variant="text" size="small" class="appbar-icon">
           <v-icon>mdi-bell-outline</v-icon>
           <v-badge color="error" content="1" floating />
         </v-btn>
@@ -80,7 +80,7 @@ function logout() {
             <v-avatar
               v-bind="mp"
               size="36"
-              style="cursor:pointer; box-shadow:0 3px 10px rgba(15,158,95,0.28);"
+              style="cursor:pointer; box-shadow:0 4px 14px rgba(20,184,166,0.35);"
             >
               <v-img
                 v-if="avatarUrl"
@@ -90,7 +90,7 @@ function logout() {
               />
               <span
                 v-else
-                style="background:linear-gradient(135deg,#19e092,#0f9e5f); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#063824;"
+                style="background:linear-gradient(135deg,var(--app-primary),var(--app-primary-600)); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#063824;"
               >{{ profileInitials }}</span>
             </v-avatar>
           </template>
@@ -103,9 +103,9 @@ function logout() {
                   <v-img v-if="avatarUrl" :src="avatarUrl" cover @error="imgError = true" />
                   <span
                     v-else
-                    style="background:linear-gradient(135deg,#19e092,#0f9e5f); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; color:#063824;"
-                  >{{ profileInitials }}</span>
-                </v-avatar>
+                    style="background:linear-gradient(135deg,#5eead4,var(--app-primary)); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; color:#064e4f;"
+                >{{ profileInitials }}</span>
+              </v-avatar>
               </template>
               <v-list-item-title class="font-weight-bold">{{ profileName }}</v-list-item-title>
               <v-list-item-subtitle>{{ profileRole }}</v-list-item-subtitle>
@@ -147,3 +147,34 @@ function logout() {
     </template>
   </v-app-bar>
 </template>
+
+<style scoped>
+.appbar {
+  background: linear-gradient(180deg, #ffffff 0%, #f6fffd 100%);
+}
+
+.appbar-crumb {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(13, 148, 136, 0.65);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.appbar-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.appbar-subtitle {
+  font-size: 12px;
+  color: rgba(30, 41, 59, 0.6);
+}
+
+.appbar-icon :deep(.v-icon) {
+  color: var(--app-primary-600);
+}
+</style>
+

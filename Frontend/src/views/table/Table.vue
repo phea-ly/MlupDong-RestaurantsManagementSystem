@@ -1,114 +1,34 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { storeToRefs } from "pinia";
+import { useTableStore } from "@/stores";
 
-const activeFilter     = ref('all')
-const showCreateDialog = ref(false)
-const showDeleteDialog = ref(false)
-const showEditDialog   = ref(false)
-const newTableName     = ref('')
-const deletingId       = ref(null)
-const editingTable     = ref(null)
-const editForm         = ref({ name: '', status: 'available' })
+const tableStore = useTableStore();
 
-const tables = ref([
-  { id: 1, name: 'Table 01', status: 'available' },
-  { id: 2, name: 'Table 02', status: 'occupied' },
-  { id: 3, name: 'Table 03', status: 'available' },
-  { id: 4, name: 'Table 04', status: 'available' },
-  { id: 5, name: 'Table 05', status: 'occupied' },
-])
+const {
+  activeFilter,
+  showCreateDialog,
+  showDeleteDialog,
+  showEditDialog,
+  newTableName,
+  editForm,
+  tables,
+  filteredTables,
+  allCount,
+  availableCount,
+  occupiedCount,
+} = storeToRefs(tableStore);
 
-// ── Computed ───────────────────────────────────────────
-const filteredTables   = computed(() =>
-  activeFilter.value === 'all'
-    ? tables.value
-    : tables.value.filter(t => t.status === activeFilter.value)
-)
-const allCount       = computed(() => tables.value.length)
-const availableCount = computed(() => tables.value.filter(t => t.status === 'available').length)
-const occupiedCount  = computed(() => tables.value.filter(t => t.status === 'occupied').length)
-
-// ── Create ─────────────────────────────────────────────
-function openCreate() {
-  newTableName.value     = ''
-  showCreateDialog.value = true
-}
-
-function createTable() {
-  if (!newTableName.value.trim()) return
-  tables.value.push({
-    id:     Date.now(),
-    name:   newTableName.value.trim(),
-    status: 'available',
-  })
-  showCreateDialog.value = false
-}
-
-// ── Edit ───────────────────────────────────────────────
-function openEdit(table) {
-  editingTable.value     = table
-  editForm.value         = { name: table.name, status: table.status }
-  showEditDialog.value   = true
-}
-
-function saveEdit() {
-  if (!editingTable.value || !editForm.value.name.trim()) return
-  editingTable.value.name   = editForm.value.name.trim()
-  editingTable.value.status = editForm.value.status
-  showEditDialog.value = false
-}
-
-// ── Delete ─────────────────────────────────────────────
-function confirmDelete(id) {
-  deletingId.value       = id
-  showDeleteDialog.value = true
-}
-
-function handleDelete() {
-  tables.value           = tables.value.filter(t => t.id !== deletingId.value)
-  showDeleteDialog.value = false
-  deletingId.value       = null
-}
-
-// ── QR Download (placeholder) ──────────────────────────
-function downloadQR(table) {
-  const svg    = generateQRSvg(table.name)
-  const blob   = new Blob([svg], { type: 'image/svg+xml' })
-  const url    = URL.createObjectURL(blob)
-  const a      = document.createElement('a')
-  a.href       = url
-  a.download   = `${table.name.replace(/\s+/g, '-')}-QR.svg`
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
-function exportAllQR() {
-  tables.value.forEach(t => downloadQR(t))
-}
-
-// ── QR SVG generator ──────────────────────────────────
-function generateQRSvg(label = '') {
-  return `<svg xmlns='http://www.w3.org/2000/svg' width='100' height='110' viewBox='0 0 100 110'>
-    <rect width='100' height='100' fill='#f7faf9'/>
-    <rect x='10' y='10' width='28' height='28' rx='2' fill='none' stroke='#122039' stroke-width='3'/>
-    <rect x='16' y='16' width='16' height='16' rx='1' fill='#122039'/>
-    <rect x='62' y='10' width='28' height='28' rx='2' fill='none' stroke='#122039' stroke-width='3'/>
-    <rect x='68' y='16' width='16' height='16' rx='1' fill='#122039'/>
-    <rect x='10' y='62' width='28' height='28' rx='2' fill='none' stroke='#122039' stroke-width='3'/>
-    <rect x='16' y='68' width='16' height='16' rx='1' fill='#122039'/>
-    <rect x='62' y='62' width='8' height='8' fill='#122039'/>
-    <rect x='74' y='62' width='8' height='8' fill='#122039'/>
-    <rect x='62' y='74' width='8' height='8' fill='#122039'/>
-    <rect x='74' y='74' width='8' height='8' fill='#122039'/>
-    <rect x='86' y='62' width='4' height='4' fill='#122039'/>
-    <rect x='86' y='74' width='4' height='4' fill='#122039'/>
-    <rect x='44' y='10' width='6' height='6' fill='#122039'/>
-    <rect x='44' y='22' width='6' height='6' fill='#122039'/>
-    <rect x='44' y='44' width='6' height='6' fill='#122039'/>
-    <rect x='44' y='56' width='6' height='6' fill='#122039'/>
-    <text x='50' y='108' font-size='9' font-family='sans-serif' font-weight='700' fill='#9aabbd' text-anchor='middle'>${label}</text>
-  </svg>`
-}
+const {
+  openCreate,
+  createTable,
+  openEdit,
+  saveEdit,
+  confirmDelete,
+  handleDelete,
+  downloadQR,
+  exportAllQR,
+  generateQRSvg,
+} = tableStore;
 </script>
 
 <template>
@@ -206,7 +126,7 @@ function generateQRSvg(label = '') {
     <div class="print-card">
       <div class="d-flex align-center ga-3">
         <div class="print-icon">
-          <v-icon color="#0f9e5f" size="22">mdi-printer-outline</v-icon>
+          <v-icon color="var(--app-primary-600)" size="22">mdi-printer-outline</v-icon>
         </div>
         <div>
           <p class="print-title">Ready to Print?</p>
@@ -364,7 +284,7 @@ function generateQRSvg(label = '') {
   padding: 0 18px;
   border-radius: 8px;
   border: none;
-  background: #14dc8b;
+  background: var(--app-primary);
   color: #063824;
   font-size: 13px;
   font-weight: 700;
@@ -403,7 +323,7 @@ function generateQRSvg(label = '') {
   transition: all 0.2s;
   gap: 8px;
 }
-.add-card:hover { border-color: #14dc8b !important; background: rgba(20,220,139,.04) !important; }
+.add-card:hover { border-color: var(--app-primary) !important; background: rgba(20,220,139,.04) !important; }
 
 .add-label {
   font-size: 12px;
@@ -491,7 +411,7 @@ function generateQRSvg(label = '') {
   transition: all 0.15s;
 }
 .act-btn.edit { color: #3d5166; }
-.act-btn.edit:hover { background: #f0f7f4; color: #0f9e5f; }
+.act-btn.edit:hover { background: #f0f7f4; color: var(--app-primary-600); }
 .act-btn.del  { color: #9aabbd; }
 .act-btn.del:hover  { background: #fff1f2; color: #ef4444; }
 .act-btn :deep(.v-icon) { color: inherit; }
@@ -539,7 +459,7 @@ function generateQRSvg(label = '') {
   padding: 0 20px;
   border-radius: 8px;
   border: none;
-  background: #14dc8b;
+  background: var(--app-primary);
   color: #063824;
   font-size: 13px;
   font-weight: 700;
@@ -571,7 +491,7 @@ function generateQRSvg(label = '') {
   font-family: inherit; box-sizing: border-box;
   transition: border-color 0.15s; background: #fff;
 }
-.form-input:focus { border-color: #14dc8b; }
+.form-input:focus { border-color: var(--app-primary); }
 
 .filter-select {
   display: flex;
@@ -602,7 +522,7 @@ function generateQRSvg(label = '') {
 
 .btn-save {
   padding: 9px 20px; border-radius: 8px; border: none;
-  background: #14dc8b; color: #063824;
+  background: var(--app-primary); color: #063824;
   font-size: 13.5px; font-weight: 700;
   cursor: pointer; font-family: inherit;
   transition: background 0.15s;
@@ -625,3 +545,4 @@ function generateQRSvg(label = '') {
 }
 .btn-delete:hover { background: #dc2626; }
 </style>
+

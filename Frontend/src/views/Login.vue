@@ -1,42 +1,15 @@
 <script setup>
-import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth.store'
+import { storeToRefs } from 'pinia'
+import { useLoginStore } from '@/stores'
 
-const auth   = useAuthStore()
 const router = useRouter()
+const loginStore = useLoginStore()
+const { email, password, error, loading, showPass, remember } = storeToRefs(loginStore)
 
-const email    = ref('')
-const password = ref('')
-const error    = ref('')
-const loading  = ref(false)
-const showPass = ref(false)
-const remember = ref(false)
-
-async function login() {
-  error.value   = ''
-  loading.value = true
-  try {
-    await auth.login(email.value, password.value)
-    await router.replace('/home')
-  } catch (e) {
-    if (e.response?.status === 422) {
-      const errors = e.response.data.errors
-      error.value = errors
-        ? Object.values(errors).map(e => e[0]).join(' ')
-        : e.response.data.message
-    } else if (e.response?.status === 401) {
-      const msg = e.response?.data?.message?.toLowerCase() ?? ''
-      if (msg.includes('email'))         error.value = 'Email address not found.'
-      else if (msg.includes('password')) error.value = 'Incorrect password.'
-      else                               error.value = 'Invalid credentials.'
-    } else {
-      error.value = e.message || 'Something went wrong. Please try again.'
-    }
-  } finally {
-    loading.value = false
-  }
-}
+const login = () => loginStore.login(router)
+const clearError = loginStore.clearError
+const toggleShowPass = loginStore.toggleShowPass
 </script>
 
 <template>
@@ -54,7 +27,7 @@ async function login() {
 
                 <!-- Brand -->
                 <div class="d-flex flex-column align-center ga-3 mb-6">
-                  <v-avatar size="44" rounded="lg" style="background:linear-gradient(135deg,#19e092,#0f9e5f); box-shadow:0 4px 14px rgba(15,158,95,0.4);">
+                  <v-avatar size="44" rounded="lg" style="background:linear-gradient(135deg,var(--app-primary),var(--app-primary-600)); box-shadow:0 4px 14px rgba(15,158,95,0.4);">
                     <span style="font-size:17px; font-weight:900; color:#063824;">M</span>
                   </v-avatar>
                   <div class="text-center">
@@ -66,7 +39,7 @@ async function login() {
                 <div class="login-title mb-1">Sign In</div>
                 <div class="login-sub mb-6">Welcome back! Please enter your credentials.</div>
 
-                <v-alert v-if="error" type="error" variant="tonal" rounded="lg" density="compact" closable class="mb-4" @click:close="error = ''">
+                <v-alert v-if="error" type="error" variant="tonal" rounded="lg" density="compact" closable class="mb-4" @click:close="clearError">
                   {{ error }}
                 </v-alert>
 
@@ -93,14 +66,14 @@ async function login() {
                   density="comfortable"
                   class="glass-field mb-3"
                   hide-details="auto"
-                  @click:append-inner="showPass = !showPass"
+                  @click:append-inner="toggleShowPass"
                   @keyup.enter="login"
                 />
 
                 <v-checkbox
                   v-model="remember"
                   label="Remember me"
-                  color="#19e092"
+                  color="var(--app-primary)"
                   density="compact"
                   hide-details
                   class="mb-5"
@@ -182,7 +155,7 @@ async function login() {
 :deep(.v-checkbox .v-label) { color: rgba(255,255,255,0.85) !important; font-size: 13.5px; font-weight: 600; }
 
 .login-btn {
-  background: linear-gradient(135deg, #19e092, #0f9e5f) !important;
+  background: linear-gradient(135deg, var(--app-primary), var(--app-primary-600)) !important;
   color: #063824 !important; font-weight: 800 !important; font-size: 15px !important;
   box-shadow: 0 6px 22px rgba(15,158,95,0.45) !important;
   transition: transform .15s, box-shadow .15s !important;

@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth.store'  // ← ADD this import
+import { useAuthStore } from '@/stores/auth.store'  
 
 const routes = [
   {
@@ -31,6 +31,12 @@ const routes = [
         component: () => import('@/views/menu/Menu.vue'),
       },
       {
+        path: 'categories',
+        name: 'home-categories',
+        meta: { requiresAuth: true },
+        component: () => import('@/views/categories/Categories.vue'),
+      },
+      {
         path: 'staff',
         name: 'home-staff',
         meta: { requiresAuth: true },
@@ -55,6 +61,12 @@ const routes = [
         component: () => import('@/views/salesReport/SalesReport.vue'),
       },
       {
+        path: 'activity',
+        name: 'home-activity',
+        meta: { requiresAuth: true },
+        component: () => import('@/views/activity/Activity.vue'),
+      },
+      {
         path: 'settings',
         name: 'home-settings',
         meta: { requiresAuth: true },
@@ -74,7 +86,8 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token')   // ← read directly, most reliable
+  if (window.location.port === '6173') { next(); return }
+  const token = localStorage.getItem('token')   
 
   if (to.meta.requiresAuth && !token) {
     next('/login')

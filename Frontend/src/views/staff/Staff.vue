@@ -1,94 +1,32 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { onMounted } from "vue";
+import { storeToRefs } from "pinia";
+import { useStaffStore } from "@/stores";
 
-const search           = ref('')
-const showAddDialog    = ref(false)
-const showEditDialog   = ref(false)
-const showDeleteDialog = ref(false)
-const deletingId       = ref(null)
-const editTarget       = ref(null)
+const staffStore = useStaffStore();
 
-const newStaff = ref({ name: '', email: '', role: 'CHEF', status: 'Active' })
-const editForm = ref({ name: '', email: '', role: '', status: 'Active' })
+const {
+  search,
+  showAddDialog,
+  showEditDialog,
+  showDeleteDialog,
+  loading,
+  saving,
+  deleting,
+  snackbar,
+  staffList,
+  userOptions,
+  newStaff,
+  editForm,
+  activeCount,
+  kitchenCount,
+  serviceCount,
+  headers,
+} = storeToRefs(staffStore);
 
-const staffList = ref([
-  { id: 1, name: 'Marcus Nguyen', email: 'marcus@mlupdong.com',  role: 'CHEF',    dateJoined: 'Oct 12, 2022', status: 'Active',   initials: 'MN', color: 'success'     },
-  { id: 2, name: 'Sarah Jenkins', email: 'sarah.j@mlupdong.com', role: 'ADMIN',   dateJoined: 'Jan 05, 2021', status: 'Active',   initials: 'SJ', color: 'error'       },
-  { id: 3, name: 'David Chen',    email: 'david@mlupdong.com',   role: 'WAITER',  dateJoined: 'Mar 22, 2023', status: 'Inactive', initials: 'DC', color: 'warning'     },
-  { id: 4, name: 'Jordan Lee',    email: 'j.lee@mlupdong.com',   role: 'CHEF',    dateJoined: 'Jun 15, 2022', status: 'Active',   initials: 'JL', color: 'pink'        },
-  { id: 5, name: 'Maya Patel',    email: 'maya.p@mlupdong.com',  role: 'WAITER',  dateJoined: 'Nov 30, 2023', status: 'Active',   initials: 'MP', color: 'deep-purple' },
-])
+const { roleColors, statusOptions, init, openAddDialog, addStaff, openEditDialog, saveEdit, confirmDelete, handleDelete } = staffStore;
 
-const roleColors = { CHEF: 'success', ADMIN: 'deep-purple', WAITER: 'teal', MANAGER: 'blue' }
-
-const headers = [
-  { title: 'Staff Member', key: 'name',       sortable: true  },
-  { title: 'Role',         key: 'role',       sortable: true  },
-  { title: 'Date Joined',  key: 'dateJoined', sortable: false },
-  { title: 'Status',       key: 'status',     sortable: true  },
-  { title: 'Actions',      key: 'actions',    sortable: false, align: 'end' },
-]
-
-const activeCount  = computed(() => staffList.value.filter(s => s.status === 'Active').length)
-const kitchenCount = computed(() => staffList.value.filter(s => s.role === 'CHEF').length)
-const serviceCount = computed(() => staffList.value.filter(s => s.role === 'WAITER').length)
-
-const roleOptions   = ['CHEF', 'WAITER', 'ADMIN', 'MANAGER']
-const statusOptions = ['Active', 'Inactive']
-
-function openAddDialog() {
-  newStaff.value = { name: '', email: '', role: 'CHEF', status: 'Active' }
-  showAddDialog.value = true
-}
-
-function addStaff() {
-  if (!newStaff.value.name.trim()) return
-  const parts    = newStaff.value.name.trim().split(/\s+/)
-  const initials = parts.map(p => p[0]).join('').toUpperCase().slice(0, 2)
-  staffList.value.push({
-    id:         Date.now(),
-    name:       newStaff.value.name.trim(),
-    email:      newStaff.value.email.trim(),
-    role:       newStaff.value.role,
-    status:     newStaff.value.status,
-    dateJoined: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-    initials,
-    color: 'success',
-  })
-  showAddDialog.value = false
-}
-
-function openEditDialog(member) {
-  editTarget.value = { ...member }
-  editForm.value   = { name: member.name, email: member.email, role: member.role, status: member.status }
-  showEditDialog.value = true
-}
-
-function saveEdit() {
-  const idx = staffList.value.findIndex(s => s.id === editTarget.value.id)
-  if (idx === -1) return
-  const parts = editForm.value.name.trim().split(/\s+/)
-  staffList.value[idx] = {
-    ...staffList.value[idx],
-    name:     editForm.value.name.trim(),
-    email:    editForm.value.email.trim(),
-    role:     editForm.value.role,
-    status:   editForm.value.status,
-    initials: parts.map(p => p[0]).join('').toUpperCase().slice(0, 2),
-  }
-  showEditDialog.value = false
-}
-
-function confirmDelete(id) {
-  deletingId.value       = id
-  showDeleteDialog.value = true
-}
-
-function handleDelete() {
-  staffList.value        = staffList.value.filter(s => s.id !== deletingId.value)
-  showDeleteDialog.value = false
-  deletingId.value       = null
-}
+onMounted(init);
 </script>
 
 <template>
@@ -152,7 +90,7 @@ function handleDelete() {
         <v-spacer />
         <v-btn variant="outlined" rounded="lg" prepend-icon="mdi-filter-outline">Filters</v-btn>
         <v-btn variant="outlined" rounded="lg" prepend-icon="mdi-download-outline">Export</v-btn>
-        <v-btn color="#14dc8b" rounded="lg" prepend-icon="mdi-plus" @click="openAddDialog">
+        <v-btn color="var(--app-primary)" rounded="lg" prepend-icon="mdi-plus" @click="openAddDialog">
           <span style="color:#063824;font-weight:800">Add Staff</span>
         </v-btn>
       </div>
@@ -215,21 +153,27 @@ function handleDelete() {
         <span class="text-h6 font-weight-black">Add New Staff</span>
       </v-card-title>
       <v-card-text class="px-6 pt-3">
-        <v-text-field v-model="newStaff.name"  label="Full Name" variant="outlined" rounded="lg" density="comfortable" class="mb-2" />
-        <v-text-field v-model="newStaff.email" label="Email"     variant="outlined" rounded="lg" density="comfortable" type="email" class="mb-2" />
+        <v-select
+          v-model="newStaff.user_id"
+          :items="userOptions"
+          item-title="name"
+          item-value="id"
+          label="User"
+          variant="outlined"
+          rounded="lg"
+          density="comfortable"
+          class="mb-2"
+        />
+        <v-text-field v-model="newStaff.position" label="Position" variant="outlined" rounded="lg" density="comfortable" class="mb-2" />
         <v-row dense>
-          <v-col cols="6">
-            <v-select v-model="newStaff.role"   :items="roleOptions"   label="Role"   variant="outlined" rounded="lg" density="comfortable" />
-          </v-col>
-          <v-col cols="6">
-            <v-select v-model="newStaff.status" :items="statusOptions" label="Status" variant="outlined" rounded="lg" density="comfortable" />
-          </v-col>
+          <v-col cols="6"><v-select v-model="newStaff.status" :items="statusOptions" label="Status" variant="outlined" rounded="lg" density="comfortable" /></v-col>
+          <v-col cols="6"><v-text-field v-model="newStaff.hire_date" label="Hire Date" type="date" variant="outlined" rounded="lg" density="comfortable" /></v-col>
         </v-row>
       </v-card-text>
       <v-card-actions class="px-6 pb-6">
         <v-spacer />
         <v-btn variant="outlined" rounded="lg" @click="showAddDialog = false">Cancel</v-btn>
-        <v-btn color="#14dc8b" rounded="lg" @click="addStaff">
+        <v-btn color="var(--app-primary)" rounded="lg" :loading="saving" @click="addStaff">
           <span style="color:#063824;font-weight:800">Add Staff</span>
         </v-btn>
       </v-card-actions>
@@ -246,21 +190,27 @@ function handleDelete() {
         <span class="text-h6 font-weight-black">Edit Staff</span>
       </v-card-title>
       <v-card-text class="px-6 pt-3">
-        <v-text-field v-model="editForm.name"  label="Full Name" variant="outlined" rounded="lg" density="comfortable" class="mb-2" />
-        <v-text-field v-model="editForm.email" label="Email"     variant="outlined" rounded="lg" density="comfortable" type="email" class="mb-2" />
+        <v-select
+          v-model="editForm.user_id"
+          :items="userOptions"
+          item-title="name"
+          item-value="id"
+          label="User"
+          variant="outlined"
+          rounded="lg"
+          density="comfortable"
+          class="mb-2"
+        />
+        <v-text-field v-model="editForm.position" label="Position" variant="outlined" rounded="lg" density="comfortable" class="mb-2" />
         <v-row dense>
-          <v-col cols="6">
-            <v-select v-model="editForm.role"   :items="roleOptions"   label="Role"   variant="outlined" rounded="lg" density="comfortable" />
-          </v-col>
-          <v-col cols="6">
-            <v-select v-model="editForm.status" :items="statusOptions" label="Status" variant="outlined" rounded="lg" density="comfortable" />
-          </v-col>
+          <v-col cols="6"><v-select v-model="editForm.status" :items="statusOptions" label="Status" variant="outlined" rounded="lg" density="comfortable" /></v-col>
+          <v-col cols="6"><v-text-field v-model="editForm.hire_date" label="Hire Date" type="date" variant="outlined" rounded="lg" density="comfortable" /></v-col>
         </v-row>
       </v-card-text>
       <v-card-actions class="px-6 pb-6">
         <v-spacer />
         <v-btn variant="outlined" rounded="lg" @click="showEditDialog = false">Cancel</v-btn>
-        <v-btn color="primary" rounded="lg" @click="saveEdit">Save Changes</v-btn>
+        <v-btn color="primary" rounded="lg" :loading="saving" @click="saveEdit">Save Changes</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -278,8 +228,18 @@ function handleDelete() {
       <v-card-actions class="px-6 pb-6">
         <v-spacer />
         <v-btn variant="outlined" rounded="lg" @click="showDeleteDialog = false">Cancel</v-btn>
-        <v-btn color="error" rounded="lg" @click="handleDelete">Delete</v-btn>
+        <v-btn color="error" rounded="lg" :loading="deleting" @click="handleDelete">Delete</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
+
+  <!-- Snackbar -->
+  <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="bottom right" rounded="lg" :timeout="3000">
+    {{ snackbar.message }}
+    <template #actions>
+      <v-btn variant="text" icon="mdi-close" size="small" @click="snackbar.show = false" />
+    </template>
+  </v-snackbar>
 </template>
+
+

@@ -1,4 +1,3 @@
-// src/stores/auth.store.js
 import { defineStore } from "pinia";
 import api from "@/plugins/axios";
 
@@ -31,8 +30,6 @@ export const useAuthStore = defineStore("auth", {
       localStorage.removeItem("user");
       api.post("/logout").catch(() => {});
     },
-
-    // Re-fetch the authenticated user from the server.
     // Called in App.vue on mount so the profile is always up-to-date after refresh.
     async fetchUser() {
       try {
@@ -40,7 +37,6 @@ export const useAuthStore = defineStore("auth", {
         this.user = data
         localStorage.setItem("user", JSON.stringify(data))
       } catch {
-        // Token expired or invalid — clean up and let the router redirect
         this.token = null
         this.user  = null
         localStorage.removeItem("token")

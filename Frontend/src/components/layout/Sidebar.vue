@@ -1,14 +1,16 @@
 <script setup>
 const menu = [
   { to: '/home/admin-dashboard', label: 'Dashboard',   icon: 'mdi-view-dashboard-outline' },
-  { to: '/home/menu',            label: 'Menu',         icon: 'mdi-silverware-fork-knife'  },
-  { to: '/home/staff',           label: 'Staff',        icon: 'mdi-account-circle-outline' },
+  { to: '/home/menu',            label: 'Menus',         icon: 'mdi-silverware-fork-knife'  },
+  { to: '/home/categories',      label: 'Categories',   icon: 'mdi-tag-multiple-outline'   },
+  { to: '/home/staff',           label: 'Staffs',        icon: 'mdi-account-circle-outline' },
   { to: '/home/table',           label: 'Tables',       icon: 'mdi-table-chair'            },
-  { to: '/home/user',            label: 'User',         icon: 'mdi-account-group-outline'  },
+  { to: '/home/user',            label: 'Users',         icon: 'mdi-account-group-outline'  },
 ]
 
 const reportsMenu = [
   { to: '/home/sales-report', label: 'Sales Report', icon: 'mdi-chart-box-outline' },
+  { to: '/home/activity',     label: 'Activity Log', icon: 'mdi-clipboard-text-outline' },
   { to: '/home/settings',     label: 'Settings',     icon: 'mdi-cog-outline'       },
 ]
 </script>
@@ -18,14 +20,15 @@ const reportsMenu = [
 
     <!-- Brand -->
     <template #prepend>
-      <div class="d-flex align-center ga-3 px-4 py-4">
-        <v-avatar size="48" rounded="lg">
+      <div class="brand-wrap px-4 py-4">
+        <v-avatar size="56" rounded="xl" class="brand-avatar">
           <v-img src="/logo.png" cover />
         </v-avatar>
-        <div>
-          <div class="text-subtitle-2 font-weight-black" style="color:#1a2e48">MLUP DONG</div>
-          <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis" style="letter-spacing:.07em">Restaurant</div>
+        <div class="brand-text">
+          <div class="brand-title">MLUP DONG</div>
+          <div class="brand-subtitle">Restaurant</div>
         </div>
+        <v-chip size="x-small" class="brand-chip" variant="tonal">Admin</v-chip>
       </div>
       <v-divider />
     </template>
@@ -39,7 +42,8 @@ const reportsMenu = [
         :prepend-icon="item.icon"
         :title="item.label"
         rounded="lg"
-        active-color="#0f9e5f"
+        color="var(--app-primary-600)"
+        base-color="#475569"
         class="mb-1"
       />
     </v-list>
@@ -56,7 +60,8 @@ const reportsMenu = [
         :prepend-icon="item.icon"
         :title="item.label"
         rounded="lg"
-        active-color="#0f9e5f"
+        color="var(--app-primary-600)"
+        base-color="#475569"
         class="mb-1"
       />
     </v-list>
@@ -65,7 +70,41 @@ const reportsMenu = [
 </template>
 
 <style scoped>
+.brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-avatar {
+  box-shadow: 0 8px 18px rgba(20, 184, 166, 0.25);
+  border: 1px solid rgba(20, 184, 166, 0.35);
+}
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.brand-title {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #0f172a;
+}
+.brand-subtitle {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(13, 148, 136, 0.8);
+}
+.brand-chip {
+  margin-left: auto;
+  font-weight: 700;
+  color: var(--app-primary-600);
+  background: rgba(204, 251, 241, 0.9);
+}
 :deep(.v-list-item-title) { font-size: 13px !important; font-weight: 700 !important; }
 :deep(.v-list-item--active) { background: #def4e8 !important; }
 :deep(.v-list-item:not(.v-list-item--active):hover) { background: #ecf3f0 !important; }
 </style>
+
