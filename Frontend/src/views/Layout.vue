@@ -5,19 +5,17 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 
-const meta = computed(() => {
-  switch (route.path) {
-    case '/home/admin-dashboard': return { title: 'Dashboard',    subtitle: 'Restaurant overview'            }
-    case '/home/menu':            return { title: 'Menu',         subtitle: 'Manage menu items & categories' }
-    case '/home/staff':           return { title: 'Staff',        subtitle: 'Manage your team'               }
-    case '/home/table':           return { title: 'Tables',       subtitle: 'Manage tables & QR codes'       }
-    case '/home/sales-report':    return { title: 'Sales Report', subtitle: 'View sales analytics'           }
-    case '/home/user':            return { title: 'Users',        subtitle: 'Manage accounts'                }
-    case '/home/settings':        return { title: 'Settings',     subtitle: 'System configuration'          }
-    default:                      return { title: 'Dashboard',    subtitle: 'Restaurant overview'            }
-  }
-})
-
+const meta = computed(() =>
+  ({
+    '/home/admin-dashboard': { title: 'Dashboard',    subtitle: 'Restaurant overview'               },
+    '/home/menu':            { title: 'Menu',         subtitle: 'Manage menu items & categories'    },
+    '/home/staff':           { title: 'Staff',        subtitle: 'Manage your team'                  },
+    '/home/table':           { title: 'Tables',       subtitle: 'Manage tables & QR codes'          },
+    '/home/sales-report':    { title: 'Sales Report', subtitle: 'View sales analytics'              },
+    '/home/user':            { title: 'Users',        subtitle: 'Manage accounts'                   },
+    '/home/settings':        { title: 'Settings',     subtitle: 'System configuration'              },
+})[route.path] ?? { title: 'Dashboard', subtitle: 'Restaurant overview' }
+)
 </script>
 
 <template>

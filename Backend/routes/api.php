@@ -24,6 +24,7 @@ Route::apiResource('staffs', StaffController::class);
 Route::post('tables/generate-all', [TableController::class, 'generateAll']);
 Route::post('tables/{id}/generate-qr', [TableController::class, 'generateQr']);
 Route::get('tables/{id}/download-qr', [TableController::class, 'downloadQrFile']);
+Route::get('tables/by-token/{token}', [TableController::class, 'getTableByToken']);
 Route::apiResource('tables', TableController::class);
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('menu-items', MenuItemController::class);
