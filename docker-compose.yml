@@ -16,7 +16,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "php", "-r", "echo ok;"]
+      test: ["CMD", "php", "-r", "echo 'ok';"]
       interval: 30s
       retries: 3
       start_period: 30s  # ✅ ADDED: wait for Laravel to boot before health checks start
