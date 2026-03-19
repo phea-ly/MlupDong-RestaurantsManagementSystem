@@ -60,8 +60,8 @@ services:
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
       interval: 10s
-      retries: 5
-      start_period: 30s  # give MySQL time to initialize on first boot
+      retries: 10
+      start_period: 60s  # give MySQL time to initialize on first boot
 
 
   redis:
