@@ -80,6 +80,11 @@ const routes = [
     component: () => import('@/views/customer/menuView.vue'),
   },
   {
+    path: '/chef',
+    name: 'customer-menu',
+    component: () => import('@/views/kds/KdsApp.vue'),
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/login',
   },
@@ -91,7 +96,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  if (window.location.port === '6173') { next(); return }
+
   const token = localStorage.getItem('token')   
 
   if (to.meta.requiresAuth && !token) {

@@ -1,6 +1,0 @@
-{
-  "scripts": {
-    "kds": "vite --config vite.config.kds.js",
-    "kds:build": "vite build --config vite.config.kds.js"
-  }
-}

@@ -1,81 +1,94 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { useMenuStore, useCartStore } from '@/stores'
+import { ref, computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import { useMenuStore } from "@/stores/menu.store";
+import { useCartStore } from "@/stores/cart.store";
 
-const menuStore = useMenuStore()
-const cartStore = useCartStore()
-const route = useRoute()
+const menuStore = useMenuStore();
+const cartStore = useCartStore();
+const route = useRoute();
 
-const searchQuery = ref('')
-const activeCategory = ref('All')
+const searchQuery = ref("");
+const activeCategory = ref("All");
 
 // Get token from route params
-const tableToken = computed(() => route.params.token)
+const tableToken = computed(() => route.params.token);
 
 // Fetch table details based on token
-const tableInfo = ref(null)
+const tableInfo = ref(null);
 
 onMounted(async () => {
-  await menuStore.fetchCategories()
-  await menuStore.fetchMenuItems()
+  await menuStore.fetchCategories();
+  await menuStore.fetchMenuItems();
 
   // If token exists, fetch table info
   if (tableToken.value) {
     try {
       // Find table by QR code URL token
-      const response = await api.get(`/tables/by-token/${tableToken.value}`)
-      tableInfo.value = response.data
+      const response = await api.get(`/tables/by-token/${tableToken.value}`);
+      tableInfo.value = response.data;
     } catch (error) {
-      console.error('Failed to fetch table info:', error)
+      console.error("Failed to fetch table info:", error);
     }
   }
-})
+});
 
 const categories = computed(() => {
-  const allCat = { category_id: 'All', category_name: 'All', icon: 'mdi-silverware-fork-knife' }
-  const mapped = menuStore.categories.map(c => ({
+  const allCat = {
+    category_id: "All",
+    category_name: "All",
+    icon: "mdi-silverware-fork-knife",
+  };
+  const mapped = menuStore.categories.map((c) => ({
     ...c,
-    icon: 'mdi-tag-outline'
-  }))
-  return [allCat, ...mapped]
-})
+    icon: "mdi-tag-outline",
+  }));
+  return [allCat, ...mapped];
+});
 
 const filteredItems = computed(() => {
   // Only show active items to customers
-  let items = menuStore.menuItems.filter(i => i.status)
+  let items = menuStore.menuItems.filter((i) => i.status);
 
-  if (activeCategory.value !== 'All') {
-    items = items.filter(i => String(i.category_id) === String(activeCategory.value))
+  if (activeCategory.value !== "All") {
+    items = items.filter(
+      (i) => String(i.category_id) === String(activeCategory.value),
+    );
   }
 
   if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase()
-    items = items.filter(i =>
-      i.name.toLowerCase().includes(q) ||
-      (i.description && i.description.toLowerCase().includes(q))
-    )
+    const q = searchQuery.value.toLowerCase();
+    items = items.filter(
+      (i) =>
+        i.name.toLowerCase().includes(q) ||
+        (i.description && i.description.toLowerCase().includes(q)),
+    );
   }
 
-  return items
-})
+  return items;
+});
 
-const featuredItem = computed(() => filteredItems.value.length ? filteredItems.value[0] : null)
-const popularDishes = computed(() => filteredItems.value.length > 1 ? filteredItems.value.slice(1) : [])
+const featuredItem = computed(() =>
+  filteredItems.value.length ? filteredItems.value[0] : null,
+);
+const popularDishes = computed(() =>
+  filteredItems.value.length > 1 ? filteredItems.value.slice(1) : [],
+);
 
-const fallbackImg = 'https://images.unsplash.com/photo-1548943487-a2e4142f6ab3?q=80&w=600&auto=format&fit=crop'
+const fallbackImg =
+  "https://images.unsplash.com/photo-1548943487-a2e4142f6ab3?q=80&w=600&auto=format&fit=crop";
 
 // Cart logic handled by store now
 function addToCart(item, event) {
-  cartStore.addToCart(item)
+  cartStore.addToCart(item);
 
   // Animate the button pop
   if (event && event.currentTarget) {
     const el = event.currentTarget;
     // Add temporary class
-    el.classList.add('bouncing');
+    el.classList.add("bouncing");
     setTimeout(() => {
-      el.classList.remove('bouncing');
+      el.classList.remove("bouncing");
     }, 300);
   }
 }
@@ -87,22 +100,38 @@ function addToCart(item, event) {
     <div class="top-accent"></div>
 
     <!-- Header -->
-    <div class="d-flex align-center justify-space-between pt-6 pb-2 px-4 position-relative">
+    <div
+      class="d-flex align-center justify-space-between pt-6 pb-2 px-4 position-relative"
+    >
       <div class="d-flex align-center ga-3">
         <v-avatar color="#fff" rounded size="44" class="elevation-2">
           <v-icon color="#215732" size="28">mdi-leaf</v-icon>
         </v-avatar>
         <div>
-          <div class="text-h6 font-weight-bold text-white mb-1">Mlup Dong Restaurant</div>
-          <div class="text-caption text-white opacity-90">Table Menu • Scan QR to Order</div>
-          <div v-if="tableToken" class="text-caption text-white opacity-75 mt-1">Token: {{ tableToken }}</div>
+          <div class="text-h6 font-weight-bold text-white mb-1">
+            Mlup Dong Restaurant
+          </div>
+          <div class="text-caption text-white opacity-90">
+            Table Menu • Scan QR to Order
+          </div>
+          <div
+            v-if="tableToken"
+            class="text-caption text-white opacity-75 mt-1"
+          >
+            Token: {{ tableToken }}
+          </div>
           <div v-if="tableInfo" class="text-caption text-white opacity-75 mt-1">
-            Table {{ tableInfo.table_number }} • {{ tableInfo.location }} • {{ tableInfo.capacity }} Seats
+            Table {{ tableInfo.table_number }} • {{ tableInfo.location }} •
+            {{ tableInfo.capacity }} Seats
           </div>
         </div>
       </div>
-      <v-chip color="white" variant="elevated" class="font-weight-bold text-green-darken-4 elevation-2 rounded-xl"
-        size="small">
+      <v-chip
+        color="white"
+        variant="elevated"
+        class="font-weight-bold text-green-darken-4 elevation-2 rounded-xl"
+        size="small"
+      >
         <v-icon start size="14">mdi-table-furniture</v-icon>
         Table 05
       </v-chip>
@@ -110,23 +139,48 @@ function addToCart(item, event) {
 
     <!-- Main Content bg block -->
     <div class="main-content-bg mt-3 rounded-t-xl pt-4">
-
       <!-- Search Bar -->
       <div class="px-4 pb-3">
-        <v-text-field v-model="searchQuery" placeholder="Search for food, drinks..." prepend-inner-icon="mdi-magnify"
-          variant="outlined" density="comfortable" hide-details rounded="xl" bg-color="#f8faf9" color="#215732"
-          class="search-input" clearable></v-text-field>
+        <v-text-field
+          v-model="searchQuery"
+          placeholder="Search for food, drinks..."
+          prepend-inner-icon="mdi-magnify"
+          variant="outlined"
+          density="comfortable"
+          hide-details
+          rounded="xl"
+          bg-color="#f8faf9"
+          color="#215732"
+          class="search-input"
+          clearable
+        ></v-text-field>
       </div>
-
 
       <!-- Categories -->
       <div class="category-scroll px-4 pb-4">
-        <v-btn v-for="cat in categories" :key="cat.category_id" rounded="xl"
+        <v-btn
+          v-for="cat in categories"
+          :key="cat.category_id"
+          rounded="xl"
           :variant="activeCategory === cat.category_id ? 'flat' : 'outlined'"
-          :color="activeCategory === cat.category_id ? '#215732' : '#eef2f0'" class="mr-2 text-none category-btn"
-          :class="activeCategory === cat.category_id ? 'text-white' : 'text-grey-darken-3'"
-          @click="activeCategory = cat.category_id" elevation="0" height="38">
-          <v-icon start size="18" :color="activeCategory === cat.category_id ? 'white' : 'grey-darken-1'">
+          :color="activeCategory === cat.category_id ? '#215732' : '#eef2f0'"
+          class="mr-2 text-none category-btn"
+          :class="
+            activeCategory === cat.category_id
+              ? 'text-white'
+              : 'text-grey-darken-3'
+          "
+          @click="activeCategory = cat.category_id"
+          elevation="0"
+          height="38"
+        >
+          <v-icon
+            start
+            size="18"
+            :color="
+              activeCategory === cat.category_id ? 'white' : 'grey-darken-1'
+            "
+          >
             {{ cat.icon }}
           </v-icon>
           {{ cat.category_name }}
@@ -135,19 +189,45 @@ function addToCart(item, event) {
 
       <!-- Loading State -->
       <div v-if="menuStore.loading" class="px-4 mt-4">
-        <v-card v-for="i in 6" :key="i" class="mb-4 rounded-xl elevation-1 bg-white">
-          <v-skeleton-loader type="image" height="180" class="rounded-t-xl"></v-skeleton-loader>
+        <v-card
+          v-for="i in 6"
+          :key="i"
+          class="mb-4 rounded-xl elevation-1 bg-white"
+        >
+          <v-skeleton-loader
+            type="image"
+            height="180"
+            class="rounded-t-xl"
+          ></v-skeleton-loader>
           <div class="pa-3">
-            <v-skeleton-loader type="list-item-two-line" class="mb-2"></v-skeleton-loader>
-            <v-skeleton-loader type="text" width="60%" height="20" class="mb-1"></v-skeleton-loader>
+            <v-skeleton-loader
+              type="list-item-two-line"
+              class="mb-2"
+            ></v-skeleton-loader>
+            <v-skeleton-loader
+              type="text"
+              width="60%"
+              height="20"
+              class="mb-1"
+            ></v-skeleton-loader>
             <div class="d-flex align-center justify-space-between">
-              <div class="d-flex align-center rating-pill pa-1 pr-3 rounded-pill">
+              <div
+                class="d-flex align-center rating-pill pa-1 pr-3 rounded-pill"
+              >
                 <v-icon color="#FFB300" size="18" class="mr-1">mdi-star</v-icon>
-                <span class="font-weight-bold mr-1 text-grey-darken-3 text-caption">5.0</span>
+                <span
+                  class="font-weight-bold mr-1 text-grey-darken-3 text-caption"
+                  >5.0</span
+                >
                 <span class="text-grey-darken-1 text-caption">(0 reviews)</span>
               </div>
-              <v-btn icon color="#215732" size="44" class="text-white elevation-2 btn-add-animated"
-                @click="addToCart(featuredItem, $event)">
+              <v-btn
+                icon
+                color="#215732"
+                size="44"
+                class="text-white elevation-2 btn-add-animated"
+                @click="addToCart(featuredItem, $event)"
+              >
                 <v-icon size="24">mdi-plus</v-icon>
               </v-btn>
             </div>
@@ -155,68 +235,113 @@ function addToCart(item, event) {
         </v-card>
       </div>
 
-
       <!-- Popular Dishes -->
       <div v-if="popularDishes.length" class="px-4 pb-24 fade-in">
-        <h2 class="text-h6 font-weight-black mb-4 text-grey-darken-4">Must Try</h2>
+        <h2 class="text-h6 font-weight-black mb-4 text-grey-darken-4">
+          Must Try
+        </h2>
 
-        <v-card v-for="item in popularDishes" :key="item.id"
-          class="popular-card rounded-xl pa-3 mb-4 d-flex align-stretch bg-white" v-ripple>
-          <v-img :src="item.image || fallbackImg" width="110" height="110"
-            class="rounded-xl mr-4 flex-shrink-0 bg-grey-lighten-4" cover></v-img>
-          <div class="flex-grow-1 py-1 pr-1 d-flex flex-column justify-space-between">
+        <v-card
+          v-for="item in popularDishes"
+          :key="item.id"
+          class="popular-card rounded-xl pa-3 mb-4 d-flex align-stretch bg-white"
+          v-ripple
+        >
+          <v-img
+            :src="item.image || fallbackImg"
+            width="110"
+            height="110"
+            class="rounded-xl mr-4 flex-shrink-0 bg-grey-lighten-4"
+            cover
+          ></v-img>
+          <div
+            class="flex-grow-1 py-1 pr-1 d-flex flex-column justify-space-between"
+          >
             <div>
-              <div class="font-weight-bold mb-1 line-clamp-2 text-grey-darken-4"
-                style="font-size: 16px; line-height: 1.25;">{{ item.name }}</div>
-              <div class="text-caption text-grey-darken-1 mb-2 line-clamp-1" style="line-height: 1.3;">{{
-                item.description || 'Taste the best from our chef.' }}</div>
+              <div
+                class="font-weight-bold mb-1 line-clamp-2 text-grey-darken-4"
+                style="font-size: 16px; line-height: 1.25"
+              >
+                {{ item.name }}
+              </div>
+              <div
+                class="text-caption text-grey-darken-1 mb-2 line-clamp-1"
+                style="line-height: 1.3"
+              >
+                {{ item.description || "Taste the best from our chef." }}
+              </div>
             </div>
             <div class="d-flex align-center justify-space-between mt-auto pt-1">
-              <div class="font-weight-black text-subtitle-1 text-green-darken-4">${{ parseFloat(item.price ||
-                0).toFixed(2) }}</div>
-              <v-btn icon color="#215732" size="36" class="elevation-2 btn-add-animated"
-                @click="addToCart(item, $event)">
+              <div
+                class="font-weight-black text-subtitle-1 text-green-darken-4"
+              >
+                ${{ parseFloat(item.price || 0).toFixed(2) }}
+              </div>
+              <v-btn
+                icon
+                color="#215732"
+                size="36"
+                class="elevation-2 btn-add-animated"
+                @click="addToCart(item, $event)"
+              >
                 <v-icon color="#ffffff" size="20">mdi-plus</v-icon>
               </v-btn>
             </div>
           </div>
         </v-card>
       </div>
-</template>
-</div>
-</div>
+    </div>
 
-<!-- Floating Cart -->
-<v-fade-transition>
-  <div v-if="cartStore.cartCount > 0" class="fixed-bottom-cart px-4 pb-6">
-    <v-card class="cart-pill rounded-pill pa-3 px-5 d-flex align-center" color="#215732" elevation="8" v-ripple
-      @click="router.push('/customer-order')">
-      <div class="position-relative mr-5 cart-icon-box">
-        <v-icon color="white" size="28">mdi-shopping-outline</v-icon>
-        <!-- Cart counter pop animation dynamically triggers when length changes via :key -->
-        <div :key="cartStore.cartCount" class="cart-badge scale-pop">{{ cartStore.cartCount }}</div>
+    <!-- Floating Cart -->
+    <v-fade-transition>
+      <div v-if="cartStore.cartCount > 0" class="fixed-bottom-cart px-4 pb-6">
+        <v-card
+          class="cart-pill rounded-pill pa-3 px-5 d-flex align-center"
+          color="#215732"
+          elevation="8"
+          v-ripple
+          @click="router.push('/customer-order')"
+        >
+          <div class="position-relative mr-5 cart-icon-box">
+            <v-icon color="white" size="28">mdi-shopping-outline</v-icon>
+            <!-- Cart counter pop animation dynamically triggers when length changes via :key -->
+            <div :key="cartStore.cartCount" class="cart-badge scale-pop">
+              {{ cartStore.cartCount }}
+            </div>
+          </div>
+          <div class="text-white flex-grow-1">
+            <div
+              class="text-caption font-weight-medium"
+              style="opacity: 0.85; line-height: 1.2"
+            >
+              {{ cartStore.cartCount }} Items
+            </div>
+            <div
+              class="font-weight-bold text-subtitle-1"
+              style="line-height: 1.2"
+            >
+              View Order
+            </div>
+          </div>
+          <div
+            class="text-white text-h6 font-weight-black text-right pt-1 d-flex align-center"
+          >
+            ${{ cartStore.cartTotal.toFixed(2) }}
+            <v-icon size="20" class="ml-2" style="opacity: 0.8"
+              >mdi-chevron-right</v-icon
+            >
+          </div>
+        </v-card>
       </div>
-      <div class="text-white flex-grow-1">
-        <div class="text-caption font-weight-medium" style="opacity: 0.85; line-height: 1.2;">{{ cartStore.cartCount
-          }}
-          Items</div>
-        <div class="font-weight-bold text-subtitle-1" style="line-height: 1.2;">View Order</div>
-      </div>
-      <div class="text-white text-h6 font-weight-black text-right pt-1 d-flex align-center">
-        ${{ cartStore.cartTotal.toFixed(2) }}
-        <v-icon size="20" class="ml-2" style="opacity: 0.8">mdi-chevron-right</v-icon>
-      </div>
-    </v-card>
+    </v-fade-transition>
   </div>
-</v-fade-transition>
-</div>
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
 
 .mobile-layout {
-  font-family: 'Manrope', sans-serif;
+  font-family: "Manrope", sans-serif;
   max-width: 480px;
   margin: 0 auto;
   background-color: #f4f7f6;
@@ -269,7 +394,6 @@ function addToCart(item, event) {
 .search-input :deep(.v-field--focused) {
   border-color: #215732;
 }
-
 
 .category-scroll {
   display: flex;
@@ -330,7 +454,9 @@ function addToCart(item, event) {
 .popular-card {
   box-shadow: 0 8px 24px rgba(149, 157, 165, 0.1) !important;
   border: 1px solid rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .popular-card:active {
@@ -349,7 +475,11 @@ function addToCart(item, event) {
   max-width: 480px;
   margin: 0 auto;
   z-index: 100;
-  background: linear-gradient(to top, rgba(250, 251, 252, 1) 40%, rgba(250, 251, 252, 0));
+  background: linear-gradient(
+    to top,
+    rgba(250, 251, 252, 1) 40%,
+    rgba(250, 251, 252, 0)
+  );
 }
 
 .cart-pill {
@@ -412,7 +542,6 @@ function addToCart(item, event) {
 }
 
 @keyframes bounce {
-
   0%,
   100% {
     transform: scale(1);
