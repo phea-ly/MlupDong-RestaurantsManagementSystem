@@ -9,7 +9,7 @@ services:
     env_file: ./backend/.env
     volumes:
       - backend_storage:/var/www/html/storage
-      - ./backend/bootstrap/cache:/var/www/html/bootstrap/cache
+      - backend_cache:/var/www/html/bootstrap/cache
     depends_on:
       db:
         condition: service_healthy
@@ -84,6 +84,7 @@ networks:
 
 volumes:
   backend_storage:
+  backend_cache:
   mysql_data:
   redis_data:
 
