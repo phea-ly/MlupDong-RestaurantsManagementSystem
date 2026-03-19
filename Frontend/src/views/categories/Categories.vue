@@ -2,8 +2,7 @@
 import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
-import { useMenuStore } from "@/stores";
-import { useCategoriesViewStore } from "@/stores";
+import { useMenuStore,useCategoriesViewStore } from "@/stores";
 import CategoryStatsRow from "@/components/categories/CategoryStatsRow.vue";
 import CategoryTopCard from "@/components/categories/CategoryTopCard.vue";
 import CategoryList from "@/components/categories/CategoryList.vue";
