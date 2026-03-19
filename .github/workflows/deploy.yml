@@ -31,37 +31,40 @@
           with:
             context: ./Frontend
             push: true
+            # ── ADD THIS SECTION ──────────────────────────────────
             build-args: |
               VITE_API_URL=${{ secrets.PROD_API_URL }}
+            # ──────────────────────────────────────────────────────
             tags: |
               ${{ secrets.DOCKER_USERNAME }}/mlupdong_frontend:latest
               ${{ secrets.DOCKER_USERNAME }}/mlupdong_frontend:${{ github.sha }}
 
+            # ── ADD THIS STEP FOR WEB SERVER ─────────────────────
         - name: Build & Push Webserver
           uses: docker/build-push-action@v5
           with:
-            context: ./Backend/nginx
+            context: ./Backend/nginx      # ← path to your nginx Dockerfile
             push: true
             tags: |
               ${{ secrets.DOCKER_USERNAME }}/mlupdong_webserver:latest
               ${{ secrets.DOCKER_USERNAME }}/mlupdong_webserver:${{ github.sha }}
 
+
+              
     deploy:
       needs: build-and-push
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v4
 
-        - name: Copy files to Server
+        - name: Copy docker-compose.yml to Server
           uses: appleboy/scp-action@v0.1.7
           with:
             host: ${{ secrets.AWS_HOST }}
             username: ${{ secrets.AWS_USER }}
             key: ${{ secrets.AWS_SSH_KEY }}
-            source: "docker-compose.yml,backend/.env"  # ✅ include .env too
+            source: "docker-compose.yml"
             target: "/home/ubuntu/mlup_dong"
-            timeout: 30s
-            command_timeout: 5m
 
         - name: Deploy to EC2
           uses: appleboy/ssh-action@v1
@@ -69,23 +72,13 @@
             host: ${{ secrets.AWS_HOST }}
             username: ${{ secrets.AWS_USER }}
             key: ${{ secrets.AWS_SSH_KEY }}
-            command_timeout: 30m                        # ✅ was missing, caused timeouts
             script: |
               cd /home/ubuntu/mlup_dong
-
-              # ✅ use --password-stdin (secure, avoids CLI warning)
-              echo "${{ secrets.DOCKER_PASSWORD }}" | docker login \
-                -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
+              docker login -u ${{ secrets.DOCKER_USERNAME }} \
+                -p ${{ secrets.DOCKER_PASSWORD }}
               docker compose pull
               docker compose up -d --remove-orphans
-
-              # ✅ wait for backend to be healthy before running artisan
-              echo "Waiting for backend to be ready..."
-              sleep 15
-
               docker exec mlupdong_backend php artisan migrate --force
               docker exec mlupdong_backend php artisan cache:clear
               docker exec mlupdong_backend php artisan config:cache
-              docker image prune -f                     # ✅ clean up old images
               echo "✅ Deployment complete!"
