@@ -108,7 +108,7 @@ async function generateAll() {
 
 function getQrUrl(path) {
   if (!path) return null
-  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+  const apiBase = import.meta.env.VITE_API_BASE_URL || '/api'
   const baseUrl = apiBase.replace(/\/api$/, '')
   return `${baseUrl}/${path}`
 }
@@ -116,7 +116,7 @@ function getQrUrl(path) {
 async function downloadQr(table) {
   try {
     // We use the new backend download endpoint which handles headers and CORS correctly
-    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+    const apiBase = import.meta.env.VITE_API_BASE_URL || '/api'
     const downloadUrl = `${apiBase.replace(/\/$/, '')}/tables/${table.table_id}/download-qr`
 
     // Create a temporary link and trigger browser's native download
