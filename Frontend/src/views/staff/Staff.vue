@@ -24,11 +24,11 @@ export const useStaffStore = defineStore("staff", () => {
   const roleColors = { CHEF: "success", ADMIN: "deep-purple", WAITER: "teal", MANAGER: "blue" };
 
   const headers = ref([
-    { title: "Staff Member", key: "name",       sortable: true  },
-    { title: "Role",         key: "role",       sortable: true  },
-    { title: "Date Joined",  key: "dateJoined", sortable: false },
-    { title: "Status",       key: "status",     sortable: true  },
-    { title: "Actions",      key: "actions",    sortable: false, align: "end" },
+    { title: "staff.headers.name",       key: "name",       sortable: true  },
+    { title: "staff.headers.role",       key: "role",       sortable: true  },
+    { title: "staff.headers.joined",     key: "dateJoined", sortable: false },
+    { title: "staff.headers.status",     key: "status",     sortable: true  },
+    { title: "staff.headers.actions",    key: "actions",    sortable: false, align: "end" },
   ]);
 
   const activeCount  = computed(() => staffList.value.filter((s) => s.status === "Active").length);
@@ -115,7 +115,7 @@ export const useStaffStore = defineStore("staff", () => {
       const { data } = await api.post("/staffs", payload);
       staffList.value.unshift(mapStaff(data));
       showAddDialog.value = false;
-      notify("Staff created successfully.");
+      notify("staff.messages.created");
     } catch (err) {
       notify(err.response?.data?.message ?? "Failed to create staff.", "error");
     } finally {
@@ -149,7 +149,7 @@ export const useStaffStore = defineStore("staff", () => {
       const mapped = mapStaff(data);
       if (idx !== -1) staffList.value[idx] = mapped;
       showEditDialog.value = false;
-      notify("Staff updated successfully.");
+      notify("staff.messages.updated");
     } catch (err) {
       notify(err.response?.data?.message ?? "Failed to update staff.", "error");
     } finally {
@@ -170,7 +170,7 @@ export const useStaffStore = defineStore("staff", () => {
       staffList.value = staffList.value.filter((s) => s.id !== deletingId.value);
       showDeleteDialog.value = false;
       deletingId.value = null;
-      notify("Staff deleted.");
+      notify("staff.messages.deleted");
     } catch (err) {
       notify(err.response?.data?.message ?? "Failed to delete staff.", "error");
     } finally {
@@ -264,7 +264,7 @@ onMounted(init);
             <v-icon>mdi-account-check-outline</v-icon>
           </v-avatar>
           <div>
-            <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis">Active Staff</div>
+            <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis">{{ $t('staff.active_staff') }}</div>
             <div class="text-h5 font-weight-black">{{ activeCount }}</div>
           </div>
         </v-card-text>
@@ -277,7 +277,7 @@ onMounted(init);
             <v-icon>mdi-silverware-fork-knife</v-icon>
           </v-avatar>
           <div>
-            <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis">Kitchen Team</div>
+            <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis">{{ $t('staff.kitchen_team') }}</div>
             <div class="text-h5 font-weight-black">{{ kitchenCount }}</div>
           </div>
         </v-card-text>
@@ -290,7 +290,7 @@ onMounted(init);
             <v-icon>mdi-room-service-outline</v-icon>
           </v-avatar>
           <div>
-            <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis">Service Team</div>
+            <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis">{{ $t('staff.service_team') }}</div>
             <div class="text-h5 font-weight-black">{{ serviceCount }}</div>
           </div>
         </v-card-text>
@@ -304,7 +304,7 @@ onMounted(init);
       <div class="d-flex align-center ga-3 flex-wrap">
         <v-text-field
           v-model="search"
-          placeholder="Search staff..."
+          :placeholder="$t('staff.search_placeholder')"
           prepend-inner-icon="mdi-magnify"
           variant="outlined"
           density="compact"
@@ -313,16 +313,16 @@ onMounted(init);
           style="min-width:220px; max-width:320px"
         />
         <v-spacer />
-        <v-btn variant="outlined" rounded="lg" prepend-icon="mdi-filter-outline">Filters</v-btn>
-        <v-btn variant="outlined" rounded="lg" prepend-icon="mdi-download-outline">Export</v-btn>
+        <v-btn variant="outlined" rounded="lg" prepend-icon="mdi-filter-outline">{{ $t('staff.filters') }}</v-btn>
+        <v-btn variant="outlined" rounded="lg" prepend-icon="mdi-download-outline">{{ $t('staff.export') }}</v-btn>
         <v-btn color="var(--app-primary)" rounded="lg" prepend-icon="mdi-plus" @click="openAddDialog">
-          <span style="color:#063824;font-weight:800">Add Staff</span>
+          <span style="color:#063824;font-weight:800">{{ $t('staff.add_staff') }}</span>
         </v-btn>
       </div>
     </v-card-text>
 
     <v-data-table
-      :headers="headers"
+      :headers="headers.map(h => ({ ...h, title: $t(h.title) }))"
       :items="staffList"
       :search="search"
       items-per-page="8"
@@ -351,18 +351,18 @@ onMounted(init);
           size="small" variant="tonal" rounded="lg"
         >
           <template #prepend><v-icon size="8">mdi-circle</v-icon></template>
-          {{ item.status }}
+          {{ item.status === 'Active' ? $t('staff.status.active') : $t('staff.status.inactive') }}
         </v-chip>
       </template>
 
       <template #item.actions="{ item }">
         <v-btn icon size="small" variant="text" color="primary" @click="openEditDialog(item)">
           <v-icon size="18">mdi-pencil-outline</v-icon>
-          <v-tooltip activator="parent" location="top">Edit</v-tooltip>
+          <v-tooltip activator="parent" location="top">{{ $t('staff.dialog.edit_title') }}</v-tooltip>
         </v-btn>
         <v-btn icon size="small" variant="text" color="error" @click="confirmDelete(item.id)">
           <v-icon size="18">mdi-delete-outline</v-icon>
-          <v-tooltip activator="parent" location="top">Delete</v-tooltip>
+          <v-tooltip activator="parent" location="top">{{ $t('staff.dialog.delete') }}</v-tooltip>
         </v-btn>
       </template>
     </v-data-table>
@@ -375,7 +375,7 @@ onMounted(init);
         <v-avatar color="success" variant="tonal" size="40" rounded="lg">
           <v-icon size="20">mdi-account-plus-outline</v-icon>
         </v-avatar>
-        <span class="text-h6 font-weight-black">Add New Staff</span>
+        <span class="text-h6 font-weight-black">{{ $t('staff.dialog.add_title') }}</span>
       </v-card-title>
       <v-card-text class="px-6 pt-3">
         <v-select
@@ -383,7 +383,7 @@ onMounted(init);
           :items="userOptions"
           item-title="name"
           item-value="id"
-          label="User"
+          :label="$t('staff.dialog.user')"
           variant="outlined"
           rounded="lg"
           density="comfortable"
@@ -391,7 +391,7 @@ onMounted(init);
         />
         <v-text-field
           v-model="newStaff.position"
-          label="Position"
+          :label="$t('staff.dialog.position')"
           variant="outlined"
           rounded="lg"
           density="comfortable"
@@ -399,18 +399,18 @@ onMounted(init);
         />
         <v-row dense>
           <v-col cols="6">
-            <v-select v-model="newStaff.status" :items="statusOptions" label="Status" variant="outlined" rounded="lg" density="comfortable" />
+            <v-select v-model="newStaff.status" :items="statusOptions" :label="$t('staff.headers.status')" variant="outlined" rounded="lg" density="comfortable" />
           </v-col>
           <v-col cols="6">
-            <v-text-field v-model="newStaff.hire_date" label="Hire Date" type="date" variant="outlined" rounded="lg" density="comfortable" />
+            <v-text-field v-model="newStaff.hire_date" :label="$t('staff.dialog.hire_date')" type="date" variant="outlined" rounded="lg" density="comfortable" />
           </v-col>
         </v-row>
       </v-card-text>
       <v-card-actions class="px-6 pb-6">
         <v-spacer />
-        <v-btn variant="outlined" rounded="lg" @click="showAddDialog = false">Cancel</v-btn>
+        <v-btn variant="outlined" rounded="lg" @click="showAddDialog = false">{{ $t('staff.dialog.cancel') }}</v-btn>
         <v-btn color="var(--app-primary)" rounded="lg" :loading="saving" @click="addStaff">
-          <span style="color:#063824;font-weight:800">Add Staff</span>
+          <span style="color:#063824;font-weight:800">{{ $t('staff.add_staff') }}</span>
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -423,7 +423,7 @@ onMounted(init);
         <v-avatar color="primary" variant="tonal" size="40" rounded="lg">
           <v-icon size="20">mdi-account-edit-outline</v-icon>
         </v-avatar>
-        <span class="text-h6 font-weight-black">Edit Staff</span>
+        <span class="text-h6 font-weight-black">{{ $t('staff.dialog.edit_title') }}</span>
       </v-card-title>
       <v-card-text class="px-6 pt-3">
         <v-select
@@ -431,7 +431,7 @@ onMounted(init);
           :items="userOptions"
           item-title="name"
           item-value="id"
-          label="User"
+          :label="$t('staff.dialog.user')"
           variant="outlined"
           rounded="lg"
           density="comfortable"
@@ -439,7 +439,7 @@ onMounted(init);
         />
         <v-text-field
           v-model="editForm.position"
-          label="Position"
+          :label="$t('staff.dialog.position')"
           variant="outlined"
           rounded="lg"
           density="comfortable"
@@ -447,17 +447,17 @@ onMounted(init);
         />
         <v-row dense>
           <v-col cols="6">
-            <v-select v-model="editForm.status" :items="statusOptions" label="Status" variant="outlined" rounded="lg" density="comfortable" />
+            <v-select v-model="editForm.status" :items="statusOptions" :label="$t('staff.headers.status')" variant="outlined" rounded="lg" density="comfortable" />
           </v-col>
           <v-col cols="6">
-            <v-text-field v-model="editForm.hire_date" label="Hire Date" type="date" variant="outlined" rounded="lg" density="comfortable" />
+            <v-text-field v-model="editForm.hire_date" :label="$t('staff.dialog.hire_date')" type="date" variant="outlined" rounded="lg" density="comfortable" />
           </v-col>
         </v-row>
       </v-card-text>
       <v-card-actions class="px-6 pb-6">
         <v-spacer />
-        <v-btn variant="outlined" rounded="lg" @click="showEditDialog = false">Cancel</v-btn>
-        <v-btn color="primary" rounded="lg" :loading="saving" @click="saveEdit">Save Changes</v-btn>
+        <v-btn variant="outlined" rounded="lg" @click="showEditDialog = false">{{ $t('staff.dialog.cancel') }}</v-btn>
+        <v-btn color="primary" rounded="lg" :loading="saving" @click="saveEdit">{{ $t('staff.dialog.save') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -469,22 +469,22 @@ onMounted(init);
         <v-avatar color="error" variant="tonal" size="40" rounded="lg">
           <v-icon size="20">mdi-delete-outline</v-icon>
         </v-avatar>
-        <span class="text-h6 font-weight-black">Delete Staff</span>
+        <span class="text-h6 font-weight-black">{{ $t('staff.dialog.delete_title') }}</span>
       </v-card-title>
       <v-card-text class="px-6">
-        Are you sure you want to delete this staff member? This cannot be undone.
+        {{ $t('staff.dialog.delete_confirm') }}
       </v-card-text>
       <v-card-actions class="px-6 pb-6">
         <v-spacer />
-        <v-btn variant="outlined" rounded="lg" @click="showDeleteDialog = false">Cancel</v-btn>
-        <v-btn color="error" rounded="lg" :loading="deleting" @click="handleDelete">Delete</v-btn>
+        <v-btn variant="outlined" rounded="lg" @click="showDeleteDialog = false">{{ $t('staff.dialog.cancel') }}</v-btn>
+        <v-btn color="error" rounded="lg" :loading="deleting" @click="handleDelete">{{ $t('staff.dialog.delete') }}</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 
   <!-- ── Snackbar ── -->
   <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="bottom right" rounded="lg" :timeout="3000">
-    {{ snackbar.message }}
+    {{ $t(snackbar.message) }}
     <template #actions>
       <v-btn variant="text" icon="mdi-close" size="small" @click="snackbar.show = false" />
     </template>

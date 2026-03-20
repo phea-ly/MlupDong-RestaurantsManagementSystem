@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRouter } from 'vue-router'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
 
 const props = defineProps({
   title:       { type: String, required: true },
@@ -69,9 +70,17 @@ function logout() {
           {{ actionLabel }}
         </v-btn>
 
-        <v-btn icon variant="text" size="small" class="appbar-icon">
-          <v-icon>mdi-bell-outline</v-icon>
-          <v-badge color="error" content="1" floating />
+        <LanguageSwitcher />
+
+        <v-btn icon variant="text" size="small" class="notification-btn ml-1">
+          <v-icon size="20">mdi-bell-outline</v-icon>
+          <v-badge
+            color="#ef4444"
+            content="1"
+            offset-x="2"
+            offset-y="2"
+            class="notification-badge"
+          />
         </v-btn>
 
         <!-- Profile menu -->
@@ -173,8 +182,22 @@ function logout() {
   color: rgba(30, 41, 59, 0.6);
 }
 
-.appbar-icon :deep(.v-icon) {
-  color: var(--app-primary-600);
+.notification-btn {
+  color: #64748b !important;
+  transition: all 0.2s ease;
+}
+
+.notification-btn:hover {
+  background-color: #f1f5f9 !important;
+  color: var(--app-primary-600) !important;
+}
+
+:deep(.notification-badge .v-badge__badge) {
+  min-width: 16px;
+  height: 16px;
+  font-size: 9px;
+  font-weight: 800;
+  border: 2px solid white;
 }
 </style>
 

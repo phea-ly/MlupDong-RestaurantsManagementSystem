@@ -4,7 +4,9 @@ import { ref } from "vue";
 import { settingsApi } from "@/api/settings.api";
 
 export const useSettingsStore = defineStore("settings", () => {
-  const language       = ref("en");
+  // Sync with current i18n locale on load
+  const currentLocale = localStorage.getItem('locale') || 'kh';
+  const language       = ref(currentLocale);
   const timezone       = ref("(GMT+07:00) Indochina Time");
   const currency       = ref("USD (USD)");
   const restaurantName = ref("");
@@ -24,9 +26,7 @@ export const useSettingsStore = defineStore("settings", () => {
 
   const languages = [
     { title: "English", value: "en" },
-    { title: "Khmer",   value: "km" },
-    { title: "French",  value: "fr" },
-    { title: "Chinese", value: "zh" },
+    { title: "ភាសាខ្មែរ (Khmer)", value: "kh" },
   ];
   const timezones = [
     "(GMT+07:00) Indochina Time",
@@ -157,10 +157,20 @@ export const useSettingsStore = defineStore("settings", () => {
 </script>
 
 <script setup>
-import { onMounted } from "vue";
+import { onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
+import { useI18n } from "vue-i18n";
 
+const { locale } = useI18n();
 const settingsStore = useSettingsStore();
+
+// Watch for changes in the store's language and update the i18n locale
+watch(() => settingsStore.language, (newLang) => {
+  if (newLang) {
+    locale.value = newLang;
+    localStorage.setItem('locale', newLang);
+  }
+});
 
 const {
   language,
@@ -196,7 +206,7 @@ onMounted(init);
     <v-card rounded="xl" elevation="0" border class="mb-4">
       <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
         <v-icon color="primary" size="18">mdi-cog-outline</v-icon>
-        <span class="text-subtitle-1 font-weight-black text-uppercase" style="color:var(--app-primary-600);letter-spacing:0.1em">General Settings</span>
+        <span class="text-subtitle-1 font-weight-black text-uppercase" style="color:var(--app-primary-600);letter-spacing:0.1em">{{ $t('settings.general') }}</span>
       </v-card-title>
       <v-card-text class="px-6">
         <v-row>
@@ -206,7 +216,7 @@ onMounted(init);
               :items="languages"
               item-title="title"
               item-value="value"
-              label="Language"
+              :label="$t('settings.language')"
               variant="outlined" rounded="lg" density="comfortable"
               prepend-inner-icon="mdi-translate"
             />
@@ -215,7 +225,7 @@ onMounted(init);
             <v-select
               v-model="timezone"
               :items="timezones"
-              label="Timezone"
+              :label="$t('settings.timezone')"
               variant="outlined" rounded="lg" density="comfortable"
               prepend-inner-icon="mdi-clock-outline"
             />
@@ -224,7 +234,7 @@ onMounted(init);
             <v-select
               v-model="currency"
               :items="currencies"
-              label="Currency"
+              :label="$t('settings.currency')"
               variant="outlined" rounded="lg" density="comfortable"
               prepend-inner-icon="mdi-currency-usd"
             />
@@ -237,7 +247,7 @@ onMounted(init);
     <v-card rounded="xl" elevation="0" border class="mb-4">
       <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
         <v-icon color="primary" size="18">mdi-store-outline</v-icon>
-        <span class="text-subtitle-1 font-weight-black text-uppercase" style="color:var(--app-primary-600);letter-spacing:0.1em">Restaurant Profile</span>
+        <span class="text-subtitle-1 font-weight-black text-uppercase" style="color:var(--app-primary-600);letter-spacing:0.1em">{{ $t('settings.profile') }}</span>
       </v-card-title>
       <v-card-text class="px-6">
         <div class="d-flex align-center ga-5 mb-5">
@@ -263,10 +273,10 @@ onMounted(init);
             </v-avatar>
           </v-hover>
           <div>
-            <div class="text-subtitle-2 font-weight-bold">Restaurant Logo</div>
-            <div class="text-caption text-medium-emphasis">PNG or JPG - max 2 MB - 200x200px recommended</div>
+            <div class="text-subtitle-2 font-weight-bold">{{ $t('settings.logo') }}</div>
+            <div class="text-caption text-medium-emphasis">{{ $t('settings.logo_help') }}</div>
             <v-btn size="small" variant="outlined" rounded="lg" class="mt-2" prepend-icon="mdi-upload" @click="triggerLogoInput">
-              Upload
+              {{ $t('settings.upload') }}
             </v-btn>
             <input ref="logoInput" type="file" accept="image/*" style="display:none" @change="onLogoChange" />
           </div>
@@ -276,7 +286,7 @@ onMounted(init);
           <v-col cols="12" md="6">
             <v-text-field
               v-model="restaurantName"
-              label="Restaurant Name"
+              :label="$t('settings.name')"
               variant="outlined" rounded="lg" density="comfortable"
               prepend-inner-icon="mdi-store-outline"
             />
@@ -284,7 +294,7 @@ onMounted(init);
           <v-col cols="12" md="6">
             <v-text-field
               v-model="phone"
-              label="Phone Number"
+              :label="$t('settings.phone')"
               variant="outlined" rounded="lg" density="comfortable"
               prepend-inner-icon="mdi-phone-outline"
             />
@@ -292,7 +302,7 @@ onMounted(init);
           <v-col cols="12">
             <v-textarea
               v-model="address"
-              label="Full Address"
+              :label="$t('settings.address')"
               variant="outlined" rounded="lg"
               rows="3" no-resize
               prepend-inner-icon="mdi-map-marker-outline"
@@ -306,7 +316,7 @@ onMounted(init);
     <v-card rounded="xl" elevation="0" border class="mb-6">
       <v-card-title class="d-flex align-center ga-2 pt-5 px-6">
         <v-icon color="primary" size="18">mdi-credit-card-outline</v-icon>
-        <span class="text-subtitle-1 font-weight-black text-uppercase" style="color:var(--app-primary-600);letter-spacing:0.1em">Payment Methods</span>
+        <span class="text-subtitle-1 font-weight-black text-uppercase" style="color:var(--app-primary-600);letter-spacing:0.1em">{{ $t('settings.payment') }}</span>
       </v-card-title>
       <v-card-text class="px-6">
         <v-row>
@@ -317,8 +327,8 @@ onMounted(init);
                   <v-icon>mdi-cash</v-icon>
                 </v-avatar>
                 <div class="flex-grow-1">
-                  <div class="text-subtitle-2 font-weight-bold">Cash</div>
-                  <div class="text-caption text-medium-emphasis">Accept cash at counter</div>
+                  <div class="text-subtitle-2 font-weight-bold">{{ $t('settings.cash') }}</div>
+                  <div class="text-caption text-medium-emphasis">{{ $t('settings.cash_desc') }}</div>
                 </div>
                 <v-switch v-model="cashEnabled" color="primary" hide-details inset />
               </v-card-text>
@@ -331,8 +341,8 @@ onMounted(init);
                   <v-icon>mdi-credit-card-outline</v-icon>
                 </v-avatar>
                 <div class="flex-grow-1">
-                  <div class="text-subtitle-2 font-weight-bold">Credit / Debit Card</div>
-                  <div class="text-caption text-medium-emphasis">Visa, Mastercard, Amex</div>
+                  <div class="text-subtitle-2 font-weight-bold">{{ $t('settings.credit') }}</div>
+                  <div class="text-caption text-medium-emphasis">{{ $t('settings.credit_desc') }}</div>
                 </div>
                 <v-switch v-model="creditEnabled" color="primary" hide-details inset />
               </v-card-text>
@@ -345,8 +355,8 @@ onMounted(init);
                   <v-icon>mdi-qrcode</v-icon>
                 </v-avatar>
                 <div class="flex-grow-1">
-                  <div class="text-subtitle-2 font-weight-bold">QR Code</div>
-                  <div class="text-caption text-medium-emphasis">ABA Pay, Wing, KHQR</div>
+                  <div class="text-subtitle-2 font-weight-bold">{{ $t('settings.qr') }}</div>
+                  <div class="text-caption text-medium-emphasis">{{ $t('settings.qr_desc') }}</div>
                 </div>
                 <v-switch v-model="qrCodeEnabled" color="primary" hide-details inset />
               </v-card-text>
@@ -358,16 +368,16 @@ onMounted(init);
 
     <!-- ── Actions ── -->
     <div class="d-flex justify-end ga-3">
-      <v-btn variant="outlined" rounded="lg" size="large">Cancel</v-btn>
+      <v-btn variant="outlined" rounded="lg" size="large">{{ $t('settings.cancel') }}</v-btn>
       <v-btn color="primary" rounded="lg" size="large" variant="flat" :loading="saving" @click="saveSettings">
-        Save Changes
+        {{ $t('settings.save') }}
       </v-btn>
     </div>
 
     <!-- ── Snackbar ── -->
     <v-snackbar v-model="snackbar" color="success" rounded="lg" :timeout="3000" location="bottom right">
       <v-icon class="mr-2">mdi-check-circle-outline</v-icon>
-      Settings saved successfully.
+      {{ $t('settings.success') }}
     </v-snackbar>
   </div>
 </template>

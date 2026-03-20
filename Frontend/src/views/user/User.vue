@@ -101,7 +101,7 @@ export const useUserStore = defineStore("user", () => {
       const list = Array.isArray(data) ? data : data.data ?? [];
       users.value = list.map(mapUser);
     } catch (err) {
-      notify("Failed to load users.", "error");
+      notify("user.messages.load_failed", "error");
     } finally {
       loading.value = false;
     }
@@ -131,9 +131,9 @@ export const useUserStore = defineStore("user", () => {
       });
       users.value.push(mapUser(data, users.value.length));
       showAddDialog.value = false;
-      notify("User created successfully.");
+      notify("user.messages.created");
     } catch (err) {
-      notify(err.response?.data?.message ?? "Failed to create user.", "error");
+      notify(err.response?.data?.message ?? "user.messages.create_failed", "error");
     } finally {
       saving.value = false;
     }
@@ -166,9 +166,9 @@ export const useUserStore = defineStore("user", () => {
       const updated = mapUser(data, users.value.findIndex((u) => u.rawId === editTarget.value.rawId));
       Object.assign(editTarget.value, updated);
       showEditDialog.value = false;
-      notify("User updated successfully.");
+      notify("user.messages.updated");
     } catch (err) {
-      notify(err.response?.data?.message ?? "Failed to update user.", "error");
+      notify(err.response?.data?.message ?? "user.messages.update_failed", "error");
     } finally {
       saving.value = false;
     }
@@ -181,7 +181,7 @@ export const useUserStore = defineStore("user", () => {
       await api.patch(`/users/${user.rawId}`, { is_active: user.active });
     } catch {
       user.active = previous;
-      notify("Failed to update status.", "error");
+      notify("user.messages.status_failed", "error");
     }
   }
 
@@ -197,9 +197,9 @@ export const useUserStore = defineStore("user", () => {
       await api.delete(`/users/${target.rawId}`);
       users.value = users.value.filter((u) => u.id !== deletingId.value);
       showDeleteDialog.value = false;
-      notify("User deleted.");
+      notify("user.messages.deleted");
     } catch (err) {
-      notify(err.response?.data?.message ?? "Failed to delete user.", "error");
+      notify(err.response?.data?.message ?? "user.messages.delete_failed", "error");
     } finally {
       deleting.value = false;
     }
@@ -229,9 +229,9 @@ export const useUserStore = defineStore("user", () => {
       const mapped = mapUser(data, idx === -1 ? users.value.length : idx);
       if (idx !== -1) users.value[idx] = mapped;
       Object.assign(profileTarget.value, mapped);
-      notify("Profile updated successfully.");
+      notify("user.messages.profile_updated");
     } catch (err) {
-      notify(err.response?.data?.message ?? "Failed to update profile.", "error");
+      notify(err.response?.data?.message ?? "user.messages.profile_failed", "error");
     } finally {
       profileSaving.value = false;
     }
@@ -335,7 +335,7 @@ onMounted(init);
         <v-card rounded="xl" border flat>
           <v-card-text class="pa-5">
             <div class="d-flex justify-space-between align-start mb-3">
-              <span class="text-caption font-weight-bold text-uppercase text-medium-emphasis" style="letter-spacing:.08em">Total Users</span>
+              <span class="text-caption font-weight-bold text-uppercase text-medium-emphasis" style="letter-spacing:.08em">{{ $t('user.total_users') }}</span>
               <v-icon size="18" color="grey-lighten-2">mdi-account-group-outline</v-icon>
             </div>
             <div class="text-h3 font-weight-black mb-1">{{ stats.total }}</div>
@@ -349,17 +349,17 @@ onMounted(init);
         <v-card rounded="xl" border flat>
           <v-card-text class="pa-5">
             <div class="d-flex justify-space-between align-start mb-3">
-              <span class="text-caption font-weight-bold text-uppercase text-medium-emphasis" style="letter-spacing:.08em">Status Distribution</span>
+              <span class="text-caption font-weight-bold text-uppercase text-medium-emphasis" style="letter-spacing:.08em">{{ $t('user.status_distribution') }}</span>
               <v-progress-circular :model-value="stats.total ? (stats.active/stats.total)*100 : 0" color="var(--app-primary)" size="18" width="2" />
             </div>
             <div class="d-flex align-end ga-3">
               <div>
                 <div class="text-h3 font-weight-black" style="color:var(--app-primary)">{{ stats.active }}</div>
-                <div class="text-caption text-medium-emphasis">Active</div>
+                <div class="text-caption text-medium-emphasis">{{ $t('user.active') }}</div>
               </div>
               <div class="pb-1">
                 <div class="text-h5 font-weight-black text-medium-emphasis">{{ stats.inactive }}</div>
-                <div class="text-caption text-medium-emphasis">Inactive</div>
+                <div class="text-caption text-medium-emphasis">{{ $t('user.inactive') }}</div>
               </div>
             </div>
           </v-card-text>
@@ -371,11 +371,11 @@ onMounted(init);
         <v-card rounded="xl" border flat>
           <v-card-text class="pa-5">
             <div class="d-flex justify-space-between align-start mb-3">
-              <span class="text-caption font-weight-bold text-uppercase text-medium-emphasis" style="letter-spacing:.08em">Locations Managed</span>
+              <span class="text-caption font-weight-bold text-uppercase text-medium-emphasis" style="letter-spacing:.08em">{{ $t('user.locations_managed') }}</span>
               <v-icon size="18" color="grey-lighten-2">mdi-map-marker-outline</v-icon>
             </div>
             <div class="text-h3 font-weight-black mb-1">8</div>
-            <div class="text-caption text-medium-emphasis">Restaurants active</div>
+            <div class="text-caption text-medium-emphasis">{{ $t('user.subtitle') }}</div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -385,7 +385,7 @@ onMounted(init);
         <v-card rounded="xl" border flat>
           <v-card-text class="pa-5">
             <div class="d-flex justify-space-between align-start mb-2">
-              <span class="text-caption font-weight-bold text-uppercase text-medium-emphasis" style="letter-spacing:.08em">Pending Approvals</span>
+              <span class="text-caption font-weight-bold text-uppercase text-medium-emphasis" style="letter-spacing:.08em">{{ $t('user.pending_approvals') }}</span>
               <v-chip color="error" size="x-small" variant="flat">2 New</v-chip>
             </div>
             <div class="d-flex flex-column ga-2 mt-1">
@@ -422,20 +422,20 @@ onMounted(init);
 
           <!-- Filters -->
           <div class="d-flex align-center ga-2 flex-wrap flex-grow-1">
-            <span class="text-caption font-weight-bold text-medium-emphasis text-uppercase" style="letter-spacing:.08em">Restaurant:</span>
+            <span class="text-caption font-weight-bold text-medium-emphasis text-uppercase" style="letter-spacing:.08em">{{ $t('user.restaurant_label') }}</span>
             <v-select
               v-model="filterRestaurant"
-              :items="restaurantOptions"
+              :items="restaurantOptions.map(o => o === 'All Locations' ? $t('table.all_sections') : o)"
               variant="outlined"
               rounded="lg"
               density="compact"
               hide-details
               style="max-width:180px; min-width:150px"
             />
-            <span class="text-caption font-weight-bold text-medium-emphasis text-uppercase" style="letter-spacing:.08em">Role:</span>
+            <span class="text-caption font-weight-bold text-medium-emphasis text-uppercase" style="letter-spacing:.08em">{{ $t('user.role_label') }}</span>
             <v-select
               v-model="filterRole"
-              :items="roleOptions"
+              :items="roleOptions.map(o => o === 'All Roles' ? $t('staff.filters') : o)"
               variant="outlined"
               rounded="lg"
               density="compact"
@@ -443,14 +443,14 @@ onMounted(init);
               style="max-width:150px; min-width:130px"
             />
             <div class="text-caption text-medium-emphasis ml-auto" style="white-space:nowrap">
-              Sorted by: <strong>Recently Created</strong>
+              {{ $t('user.sorted_by') }}
             </div>
           </div>
 
           <!-- Search + create -->
           <v-text-field
             v-model="search"
-            placeholder="Search across all locations..."
+            :placeholder="$t('user.search_placeholder')"
             prepend-inner-icon="mdi-magnify"
             variant="outlined"
             rounded="lg"
@@ -465,7 +465,7 @@ onMounted(init);
             prepend-icon="mdi-account-multiple-plus"
             @click="openAdd"
           >
-            <span style="color:#063824;font-weight:800">Create Account</span>
+            <span style="color:#063824;font-weight:800">{{ $t('user.create_account') }}</span>
           </v-btn>
         </div>
       </v-card-text>
@@ -473,13 +473,13 @@ onMounted(init);
       <!-- Table -->
       <v-data-table
         :headers="[
-          { title: 'User Identity',  key: 'name',       sortable: true  },
-          { title: 'Email Address',  key: 'email',      sortable: true  },
-          { title: 'Restaurant',     key: 'restaurant', sortable: true  },
-          { title: 'Role & Rank',    key: 'role',       sortable: true  },
-          { title: 'Status',         key: 'active',     sortable: true  },
-          { title: 'Created At',     key: 'created',    sortable: false },
-          { title: 'Actions',        key: 'actions',    sortable: false, align: 'end' },
+          { title: $t('user.headers.identity'),  key: 'name',       sortable: true  },
+          { title: $t('user.headers.email'),     key: 'email',      sortable: true  },
+          { title: $t('user.headers.restaurant'), key: 'restaurant', sortable: true  },
+          { title: $t('user.headers.role'),      key: 'role',       sortable: true  },
+          { title: $t('user.headers.status'),    key: 'active',     sortable: true  },
+          { title: $t('user.headers.created'),   key: 'created',    sortable: false },
+          { title: $t('user.headers.actions'),   key: 'actions',    sortable: false, align: 'end' },
         ]"
         :items="filteredUsers"
         :loading="loading"
@@ -554,15 +554,15 @@ onMounted(init);
           <div class="d-flex align-center justify-end ga-1">
             <v-btn icon size="small" variant="text" @click="openEditProfile(item)">
               <v-icon size="16" color="grey">mdi-account-circle-outline</v-icon>
-              <v-tooltip activator="parent" location="top">Edit Profile / Avatar</v-tooltip>
+              <v-tooltip activator="parent" location="top">{{ $t('user.tooltips.edit_profile') }}</v-tooltip>
             </v-btn>
             <v-btn icon size="small" variant="text" @click="openEdit(item)">
               <v-icon size="16" color="grey">mdi-pencil-outline</v-icon>
-              <v-tooltip activator="parent" location="top">Edit</v-tooltip>
+              <v-tooltip activator="parent" location="top">{{ $t('user.tooltips.edit') }}</v-tooltip>
             </v-btn>
             <v-btn icon size="small" variant="text" @click="confirmDelete(item.id)">
               <v-icon size="16" color="grey">mdi-delete-outline</v-icon>
-              <v-tooltip activator="parent" location="top">Delete</v-tooltip>
+              <v-tooltip activator="parent" location="top">{{ $t('user.tooltips.delete') }}</v-tooltip>
             </v-btn>
           </div>
         </template>
@@ -584,7 +584,7 @@ onMounted(init);
           <v-avatar color="success" variant="tonal" size="40" rounded="lg">
             <v-icon size="20">mdi-account-plus-outline</v-icon>
           </v-avatar>
-          <span class="text-h6 font-weight-black">Create New Account</span>
+          <span class="text-h6 font-weight-black">{{ $t('user.dialog.add_title') }}</span>
         </v-card-title>
         <v-card-text class="px-6 pt-3">
           <v-row dense>
@@ -603,9 +603,9 @@ onMounted(init);
         </v-card-text>
         <v-card-actions class="px-6 pb-6 pt-0">
           <v-spacer />
-          <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="showAddDialog = false">Cancel</v-btn>
+          <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="showAddDialog = false">{{ $t('user.dialog.cancel') }}</v-btn>
           <v-btn color="var(--app-primary)" rounded="lg" :loading="saving" @click="saveUser">
-            <span style="color:#063824;font-weight:800">Create Account</span>
+            <span style="color:#063824;font-weight:800">{{ $t('user.dialog.submit') }}</span>
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -618,7 +618,7 @@ onMounted(init);
           <v-avatar color="primary" variant="tonal" size="40" rounded="lg">
             <v-icon size="20">mdi-account-edit-outline</v-icon>
           </v-avatar>
-          <span class="text-h6 font-weight-black">Edit Account</span>
+          <span class="text-h6 font-weight-black">{{ $t('user.dialog.edit_title') }}</span>
         </v-card-title>
         <v-card-text class="px-6 pt-3">
           <v-row dense>
@@ -637,8 +637,8 @@ onMounted(init);
         </v-card-text>
         <v-card-actions class="px-6 pb-6 pt-0">
           <v-spacer />
-          <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="showEditDialog = false">Cancel</v-btn>
-          <v-btn color="primary" variant="flat" rounded="lg" :loading="saving" @click="saveEdit">Save Changes</v-btn>
+          <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="showEditDialog = false">{{ $t('user.dialog.cancel') }}</v-btn>
+          <v-btn color="primary" variant="flat" rounded="lg" :loading="saving" @click="saveEdit">{{ $t('user.dialog.save') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -651,23 +651,23 @@ onMounted(init);
             <v-avatar color="red-lighten-5" rounded="lg" size="44" style="border:1px solid #fca5a5">
               <v-icon color="error" size="22">mdi-delete-outline</v-icon>
             </v-avatar>
-            <span class="text-h6 font-weight-black">Delete User</span>
+            <span class="text-h6 font-weight-black">{{ $t('user.dialog.delete_title') }}</span>
           </div>
           <p class="text-body-2 text-medium-emphasis">
-            This will permanently delete the user account. This action cannot be undone.
+            {{ $t('user.dialog.delete_confirm') }}
           </p>
         </v-card-text>
         <v-card-actions class="px-6 pb-6 pt-0">
           <v-spacer />
-          <v-btn variant="outlined" rounded="lg" :disabled="deleting" @click="showDeleteDialog = false">Cancel</v-btn>
-          <v-btn color="error" variant="flat" rounded="lg" :loading="deleting" @click="handleDelete">Delete</v-btn>
+          <v-btn variant="outlined" rounded="lg" :disabled="deleting" @click="showDeleteDialog = false">{{ $t('user.dialog.cancel') }}</v-btn>
+          <v-btn color="error" variant="flat" rounded="lg" :loading="deleting" @click="handleDelete">{{ $t('user.tooltips.delete') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
     <!-- ── Snackbar ── -->
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="bottom right" rounded="lg" :timeout="3000">
-      {{ snackbar.message }}
+      {{ $t(snackbar.message) }}
       <template #actions>
         <v-btn variant="text" icon="mdi-close" size="small" @click="snackbar.show = false" />
       </template>

@@ -7,9 +7,9 @@ export const useDashboardStore = defineStore("dashboard", () => {
 
   const stats = ref([
     {
-      label: "TOTAL REVENUE",
+      label: "dashboard.total_revenue",
       value: "$420,000",
-      sub: "Year to date performance",
+      sub: "dashboard.revenue_sub",
       trend: "+15.8%",
       up: true,
       color: "var(--app-primary-600)",
@@ -17,9 +17,10 @@ export const useDashboardStore = defineStore("dashboard", () => {
       route: "/home/sales-report",
     },
     {
-      label: "ORDERS TODAY",
+      label: "dashboard.orders_today",
       value: "128",
-      sub: "18 orders since 6:00 AM",
+      subKey: "dashboard.orders_sub",
+      subCount: 18,
       trend: "+8.1%",
       up: true,
       color: "#3b82f6",
@@ -27,9 +28,9 @@ export const useDashboardStore = defineStore("dashboard", () => {
       route: "/home/sales-report",
     },
     {
-      label: "AVG TICKET",
+      label: "dashboard.avg_ticket",
       value: "$32.40",
-      sub: "Last 7 days average",
+      sub: "dashboard.avg_sub",
       trend: "-1.2%",
       up: false,
       color: "#f59e0b",
@@ -37,9 +38,9 @@ export const useDashboardStore = defineStore("dashboard", () => {
       route: "/home/sales-report",
     },
     {
-      label: "NEW GUESTS",
+      label: "dashboard.new_guests",
       value: "46",
-      sub: "First-time visitors",
+      sub: "dashboard.guests_sub",
       trend: "+5.6%",
       up: true,
       color: "#a855f7",
@@ -49,9 +50,9 @@ export const useDashboardStore = defineStore("dashboard", () => {
   ]);
 
   const quickActions = ref([
-    { label: "Add Item", icon: "mdi-plus", color: "var(--app-primary)", route: "/home/menu" },
-    { label: "New Order", icon: "mdi-silverware-fork-knife", color: "#3b82f6", route: "/home/table" },
-    { label: "View Reports", icon: "mdi-chart-box-outline", color: "#f59e0b", route: "/home/sales-report" },
+    { label: "dashboard.add_item", icon: "mdi-plus", color: "var(--app-primary)", route: "/home/menu" },
+    { label: "dashboard.new_order", icon: "mdi-silverware-fork-knife", color: "#3b82f6", route: "/home/table" },
+    { label: "dashboard.view_reports", icon: "mdi-chart-box-outline", color: "#f59e0b", route: "/home/sales-report" },
   ]);
 
   const bestSelling = ref([
@@ -73,17 +74,17 @@ export const useDashboardStore = defineStore("dashboard", () => {
   ]);
 
   const orderSummary = ref([
-    { label: "Total Orders", value: "2,480", meta: "+12% vs last month" },
-    { label: "Refund Rate", value: "0.7%", meta: "-0.3% trend" },
-    { label: "Repeat Guests", value: "38%", meta: "+4% last 30 days" },
+    { label: "dashboard.total_orders", value: "2,480", meta: "+12% vs last month" },
+    { label: "dashboard.refund_rate", value: "0.7%", meta: "-0.3% trend" },
+    { label: "dashboard.repeat_guests", value: "38%", meta: "+4% last 30 days" },
   ]);
 
   const orderHeaders = ref([
-    { title: "Order ID", key: "id" },
-    { title: "Customer", key: "customer" },
-    { title: "Items", key: "items" },
-    { title: "Status", key: "status" },
-    { title: "Amount", key: "amount", align: "end" },
+    { title: "dashboard.order_id", key: "id" },
+    { title: "dashboard.customer", key: "customer" },
+    { title: "dashboard.items", key: "items" },
+    { title: "dashboard.status", key: "status" },
+    { title: "dashboard.amount", key: "amount", align: "end" },
   ]);
 
   const recentOrders = ref([
@@ -172,8 +173,8 @@ const { goTo } = dashboardStore;
     <v-card rounded="xl" elevation="0" border class="mb-4">
       <v-card-text class="d-flex align-center justify-space-between flex-wrap ga-3 px-5 py-4">
         <div>
-          <div class="text-h6 font-weight-black">Welcome back, Admin</div>
-          <div class="text-caption text-medium-emphasis">Overview of sales and operations today</div>
+          <div class="text-h6 font-weight-black">{{ $t('dashboard.welcome', { name: 'Admin' }) }}</div>
+          <div class="text-caption text-medium-emphasis">{{ $t('dashboard.overview') }}</div>
         </div>
         <div class="d-flex align-center ga-2">
           <v-btn
@@ -186,7 +187,7 @@ const { goTo } = dashboardStore;
             :prepend-icon="action.icon"
             @click="goTo(router, action.route)"
           >
-            {{ action.label }}
+            {{ $t(action.label) }}
           </v-btn>
         </div>
       </v-card-text>
@@ -199,9 +200,11 @@ const { goTo } = dashboardStore;
           <v-card-text class="pa-5">
             <div class="d-flex justify-space-between align-start mb-3">
               <div>
-                <div class="text-caption font-weight-black text-uppercase text-medium-emphasis mb-1">{{ stat.label }}</div>
+                <div class="text-caption font-weight-black text-uppercase text-medium-emphasis mb-1">{{ $t(stat.label) }}</div>
                 <div class="text-h5 font-weight-black">{{ stat.value }}</div>
-                <div class="text-caption text-medium-emphasis mt-1">{{ stat.sub }}</div>
+                <div class="text-caption text-medium-emphasis mt-1">
+                  {{ stat.subKey ? $t(stat.subKey, { count: stat.subCount }) : $t(stat.sub) }}
+                </div>
               </div>
               <v-avatar :color="stat.color" size="36" rounded="lg" variant="tonal">
                 <v-icon size="18">{{ stat.icon }}</v-icon>
@@ -209,7 +212,7 @@ const { goTo } = dashboardStore;
             </div>
             <v-chip :color="stat.up ? 'success' : 'error'" variant="tonal" size="x-small">
               <v-icon start size="12">{{ stat.up ? 'mdi-trending-up' : 'mdi-trending-down' }}</v-icon>
-              {{ stat.trend }} {{ stat.up ? 'UP' : 'DOWN' }}
+              {{ stat.trend }} {{ stat.up ? $t('dashboard.up') : $t('dashboard.down') }}
             </v-chip>
           </v-card-text>
         </v-card>
@@ -220,8 +223,8 @@ const { goTo } = dashboardStore;
     <v-card rounded="xl" elevation="0" border class="mb-4">
       <v-card-title class="d-flex align-center justify-space-between pt-5 px-5 flex-wrap ga-3">
         <div>
-          <div class="text-subtitle-1 font-weight-black">Order Statistics</div>
-          <div class="text-caption text-medium-emphasis">Total volume over the selected period</div>
+          <div class="text-subtitle-1 font-weight-black">{{ $t('dashboard.order_stats') }}</div>
+          <div class="text-caption text-medium-emphasis">{{ $t('dashboard.stats_sub') }}</div>
         </div>
         <v-btn-toggle
           v-model="activeRange"
@@ -230,8 +233,8 @@ const { goTo } = dashboardStore;
           color="var(--app-primary-600)"
           variant="outlined"
         >
-          <v-btn value="30days" size="small">Last 30 Days</v-btn>
-          <v-btn value="7days" size="small">Last 7 Days</v-btn>
+          <v-btn value="30days" size="small">{{ $t('dashboard.last_30') }}</v-btn>
+          <v-btn value="7days" size="small">{{ $t('dashboard.last_7') }}</v-btn>
         </v-btn-toggle>
       </v-card-title>
       <v-card-text>
@@ -258,7 +261,7 @@ const { goTo } = dashboardStore;
         <v-divider class="my-4" />
         <div class="d-flex flex-wrap justify-space-between ga-4">
           <div v-for="item in orderSummary" :key="item.label">
-            <div class="text-caption text-medium-emphasis">{{ item.label }}</div>
+            <div class="text-caption text-medium-emphasis">{{ $t(item.label) }}</div>
             <div class="text-h6 font-weight-black">{{ item.value }}</div>
             <div class="text-caption text-medium-emphasis">{{ item.meta }}</div>
           </div>
@@ -271,14 +274,14 @@ const { goTo } = dashboardStore;
       <v-col cols="12" md="6">
         <v-card rounded="xl" elevation="0" border height="100%">
           <v-card-title class="d-flex justify-space-between align-center pt-5 px-5">
-            <span class="text-subtitle-1 font-weight-black">Best Selling Food and Drinks</span>
-            <v-btn variant="text" color="var(--app-primary-600)" size="small" @click="goTo(router, '/home/menu')">View All</v-btn>
+            <span class="text-subtitle-1 font-weight-black">{{ $t('dashboard.best_selling') }}</span>
+            <v-btn variant="text" color="var(--app-primary-600)" size="small" @click="goTo(router, '/home/menu')">{{ $t('dashboard.view_all') }}</v-btn>
           </v-card-title>
           <v-card-text>
             <div v-for="item in bestSelling" :key="item.name" class="mb-4">
               <div class="d-flex justify-space-between mb-1">
                 <span class="text-body-2 font-weight-medium">{{ item.name }}</span>
-                <span class="text-body-2 font-weight-bold">{{ item.sold }} sold</span>
+                <span class="text-body-2 font-weight-bold">{{ $t('dashboard.sold', { count: item.sold }) }}</span>
               </div>
               <v-progress-linear
                 :model-value="item.pct"
@@ -295,7 +298,7 @@ const { goTo } = dashboardStore;
       <v-col cols="12" md="6">
         <v-card rounded="xl" elevation="0" border height="100%">
           <v-card-title class="d-flex justify-space-between align-center pt-5 px-5">
-            <span class="text-subtitle-1 font-weight-black">Peak Hour Analysis</span>
+            <span class="text-subtitle-1 font-weight-black">{{ $t('dashboard.peak_hour') }}</span>
             <v-chip size="small" variant="tonal">24H CYCLE</v-chip>
           </v-card-title>
           <v-card-text>
@@ -314,8 +317,7 @@ const { goTo } = dashboardStore;
             </div>
             <v-alert type="success" variant="tonal" rounded="lg" density="compact">
               <span class="text-caption">
-                Dinner service (6 PM – 8 PM) accounts for 42% of daily revenue.
-                Consider increasing floor staff during this window.
+                {{ $t('dashboard.peak_alert') }}
               </span>
             </v-alert>
           </v-card-text>
@@ -326,7 +328,7 @@ const { goTo } = dashboardStore;
     <!-- Recent Orders -->
     <v-card rounded="xl" elevation="0" border>
       <v-card-title class="d-flex justify-space-between align-center pt-5 px-5">
-        <span class="text-subtitle-1 font-weight-black">Recent High-Value Orders</span>
+        <span class="text-subtitle-1 font-weight-black">{{ $t('dashboard.recent_orders') }}</span>
         <v-btn
           variant="outlined"
           rounded="lg"
@@ -334,12 +336,12 @@ const { goTo } = dashboardStore;
           prepend-icon="mdi-filter-outline"
           @click="goTo(router, '/home/sales-report')"
         >
-          Filter
+          {{ $t('dashboard.filter') }}
         </v-btn>
       </v-card-title>
 
       <v-data-table
-        :headers="orderHeaders"
+        :headers="orderHeaders.map(h => ({ ...h, title: $t(h.title) }))"
         :items="recentOrders"
         hide-default-footer
         items-per-page="-1"

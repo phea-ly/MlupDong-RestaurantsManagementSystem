@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Cache;
 
+use Illuminate\Support\Str;
+
 class OrderController extends Controller
 {
     public function index()
@@ -38,25 +40,44 @@ class OrderController extends Controller
             'table_id'       => ['nullable', 'exists:tables,table_id'],
             'discount_id'    => ['nullable', 'exists:discounts,discount_id'],
             'restaurant_id'  => ['nullable', 'exists:restaurants,restaurant_id'],
+            'items'          => ['required', 'array'],
+            'items.*.menu_item_id' => ['required', 'exists:menu_items,menu_item_id'],
+            'items.*.quantity'     => ['required', 'integer', 'min:1'],
+            'items.*.unit_price'   => ['required', 'numeric'],
+            'items.*.note'         => ['nullable', 'string'],
         ]);
 
         try {
-            return DB::transaction(function () use ($validated) {
+            $order = DB::transaction(function () use ($validated) {
                 // Generate order number if not provided
                 if (empty($validated['order_number'])) {
                     $validated['order_number'] = 'ORD-' . strtoupper(Str::random(8));
                 }
 
-        Cache::tags(['orders'])->flush();
+                $order = Order::create($validated);
 
-        $payload = KdsPayload::fromOrder($order);
-        event(new KdsOrderEvent('order.created', $payload));
+                // Create order items
+                foreach ($validated['items'] as $item) {
+                    $order->orderItems()->create($item);
+                }
 
-        return response()->json(
-            $order->load(['user', 'table', 'discount', 'restaurant', 'orderItems', 'payments', 'statusLogs']),
-            201
-        );
+                return $order;
+            });
+
+            Cache::tags(['orders'])->flush();
+
+            $payload = KdsPayload::fromOrder($order);
+            event(new KdsOrderEvent('order.created', $payload));
+
+            return response()->json(
+                $order->load(['user', 'table', 'discount', 'restaurant', 'orderItems.menuItem', 'payments', 'statusLogs']),
+                201
+            );
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Order placement failed', 'error' => $e->getMessage()], 500);
+        }
     }
+
 
     public function show(string $id)
     {

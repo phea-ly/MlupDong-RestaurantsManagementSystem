@@ -35,11 +35,11 @@ export const useLoginStore = defineStore("login", () => {
           : e.response.data.message;
       } else if (e.response?.status === 401) {
         const msg = e.response?.data?.message?.toLowerCase() ?? "";
-        if (msg.includes("email"))         error.value = "Email address not found.";
-        else if (msg.includes("password")) error.value = "Incorrect password.";
-        else                               error.value = "Invalid credentials.";
+        if (msg.includes("email"))         error.value = "auth.errors.not_found";
+        else if (msg.includes("password")) error.value = "auth.errors.incorrect";
+        else                               error.value = "auth.errors.invalid";
       } else {
-        error.value = e.message || "Something went wrong. Please try again.";
+        error.value = "auth.errors.generic";
       }
     } finally {
       loading.value = false;
@@ -94,12 +94,12 @@ const toggleShowPass = loginStore.toggleShowPass;
                   </v-avatar>
                   <div class="text-center">
                     <div class="text-subtitle-2 font-weight-black" style="color:#fff">Mlup Dong</div>
-                    <div class="text-caption font-weight-bold text-uppercase" style="color:rgba(255,255,255,0.6); letter-spacing:0.1em">Restaurant Management</div>
+                    <div class="text-caption font-weight-bold text-uppercase" style="color:rgba(255,255,255,0.6); letter-spacing:0.1em">{{ $t('login.brand_sub') }}</div>
                   </div>
                 </div>
 
-                <div class="login-title mb-1">Sign In</div>
-                <div class="login-sub mb-6">Welcome back! Please enter your credentials.</div>
+                <div class="login-title mb-1">{{ $t('login.title') }}</div>
+                <div class="login-sub mb-6">{{ $t('login.subtitle') }}</div>
 
                 <v-alert
                   v-if="error"
@@ -107,12 +107,12 @@ const toggleShowPass = loginStore.toggleShowPass;
                   class="mb-4"
                   @click:close="clearError"
                 >
-                  {{ error }}
+                  {{ $t(error) }}
                 </v-alert>
 
                 <v-text-field
                   v-model="email"
-                  placeholder="Email address"
+                  :placeholder="$t('login.email')"
                   type="email"
                   append-inner-icon="mdi-account-outline"
                   variant="outlined" rounded="lg" density="comfortable"
@@ -123,7 +123,7 @@ const toggleShowPass = loginStore.toggleShowPass;
 
                 <v-text-field
                   v-model="password"
-                  placeholder="Password"
+                  :placeholder="$t('login.password')"
                   :type="showPass ? 'text' : 'password'"
                   :append-inner-icon="showPass ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
                   variant="outlined" rounded="lg" density="comfortable"
@@ -135,7 +135,7 @@ const toggleShowPass = loginStore.toggleShowPass;
 
                 <v-checkbox
                   v-model="remember"
-                  label="Remember me"
+                  :label="$t('login.remember')"
                   color="var(--app-primary)"
                   density="compact"
                   hide-details
@@ -148,7 +148,7 @@ const toggleShowPass = loginStore.toggleShowPass;
                   class="login-btn mb-5"
                   @click="login"
                 >
-                  Sign In
+                  {{ $t('login.submit') }}
                 </v-btn>
 
                 <v-divider class="mb-4" style="border-color:rgba(255,255,255,0.15)" />

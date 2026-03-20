@@ -1,17 +1,17 @@
 <script setup>
 const menu = [
-  { to: '/home/admin-dashboard', label: 'Dashboard',   icon: 'mdi-view-dashboard-outline' },
-  { to: '/home/menu',            label: 'Menus',         icon: 'mdi-silverware-fork-knife'  },
-  { to: '/home/categories',      label: 'Categories',   icon: 'mdi-tag-multiple-outline'   },
-  { to: '/home/staff',           label: 'Staffs',        icon: 'mdi-account-circle-outline' },
-  { to: '/home/table',           label: 'Tables',       icon: 'mdi-table-chair'            },
-  { to: '/home/user',            label: 'Users',         icon: 'mdi-account-group-outline'  },
+  { to: '/home/admin-dashboard', label: 'sidebar.dashboard',   icon: 'mdi-view-dashboard-outline' },
+  { to: '/home/menu',            label: 'sidebar.menu',        icon: 'mdi-silverware-fork-knife'  },
+  { to: '/home/categories',      label: 'sidebar.categories',  icon: 'mdi-tag-multiple-outline'   },
+  { to: '/home/staff',           label: 'sidebar.staff',       icon: 'mdi-account-circle-outline' },
+  { to: '/home/table',           label: 'sidebar.tables',       icon: 'mdi-table-chair'            },
+  { to: '/home/user',            label: 'sidebar.users',       icon: 'mdi-account-group-outline'  },
 ]
 
 const reportsMenu = [
-  { to: '/home/sales-report', label: 'Sales Report', icon: 'mdi-chart-box-outline' },
-  { to: '/home/activity',     label: 'Activity Log', icon: 'mdi-clipboard-text-outline' },
-  { to: '/home/settings',     label: 'Settings',     icon: 'mdi-cog-outline'       },
+  { to: '/home/sales-report', label: 'sidebar.sales_report', icon: 'mdi-chart-box-outline' },
+  { to: '/home/activity',     label: 'sidebar.activity_log', icon: 'mdi-clipboard-text-outline' },
+  { to: '/home/settings',     label: 'sidebar.settings',     icon: 'mdi-cog-outline'       },
 ]
 </script>
 
@@ -40,7 +40,7 @@ const reportsMenu = [
         :key="item.to"
         :to="item.to"
         :prepend-icon="item.icon"
-        :title="item.label"
+        :title="$t(item.label)"
         rounded="lg"
         color="var(--app-primary-600)"
         base-color="#475569"
@@ -50,7 +50,7 @@ const reportsMenu = [
 
     <!-- Reports section -->
     <div class="text-caption font-weight-black text-uppercase px-4 mt-3 mb-1" style="color:#9aabbd; letter-spacing:.12em">
-      Reports
+      {{ $t('sidebar.reports') }}
     </div>
     <v-list nav density="comfortable" class="px-2">
       <v-list-item
@@ -58,13 +58,14 @@ const reportsMenu = [
         :key="item.to"
         :to="item.to"
         :prepend-icon="item.icon"
-        :title="item.label"
+        :title="$t(item.label)"
         rounded="lg"
         color="var(--app-primary-600)"
         base-color="#475569"
         class="mb-1"
       />
     </v-list>
+
 
   </v-navigation-drawer>
 </template>

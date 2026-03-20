@@ -1,117 +1,9 @@
-<script>
-import { defineStore } from "pinia";
-import { ref, computed, watch } from "vue";
-import { order } from "@/api/order.api";
-
-export const useCartStore = defineStore("cart", () => {
-  const items               = ref([]);
-  const specialInstructions = ref("");
-
-  // Load from localStorage
-  const savedCart = localStorage.getItem("cart_items");
-  if (savedCart) {
-    try { items.value = JSON.parse(savedCart); } catch (e) {}
-  }
-  const savedInstructions = localStorage.getItem("cart_instructions");
-  if (savedInstructions) specialInstructions.value = savedInstructions;
-
-  watch(items, (newVal) => {
-    localStorage.setItem("cart_items", JSON.stringify(newVal));
-  }, { deep: true });
-
-  watch(specialInstructions, (newVal) => {
-    localStorage.setItem("cart_instructions", newVal);
-  });
-
-  const cartCount    = computed(() => items.value.reduce((sum, i) => sum + i.quantity, 0));
-  const cartSubtotal = computed(() => items.value.reduce((sum, i) => sum + ((i.price || 0) * i.quantity), 0));
-  const taxRate      = 0.10;
-  const cartTax      = computed(() => cartSubtotal.value * taxRate);
-  const cartTotal    = computed(() => cartSubtotal.value + cartTax.value);
-
-  function addToCart(product) {
-    const existing = items.value.find((i) => i.id === product.id);
-    if (existing) {
-      existing.quantity++;
-    } else {
-      items.value.push({
-        id:       product.id,
-        name:     product.name,
-        price:    parseFloat(product.price || 0),
-        image:    product.image,
-        quantity: 1,
-      });
-    }
-  }
-
-  function removeFromCart(productId) {
-    items.value = items.value.filter((i) => i.id !== productId);
-  }
-
-  function updateQuantity(productId, quantity) {
-    const existing = items.value.find((i) => i.id === productId);
-    if (existing) {
-      if (quantity <= 0) removeFromCart(productId);
-      else existing.quantity = quantity;
-    }
-  }
-
-  function clearCart() {
-    items.value               = [];
-    specialInstructions.value = "";
-    localStorage.removeItem("cart_items");
-    localStorage.removeItem("cart_instructions");
-  }
-
-  async function placeOrder(details = {}) {
-    if (items.value.length === 0) return { success: false, message: "Cart is empty" };
-
-    const data = {
-      order_type:     details.order_type || "dine_in",
-      table_id:       details.table_id   || 1,
-      total_amount:   cartSubtotal.value,
-      tax:            cartTax.value,
-      final_amount:   cartTotal.value,
-      order_status:   "new",
-      payment_status: "pending",
-      items: items.value.map((item) => ({
-        menu_item_id: item.id,
-        quantity:     item.quantity,
-        unit_price:   item.price,
-        note:         specialInstructions.value,
-      })),
-    };
-
-    try {
-      await order.create(data);
-      clearCart();
-      return { success: true };
-    } catch (e) {
-      console.error("Order placement failed", e);
-      return { success: false, message: e.response?.data?.message || "Failed to place order" };
-    }
-  }
-
-  return {
-    items,
-    specialInstructions,
-    cartCount,
-    cartSubtotal,
-    cartTax,
-    cartTotal,
-    addToCart,
-    removeFromCart,
-    updateQuantity,
-    clearCart,
-    placeOrder,
-  };
-});
-</script>
-
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useMenuStore } from "@/stores/menu.store";
+import { useCartStore } from "@/stores/cart.store";
+import LanguageSwitcher from "@/components/LanguageSwitcher.vue";
 
 const menuStore = useMenuStore();
 const cartStore = useCartStore();
@@ -122,6 +14,13 @@ const searchQuery    = ref("");
 const activeCategory = ref("All");
 
 onMounted(async () => {
+  // Capture table info from query params if present
+  const tableId = route.query.table_id;
+  const tableNumber = route.query.table_number;
+  if (tableId) {
+    cartStore.setTableId(tableId, tableNumber);
+  }
+
   await menuStore.fetchCategories();
   await menuStore.fetchMenuItems();
 });
@@ -131,6 +30,7 @@ const categories = computed(() => {
   const mapped = menuStore.categories.map((c) => ({ ...c, icon: "mdi-tag-outline" }));
   return [allCat, ...mapped];
 });
+
 
 const filteredItems = computed(() => {
   let items = menuStore.menuItems.filter((i) => i.status);
@@ -184,10 +84,13 @@ function addToCart(item, event) {
           <div class="text-caption text-white opacity-90">Table Menu • Scan QR to Order</div>
         </div>
       </div>
-      <v-chip color="white" variant="elevated" class="font-weight-bold text-green-darken-4 elevation-2 rounded-xl" size="small">
-        <v-icon start size="14">mdi-table-furniture</v-icon>
-        Table {{ tableInfo?.table_number || '...' }}
-      </v-chip>
+      <div class="d-flex align-center ga-2">
+        <LanguageSwitcher />
+        <v-chip color="white" variant="elevated" class="font-weight-bold text-green-darken-4 elevation-2 rounded-xl" size="small">
+          <v-icon start size="14">mdi-table-furniture</v-icon>
+          {{ $t('menu.table') }} {{ cartStore.tableNumber || '...' }}
+        </v-chip>
+      </div>
     </div>
 
     <!-- Main Content bg block -->
@@ -197,7 +100,7 @@ function addToCart(item, event) {
       <div class="px-4 pb-3">
         <v-text-field
           v-model="searchQuery"
-          placeholder="Search for food, drinks..."
+          :placeholder="$t('menu.search_placeholder')"
           prepend-inner-icon="mdi-magnify"
           variant="outlined" density="comfortable"
           hide-details rounded="xl"
@@ -239,7 +142,7 @@ function addToCart(item, event) {
 
       <!-- Popular Dishes -->
       <div v-if="popularDishes.length && !menuStore.loading" class="px-4 pb-24 fade-in">
-        <h2 class="text-h6 font-weight-black mb-4 text-grey-darken-4">Menu Selection</h2>
+        <h2 class="text-h6 font-weight-black mb-4 text-grey-darken-4">{{ $t('menu.title') }}</h2>
 
         <v-card
           v-for="item in popularDishes" :key="item.id"
@@ -293,7 +196,7 @@ function addToCart(item, event) {
             <div class="text-caption font-weight-medium" style="opacity:0.85; line-height:1.2">
               {{ cartStore.cartCount }} Items
             </div>
-            <div class="font-weight-bold text-subtitle-1" style="line-height:1.2">View Order</div>
+            <div class="font-weight-bold text-subtitle-1" style="line-height:1.2">{{ $t('menu.view_order') }}</div>
           </div>
           <div class="text-white text-h6 font-weight-black text-right pt-1 d-flex align-center">
             ${{ cartStore.cartTotal.toFixed(2) }}

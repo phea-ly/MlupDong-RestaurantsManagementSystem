@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import * as authApi from "@/api/auth.api";
+import api from "@/api/api"; // Added missing import for the api instance
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
@@ -28,12 +29,12 @@ export const useAuthStore = defineStore("auth", {
       this.user  = null;
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      api.post("/logout").catch(() => {});
+      authApi.logoutApi().catch(() => {}); // Use authApi instead of raw api if available
     },
     // Called in App.vue on mount so the profile is always up-to-date after refresh.
     async fetchUser() {
       try {
-        const { data } = await api.get("/user")
+        const { data } = await authApi.meApi() // Use authApi
         this.user = data
         localStorage.setItem("user", JSON.stringify(data))
       } catch {
@@ -43,6 +44,7 @@ export const useAuthStore = defineStore("auth", {
         localStorage.removeItem("user")
       }
     },
+
 
     // Instantly show local preview in AppBar while upload is in-flight
     patchAvatar(avatarUrl) {

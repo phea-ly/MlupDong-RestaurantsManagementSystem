@@ -2,17 +2,17 @@
 import { defineStore } from "pinia";
 
 const metaByPath = {
-  "/home/admin-dashboard": { title: "Dashboard", subtitle: "Restaurant overview" },
-  "/home/menu": { title: "Menu", subtitle: "Manage menu items & categories" },
-  "/home/staff": { title: "Staff", subtitle: "Manage your team" },
-  "/home/table": { title: "Tables", subtitle: "Manage tables & QR codes" },
-  "/home/sales-report": { title: "Sales Report", subtitle: "View sales analytics" },
-  "/home/user": { title: "Users", subtitle: "Manage accounts" },
-  "/home/activity": { title: "Activity Log", subtitle: "View system activity" },
-  "/home/settings": { title: "Settings", subtitle: "System configuration" },
+  "/home/admin-dashboard": { title: "page.dashboard.title", subtitle: "page.dashboard.subtitle" },
+  "/home/menu":            { title: "page.menu.title",      subtitle: "page.menu.subtitle" },
+  "/home/staff":           { title: "page.staff.title",     subtitle: "page.staff.subtitle" },
+  "/home/table":           { title: "page.table.title",     subtitle: "page.table.subtitle" },
+  "/home/sales-report":    { title: "page.sales_report.title", subtitle: "page.sales_report.subtitle" },
+  "/home/user":            { title: "page.user.title",      subtitle: "page.user.subtitle" },
+  "/home/activity":        { title: "page.activity.title",  subtitle: "page.activity.subtitle" },
+  "/home/settings":        { title: "page.settings.title",  subtitle: "page.settings.subtitle" },
 };
 
-const defaultMeta = { title: "Dashboard", subtitle: "Restaurant overview" };
+const defaultMeta = { title: "page.dashboard.title", subtitle: "page.dashboard.subtitle" };
 
 export const useLayoutStore = defineStore("layout", () => {
   function getMeta(path) {
@@ -29,11 +29,19 @@ export const useLayoutStore = defineStore("layout", () => {
 import AppLayout from "@/components/layout/AppLayout.vue";
 import { computed } from "vue";
 import { useRoute } from "vue-router";
+import { useI18n } from "vue-i18n";
 
 const route = useRoute();
 const layoutStore = useLayoutStore();
+const { t } = useI18n();
 
-const meta = computed(() => layoutStore.getMeta(route.path));
+const meta = computed(() => {
+  const m = layoutStore.getMeta(route.path);
+  return {
+    title: t(m.title),
+    subtitle: t(m.subtitle)
+  };
+});
 </script>
 
 <template>

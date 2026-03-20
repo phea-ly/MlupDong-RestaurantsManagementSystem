@@ -284,10 +284,10 @@ const filteredTables = computed(() => {
 
 const dashboardStats = computed(() => {
   return [
-    { label: "TOTAL UNITS",    value: tables.value.length,                                          icon: "mdi-table-furniture", color: "#0f172a", bg: "#f1f5f9" },
-    { label: "ASSETS READY",   value: tables.value.filter((t) => t.qr_code).length,                 icon: "mdi-qrcode-check",    color: "#16c65b", bg: "#f0fdf4" },
-    { label: "PENDING QRS",    value: tables.value.filter((t) => !t.qr_code).length,                icon: "mdi-clock-outline",   color: "#f59e0b", bg: "#fffbeb" },
-    { label: "TOTAL CAPACITY", value: tables.value.reduce((acc, t) => acc + (parseInt(t.capacity) || 0), 0), icon: "mdi-account-group", color: "#6366f1", bg: "#eef2ff" },
+    { label: "table.total_units",    value: tables.value.length,                                          icon: "mdi-table-furniture", color: "#0f172a", bg: "#f1f5f9" },
+    { label: "table.assets_ready",   value: tables.value.filter((t) => t.qr_code).length,                 icon: "mdi-qrcode-check",    color: "#16c65b", bg: "#f0fdf4" },
+    { label: "table.pending_qrs",    value: tables.value.filter((t) => !t.qr_code).length,                icon: "mdi-clock-outline",   color: "#f59e0b", bg: "#fffbeb" },
+    { label: "table.total_capacity", value: tables.value.reduce((acc, t) => acc + (parseInt(t.capacity) || 0), 0), icon: "mdi-account-group", color: "#6366f1", bg: "#eef2ff" },
   ];
 });
 </script>
@@ -305,7 +305,7 @@ const dashboardStats = computed(() => {
           prepend-icon="mdi-plus"
           @click="openAddDialog"
         >
-          Register New Table
+          {{ $t('table.register') }}
         </v-btn>
         <v-btn
           variant="outlined" color="#cbd5e1" elevation="0" rounded="lg" height="48"
@@ -314,7 +314,7 @@ const dashboardStats = computed(() => {
           :loading="loading"
           @click="generateAll"
         >
-          Bulk Generate QRs
+          {{ $t('table.bulk_generate') }}
         </v-btn>
       </v-col>
     </v-row>
@@ -328,7 +328,7 @@ const dashboardStats = computed(() => {
               <v-icon :color="stat.color" size="22">{{ stat.icon }}</v-icon>
             </v-avatar>
             <div>
-              <div class="text-caption font-weight-bold text-grey-darken-1 mb-n1" style="letter-spacing: 0.5px;">{{ stat.label }}</div>
+              <div class="text-caption font-weight-bold text-grey-darken-1 mb-n1" style="letter-spacing: 0.5px;">{{ $t(stat.label) }}</div>
               <div class="text-h5 font-weight-black" :style="{ color: stat.color }">{{ stat.value }}</div>
             </div>
           </div>
@@ -344,7 +344,7 @@ const dashboardStats = computed(() => {
           size="large" variant="flat"
           class="ma-1 font-weight-bold filter-chip"
         >
-          {{ s }}
+          {{ $t('table.' + s.toLowerCase().replace(/\s+/g, '_')) }}
         </v-chip>
       </v-chip-group>
     </v-sheet>
@@ -368,9 +368,9 @@ const dashboardStats = computed(() => {
           <!-- Top Area: Unit Title & Ready Pill -->
           <v-sheet color="transparent" class="d-flex justify-space-between align-start mb-4">
             <v-sheet color="transparent">
-              <v-sheet color="transparent" class="font-weight-bold text-grey-darken-1 mb-1 unit-id-label">UNIT</v-sheet>
+              <v-sheet color="transparent" class="font-weight-bold text-grey-darken-1 mb-1 unit-id-label">{{ $t('table.unit') }}</v-sheet>
               <v-sheet color="transparent" class="text-h4 font-weight-black text-grey-darken-4 mb-0 card-title-text">
-                Table-{{ table.table_number }}
+                {{ $t('table.unit') }}-{{ table.table_number }}
               </v-sheet>
             </v-sheet>
             <v-chip
@@ -379,18 +379,18 @@ const dashboardStats = computed(() => {
               class="font-weight-black px-3 py-4 text-uppercase text-caption status-badge"
               rounded="pill" elevation="0"
             >
-              {{ table.qr_code ? "READY" : "PENDING" }}
+              {{ table.qr_code ? $t('table.ready') : $t('table.pending') }}
             </v-chip>
           </v-sheet>
 
           <!-- Capacity & Location Info -->
           <v-sheet color="transparent" class="d-flex align-center gap-4 mb-4 info-row" style="font-size: 14px; gap: 16px; opacity: 0.9">
             <span class="font-weight-bold text-grey-darken-2 d-flex align-center">
-              <v-icon size="20" color="#94a3b8" class="mr-2">mdi-account-group</v-icon> {{ table.capacity }} Seats
+              <v-icon size="20" color="#94a3b8" class="mr-2">mdi-account-group</v-icon> {{ table.capacity }} {{ $t('table.seats') }}
             </span>
             <v-divider vertical class="mx-1 info-divider" />
             <span class="font-weight-bold text-grey-darken-2 d-flex align-center">
-              <v-icon size="20" color="#94a3b8" class="mr-2">mdi-map-marker-radius</v-icon> {{ table.location || "Indoor" }}
+              <v-icon size="20" color="#94a3b8" class="mr-2">mdi-map-marker-radius</v-icon> {{ $t('table.' + (table.location || 'Indoor').toLowerCase()) }}
             </span>
           </v-sheet>
 
@@ -433,8 +433,8 @@ const dashboardStats = computed(() => {
             >
               <v-icon size="24" color="#10b981" class="mr-2">mdi-check-circle</v-icon>
               <v-sheet color="transparent" class="d-flex flex-column align-start">
-                <v-sheet color="transparent" class="font-weight-black uppercase-mini text-green-darken-1">ASSET</v-sheet>
-                <v-sheet color="transparent" class="font-weight-black uppercase-main text-green-darken-3">DEPLOYED</v-sheet>
+                <v-sheet color="transparent" class="font-weight-black uppercase-mini text-green-darken-1">{{ $t('table.asset') }}</v-sheet>
+                <v-sheet color="transparent" class="font-weight-black uppercase-main text-green-darken-3">{{ $t('table.deployed') }}</v-sheet>
               </v-sheet>
             </v-btn>
 
@@ -445,8 +445,8 @@ const dashboardStats = computed(() => {
             >
               <v-icon size="24" color="#3b82f6" class="mr-2">mdi-plus-circle</v-icon>
               <v-sheet color="transparent" class="d-flex flex-column align-start">
-                <v-sheet color="transparent" class="font-weight-black uppercase-mini text-blue-darken-1">GENERATE</v-sheet>
-                <v-sheet color="transparent" class="font-weight-black uppercase-main text-blue-darken-3">ASSET</v-sheet>
+                <v-sheet color="transparent" class="font-weight-black uppercase-mini text-blue-darken-1">{{ $t('table.generate') }}</v-sheet>
+                <v-sheet color="transparent" class="font-weight-black uppercase-main text-blue-darken-3">{{ $t('table.asset') }}</v-sheet>
               </v-sheet>
             </v-btn>
 
@@ -462,20 +462,20 @@ const dashboardStats = computed(() => {
                   <template #prepend>
                     <v-icon color="#3b82f6" class="mr-2" size="20">mdi-tray-arrow-down</v-icon>
                   </template>
-                  <v-list-item-title class="font-weight-bold text-body-2 text-grey-darken-3">Download QR</v-list-item-title>
+                  <v-list-item-title class="font-weight-bold text-body-2 text-grey-darken-3">{{ $t('table.download') }}</v-list-item-title>
                 </v-list-item>
                 <v-list-item @click="openEditDialog(table)" class="rounded-lg mb-1 menu-item-hover">
                   <template #prepend>
                     <v-icon color="#f59e0b" class="mr-2" size="20">mdi-pencil-outline</v-icon>
                   </template>
-                  <v-list-item-title class="font-weight-bold text-body-2 text-grey-darken-3">Edit Details</v-list-item-title>
+                  <v-list-item-title class="font-weight-bold text-body-2 text-grey-darken-3">{{ $t('table.edit') }}</v-list-item-title>
                 </v-list-item>
                 <v-divider class="my-1 border-subtle" />
                 <v-list-item @click="deleteTable(table.table_id)" class="rounded-lg mt-1 menu-item-hover-danger text-error">
                   <template #prepend>
                     <v-icon color="error" class="mr-2" size="20">mdi-trash-can-outline</v-icon>
                   </template>
-                  <v-list-item-title class="font-weight-bold text-body-2">Delete Table</v-list-item-title>
+                  <v-list-item-title class="font-weight-bold text-body-2">{{ $t('table.delete') }}</v-list-item-title>
                 </v-list-item>
               </v-list>
             </v-menu>
@@ -484,11 +484,11 @@ const dashboardStats = computed(() => {
           <!-- Status Footer -->
           <v-sheet color="transparent" class="d-flex align-center font-weight-black footer-status-row">
             <v-sheet color="transparent" class="d-flex align-center mr-4 sync-status" style="color: #10b981; font-size: 11px; cursor: default; letter-spacing: 0.5px;">
-              <v-icon size="8" class="mr-2 pulse-dot">mdi-circle</v-icon> SYNC ACTIVE
+              <v-icon size="8" class="mr-2 pulse-dot">mdi-circle</v-icon> {{ $t('table.sync') }}
             </v-sheet>
             <v-spacer />
             <v-sheet color="transparent" class="d-flex align-center text-grey-darken-1 update-text" style="font-size: 11px; cursor: pointer; letter-spacing: 0.5px;" @click="generateQr(table.table_id)">
-              <v-icon size="14" class="mr-1">mdi-refresh</v-icon> UPDATE
+              <v-icon size="14" class="mr-1">mdi-refresh</v-icon> {{ $t('table.update') }}
             </v-sheet>
           </v-sheet>
         </v-card>
@@ -500,10 +500,10 @@ const dashboardStats = computed(() => {
       <v-col cols="12" md="6" class="text-center">
         <v-sheet class="pa-10 bg-white rounded-xl border-dashed d-flex flex-column align-center" border="2px dashed #e2e8f0">
           <v-icon size="80" color="#cbd5e1" class="mb-4">mdi-table-search</v-icon>
-          <div class="text-h5 font-weight-black text-grey-darken-3 mb-2">No Units Found</div>
-          <div class="text-body-1 text-grey-darken-1 mb-6">Looks like we couldn't find any tables matching your criteria.</div>
+          <div class="text-h5 font-weight-black text-grey-darken-3 mb-2">{{ $t('table.empty_title') }}</div>
+          <div class="text-body-1 text-grey-darken-1 mb-6">{{ $t('table.empty_sub') }}</div>
           <v-btn color="primary" rounded="lg" elevation="0" class="text-none px-6 font-weight-bold" @click="search = ''; selectedSection = 'All Sections'">
-            Clear All Filters
+            {{ $t('table.clear_filters') }}
           </v-btn>
         </v-sheet>
       </v-col>
@@ -516,7 +516,7 @@ const dashboardStats = computed(() => {
           <v-avatar color="#e6f9f0" class="mr-3 text-success">
             <v-icon color="#16c65b">mdi-qrcode-scan</v-icon>
           </v-avatar>
-          <v-sheet class="text-h5 font-weight-black title-black" color="transparent" style="letter-spacing: -0.5px">Register New Table</v-sheet>
+          <v-sheet class="text-h5 font-weight-black title-black" color="transparent" style="letter-spacing: -0.5px">{{ $t('table.dialog.register_title') }}</v-sheet>
           <v-spacer />
           <v-btn icon="mdi-close" variant="tonal" color="grey-darken-1" size="small" @click="showAddDialog = false" class="bg-grey-lighten-4 rounded-lg" />
         </v-card-title>
@@ -524,15 +524,15 @@ const dashboardStats = computed(() => {
           <v-container class="pa-0">
             <v-row>
               <v-col cols="12">
-                <span class="text-subtitle-2 font-weight-bold text-grey-darken-2 pl-2">Unit Identifier</span>
+                <span class="text-subtitle-2 font-weight-bold text-grey-darken-2 pl-2">{{ $t('table.dialog.identifier') }}</span>
                 <v-text-field v-model="newTable.table_number" type="number" variant="outlined" color="#16c65b" rounded="lg" class="mt-1 modern-input" prepend-inner-icon="mdi-pound" />
               </v-col>
               <v-col cols="12" sm="6">
-                <span class="text-subtitle-2 font-weight-bold text-grey-darken-2 pl-2">Capacity</span>
+                <span class="text-subtitle-2 font-weight-bold text-grey-darken-2 pl-2">{{ $t('table.dialog.capacity') }}</span>
                 <v-text-field v-model="newTable.capacity" type="number" variant="outlined" color="#16c65b" rounded="lg" class="mt-1 modern-input" prepend-inner-icon="mdi-account-group" />
               </v-col>
               <v-col cols="12" sm="6">
-                <span class="text-subtitle-2 font-weight-bold text-grey-darken-2 pl-2">Dining Zone</span>
+                <span class="text-subtitle-2 font-weight-bold text-grey-darken-2 pl-2">{{ $t('table.dialog.zone') }}</span>
                 <v-select v-model="newTable.location" :items="['Indoor', 'Patio', 'Bar']" variant="outlined" color="#16c65b" rounded="lg" class="mt-1 modern-input" prepend-inner-icon="mdi-map-marker" />
               </v-col>
             </v-row>
@@ -540,8 +540,8 @@ const dashboardStats = computed(() => {
         </v-card-text>
         <v-card-actions class="px-6 pb-6 pt-0">
           <v-spacer />
-          <v-btn variant="text" class="text-none font-weight-bold px-4 hover-grey-btn" color="grey-darken-2" height="48" rounded="lg" @click="showAddDialog = false">Cancel</v-btn>
-          <v-btn color="#16c65b" class="text-none font-weight-bold px-8 text-white shadow-btn-green" height="48" rounded="lg" elevation="0" @click="addTable">Register Table</v-btn>
+          <v-btn variant="text" class="text-none font-weight-bold px-4 hover-grey-btn" color="grey-darken-2" height="48" rounded="lg" @click="showAddDialog = false">{{ $t('table.dialog.cancel') }}</v-btn>
+          <v-btn color="#16c65b" class="text-none font-weight-bold px-8 text-white shadow-btn-green" height="48" rounded="lg" elevation="0" @click="addTable">{{ $t('table.dialog.submit') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -553,7 +553,7 @@ const dashboardStats = computed(() => {
           <v-avatar color="#eff6ff" class="mr-3 text-primary">
             <v-icon color="#3b82f6">mdi-pencil</v-icon>
           </v-avatar>
-          <v-sheet class="text-h5 font-weight-black title-black" color="transparent" style="letter-spacing: -0.5px">Edit Unit #{{ editTableData.table_number }}</v-sheet>
+          <v-sheet class="text-h5 font-weight-black title-black" color="transparent" style="letter-spacing: -0.5px">{{ $t('table.dialog.edit_title', { number: editTableData.table_number }) }}</v-sheet>
           <v-spacer />
           <v-btn icon="mdi-close" variant="tonal" color="grey-darken-1" size="small" @click="showEditDialog = false" class="bg-grey-lighten-4 rounded-lg" />
         </v-card-title>
@@ -561,15 +561,15 @@ const dashboardStats = computed(() => {
           <v-container class="pa-0">
             <v-row>
               <v-col cols="12">
-                <span class="text-subtitle-2 font-weight-bold text-grey-darken-2 pl-2">Unit Identifier</span>
+                <span class="text-subtitle-2 font-weight-bold text-grey-darken-2 pl-2">{{ $t('table.dialog.identifier') }}</span>
                 <v-text-field v-model="editTableData.table_number" type="number" variant="outlined" color="#3b82f6" rounded="lg" class="mt-1 modern-input" prepend-inner-icon="mdi-pound" />
               </v-col>
               <v-col cols="12" sm="6">
-                <span class="text-subtitle-2 font-weight-bold text-grey-darken-2 pl-2">Capacity</span>
+                <span class="text-subtitle-2 font-weight-bold text-grey-darken-2 pl-2">{{ $t('table.dialog.capacity') }}</span>
                 <v-text-field v-model="editTableData.capacity" type="number" variant="outlined" color="#3b82f6" rounded="lg" class="mt-1 modern-input" prepend-inner-icon="mdi-account-group" />
               </v-col>
               <v-col cols="12" sm="6">
-                <span class="text-subtitle-2 font-weight-bold text-grey-darken-2 pl-2">Dining Zone</span>
+                <span class="text-subtitle-2 font-weight-bold text-grey-darken-2 pl-2">{{ $t('table.dialog.zone') }}</span>
                 <v-select v-model="editTableData.location" :items="['Indoor', 'Patio', 'Bar']" variant="outlined" color="#3b82f6" rounded="lg" class="mt-1 modern-input" prepend-inner-icon="mdi-map-marker" />
               </v-col>
             </v-row>
@@ -577,8 +577,8 @@ const dashboardStats = computed(() => {
         </v-card-text>
         <v-card-actions class="px-6 pb-6 pt-0">
           <v-spacer />
-          <v-btn variant="text" class="text-none font-weight-bold px-4 hover-grey-btn" color="grey-darken-2" height="48" rounded="lg" @click="showEditDialog = false">Cancel</v-btn>
-          <v-btn color="#3b82f6" class="text-none font-weight-bold px-8 text-white shadow-btn-subtle" height="48" rounded="lg" elevation="0" @click="saveEdit">Save Details</v-btn>
+          <v-btn variant="text" class="text-none font-weight-bold px-4 hover-grey-btn" color="grey-darken-2" height="48" rounded="lg" @click="showEditDialog = false">{{ $t('table.dialog.cancel') }}</v-btn>
+          <v-btn color="#3b82f6" class="text-none font-weight-bold px-8 text-white shadow-btn-subtle" height="48" rounded="lg" elevation="0" @click="saveEdit">{{ $t('table.dialog.save') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -587,13 +587,13 @@ const dashboardStats = computed(() => {
     <div class="print-only-section d-none">
       <template v-if="tableToPrint">
         <div class="print-container">
-          <div class="print-header">Mlup Dong Restaurant</div>
+          <div class="print-header">{{ $t('table.print.header') }}</div>
           <div class="print-qr-card">
-            <h1 class="print-table-number">Table {{ tableToPrint.table_number }}</h1>
+            <h1 class="print-table-number">{{ $t('table.unit') }} {{ tableToPrint.table_number }}</h1>
             <div class="print-qr-wrapper">
               <img :src="getQrUrl(tableToPrint.qr_code)" class="print-qr-img" alt="Table QR Code" />
             </div>
-            <p class="print-instruction">Scan to view menu & order</p>
+            <p class="print-instruction">{{ $t('table.print.instruction') }}</p>
           </div>
         </div>
       </template>
