@@ -2,7 +2,7 @@ import axios from 'axios'
 import { getToken, clearSession } from '@/utils/auth'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api',
   withCredentials: true,
   headers: {
     Accept: 'application/json',
