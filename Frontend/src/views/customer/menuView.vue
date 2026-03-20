@@ -186,7 +186,7 @@ function addToCart(item, event) {
       </div>
       <v-chip color="white" variant="elevated" class="font-weight-bold text-green-darken-4 elevation-2 rounded-xl" size="small">
         <v-icon start size="14">mdi-table-furniture</v-icon>
-        Table 05
+        Table {{ tableInfo?.table_number || '...' }}
       </v-chip>
     </div>
 
@@ -238,8 +238,8 @@ function addToCart(item, event) {
       </div>
 
       <!-- Popular Dishes -->
-      <div v-if="popularDishes.length" class="px-4 pb-24 fade-in">
-        <h2 class="text-h6 font-weight-black mb-4 text-grey-darken-4">Must Try</h2>
+      <div v-if="popularDishes.length && !menuStore.loading" class="px-4 pb-24 fade-in">
+        <h2 class="text-h6 font-weight-black mb-4 text-grey-darken-4">Menu Selection</h2>
 
         <v-card
           v-for="item in popularDishes" :key="item.id"

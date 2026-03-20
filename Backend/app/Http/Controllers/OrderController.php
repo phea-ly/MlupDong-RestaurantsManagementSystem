@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Support\KdsPayload;
 use App\Events\KdsOrderEvent;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Cache;
 
@@ -15,7 +16,7 @@ class OrderController extends Controller
     {
         $orders = Cache::tags(['orders'])->remember('orders_all', 300, fn() =>
             Order::query()
-                ->with(['user', 'table', 'discount', 'restaurant', 'orderItems', 'payments', 'statusLogs'])
+                ->with(['user', 'table', 'discount', 'restaurant', 'orderItems.menuItem', 'payments', 'statusLogs'])
                 ->latest('order_id')
                 ->get()
         );
@@ -39,7 +40,12 @@ class OrderController extends Controller
             'restaurant_id'  => ['nullable', 'exists:restaurants,restaurant_id'],
         ]);
 
-        $order = Order::query()->create($validated);
+        try {
+            return DB::transaction(function () use ($validated) {
+                // Generate order number if not provided
+                if (empty($validated['order_number'])) {
+                    $validated['order_number'] = 'ORD-' . strtoupper(Str::random(8));
+                }
 
         Cache::tags(['orders'])->flush();
 
@@ -89,13 +95,16 @@ class OrderController extends Controller
         event(new KdsOrderEvent('order.status.updated', $payload));
 
         return response()->json(
-            $order->load(['user', 'table', 'discount', 'restaurant', 'orderItems', 'payments', 'statusLogs'])
+            $order->load(['user', 'table', 'discount', 'restaurant', 'orderItems.menuItem', 'payments', 'statusLogs'])
         );
     }
 
     public function destroy(string $id)
     {
         $order = Order::query()->findOrFail($id);
+        
+        // Items are usually deleted by cascade or manually if not set up in DB
+        $order->orderItems()->delete();
         $order->delete();
 
         Cache::tags(['orders'])->flush();
