@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
+import { orderApi } from '@/api/order.api'
 
 export const useCartStore = defineStore('cart', () => {
   const items = ref([])
   const specialInstructions = ref('')
+  const tableToken = ref(localStorage.getItem('table_token') || '')
 
   // Load from local storage
   const savedCart = localStorage.getItem('cart_items')
@@ -67,9 +69,47 @@ export const useCartStore = defineStore('cart', () => {
     localStorage.removeItem('cart_instructions')
   }
 
+  async function placeOrder(details = {}) {
+    if (items.value.length === 0) return { success: false, message: 'Cart is empty' }
+
+    const payload = {
+      order_type: details.order_type || 'dine_in',
+      table_id: details.table_id || 1, // Default to table 1 if not specified
+      total_amount: cartSubtotal.value,
+      tax: cartTax.value,
+      final_amount: cartTotal.value,
+      order_status: 'new',
+      payment_status: 'pending',
+      items: items.value.map(item => ({
+        menu_item_id: item.id,
+        quantity: item.quantity,
+        unit_price: item.price,
+        note: specialInstructions.value
+      }))
+    }
+
+    try {
+      await orderApi.create(payload)
+      clearCart()
+      return { success: true }
+    } catch (e) {
+      console.error('Order placement failed', e)
+      return { 
+        success: false, 
+        message: e.response?.data?.message || 'Failed to place order' 
+      }
+    }
+  }
+
+  function setTableToken(token) {
+    tableToken.value = token
+    localStorage.setItem('table_token', token)
+  }
+
   return {
     items,
     specialInstructions,
+    tableToken,
     cartCount,
     cartSubtotal,
     cartTax,
@@ -77,6 +117,8 @@ export const useCartStore = defineStore('cart', () => {
     addToCart,
     removeFromCart,
     updateQuantity,
-    clearCart
+    clearCart,
+    placeOrder,
+    setTableToken
   }
 })

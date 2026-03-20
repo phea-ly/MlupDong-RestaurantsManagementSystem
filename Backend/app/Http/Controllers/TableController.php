@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\RestaurantTable;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
+use chillerlan\QRCode\Output\QRMarkupSVG;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -21,50 +22,50 @@ class TableController extends Controller
 
     public function generateQr(string $id)
     {
-        $table = RestaurantTable::query()->findOrFail($id);
+        try {
+            $table = RestaurantTable::query()->findOrFail($id);
 
-        // Create a unique token (qr_code_url) if not exists
-        $token = $table->qr_code_url ?? Str::random(32);
+            // Create a unique token (qr_code_url) if not exists
+            $token = $table->qr_code_url ?? Str::random(32);
 
-        // Construct the URL (e.g. frontend menu URL)
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
-        $data = "{$frontendUrl}/menu/{$token}";
+            // Construct the URL (e.g. frontend menu URL)
+            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5174');
+            $data = "{$frontendUrl}/menu/{$token}";
 
-        // Configure QR Code — SVG output
-        $options = new QROptions([
-            'outputType' => QRCode::OUTPUT_MARKUP_SVG,
-            'eccLevel'   => QRCode::ECC_L,
-            'addQuietzone' => true,
-        ]);
+            // Configure QR Code — SVG output
+            $options = new QROptions([
+                'outputInterface' => QRMarkupSVG::class,
+                'eccLevel'        => 0, // 0 = L
+                'addQuietzone'    => true,
+                'outputBase64'    => false,
+            ]);
 
-        $qrcode  = new QRCode($options);
-        $dataUri = $qrcode->render($data);
+            $qrcode  = new QRCode($options);
+            $svg = $qrcode->render($data);
 
-        // render() returns "data:image/svg+xml;base64,<encoded>" — decode it
-        if (str_starts_with($dataUri, 'data:image/svg+xml;base64,')) {
-            $svg = base64_decode(substr($dataUri, strlen('data:image/svg+xml;base64,')));
-        } elseif (str_starts_with($dataUri, 'data:image/svg+xml,')) {
-            $svg = urldecode(substr($dataUri, strlen('data:image/svg+xml,')));
-        } else {
-            $svg = $dataUri; // Already raw SVG
+            // Ensure directory exists
+            if (!Storage::disk('public')->exists('qrcodes')) {
+                Storage::disk('public')->makeDirectory('qrcodes');
+            }
+
+            // Save raw SVG to storage
+            $filename = "qrcodes/table-{$id}.svg";
+            Storage::disk('public')->put($filename, $svg);
+
+            // Update table record
+            $table->update([
+                'qr_code'     => "storage/{$filename}",
+                'qr_code_url' => $token,
+            ]);
+
+            return response()->json($table->load('restaurant'));
+        } catch (\Exception $e) {
+            \Log::error('QR Generation Error: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Failed to generate QR code',
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        // Ensure directory exists
-        if (!Storage::disk('public')->exists('qrcodes')) {
-            Storage::disk('public')->makeDirectory('qrcodes');
-        }
-
-        // Save raw SVG to storage
-        $filename = "qrcodes/table-{$id}.svg";
-        Storage::disk('public')->put($filename, $svg);
-
-        // Update table record
-        $table->update([
-            'qr_code'     => "storage/{$filename}",
-            'qr_code_url' => $token,
-        ]);
-
-        return response()->json($table->load('restaurant'));
     }
 
     public function generateAll()
@@ -158,6 +159,32 @@ class TableController extends Controller
         ];
 
         return Storage::disk('public')->download($relativePath, "Table-{$table->table_number}-QR.svg", $headers);
+    }
+
+    public function serveQr(string $id)
+    {
+        $table = RestaurantTable::findOrFail($id);
+        if (!$table->qr_code) abort(404);
+
+        $relativePath = str_replace('storage/', '', $table->qr_code);
+
+        if (!Storage::disk('public')->exists($relativePath)) abort(404);
+
+        return response()->file(Storage::disk('public')->path($relativePath), [
+            'Content-Type' => 'image/svg+xml',
+            'Cache-Control' => 'no-cache, must-revalidate',
+        ]);
+    }
+
+    public function getTableByToken(string $token)
+    {
+        $table = RestaurantTable::where('qr_code_url', $token)->first();
+
+        if (!$table) {
+            return response()->json(['message' => 'Table not found'], 404);
+        }
+
+        return response()->json($table);
     }
 
     public function destroy(string $id)

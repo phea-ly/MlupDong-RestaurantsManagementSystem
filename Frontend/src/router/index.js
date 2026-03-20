@@ -63,14 +63,14 @@ const routes = [
     ],
   },
   {
-    path: '/customer-menu',
+    path: '/menu/:token',
     name: 'customer-menu',
     component: () => import('@/views/customer/menuView.vue'),
   },
   {
-    path: '/customer-cart',
-    name: 'customer-cart',
-    component: () => import('@/views/customer/menuOrder.vue'),
+    path: '/customer-order',
+    name: 'customer-order',
+    component: () => import('@/views/customer/order.vue'),
   },
   {
     path: '/:pathMatch(.*)*',
