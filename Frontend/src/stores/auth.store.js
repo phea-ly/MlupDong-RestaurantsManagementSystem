@@ -15,7 +15,7 @@ export const useAuthStore = defineStore("auth", {
 
   actions: {
     async login(email, password) {
-      const { data } = await authApi.loginApi("/login", { email, password });
+      const { data } = await authApi.loginApi({ email, password });
       if (!data.token) throw new Error("No token received");
 
       this.token = data.token;
