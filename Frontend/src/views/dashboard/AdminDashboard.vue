@@ -1,7 +1,151 @@
+<script>
+import { defineStore } from "pinia";
+import { ref } from "vue";
+
+export const useDashboardStore = defineStore("dashboard", () => {
+  const activeRange = ref("7days");
+
+  const stats = ref([
+    {
+      label: "TOTAL REVENUE",
+      value: "$420,000",
+      sub: "Year to date performance",
+      trend: "+15.8%",
+      up: true,
+      color: "var(--app-primary-600)",
+      icon: "mdi-chart-line",
+      route: "/home/sales-report",
+    },
+    {
+      label: "ORDERS TODAY",
+      value: "128",
+      sub: "18 orders since 6:00 AM",
+      trend: "+8.1%",
+      up: true,
+      color: "#3b82f6",
+      icon: "mdi-receipt-text-outline",
+      route: "/home/sales-report",
+    },
+    {
+      label: "AVG TICKET",
+      value: "$32.40",
+      sub: "Last 7 days average",
+      trend: "-1.2%",
+      up: false,
+      color: "#f59e0b",
+      icon: "mdi-currency-usd",
+      route: "/home/sales-report",
+    },
+    {
+      label: "NEW GUESTS",
+      value: "46",
+      sub: "First-time visitors",
+      trend: "+5.6%",
+      up: true,
+      color: "#a855f7",
+      icon: "mdi-account-plus-outline",
+      route: "/home/user",
+    },
+  ]);
+
+  const quickActions = ref([
+    { label: "Add Item", icon: "mdi-plus", color: "var(--app-primary)", route: "/home/menu" },
+    { label: "New Order", icon: "mdi-silverware-fork-knife", color: "#3b82f6", route: "/home/table" },
+    { label: "View Reports", icon: "mdi-chart-box-outline", color: "#f59e0b", route: "/home/sales-report" },
+  ]);
+
+  const bestSelling = ref([
+    { name: "Signature Fish Amok", sold: 452, pct: 100, color: "success" },
+    { name: "Iced Coconut Coffee", sold: 310, pct: 69, color: "blue" },
+    { name: "Kampot Pepper Squid", sold: 285, pct: 63, color: "orange" },
+    { name: "Mango Sticky Rice", sold: 215, pct: 48, color: "pink" },
+    { name: "Tamarind Shaked Tea", sold: 198, pct: 44, color: "teal" },
+  ]);
+
+  const peakHours = ref([
+    { label: "8 AM", height: 30 },
+    { label: "10 AM", height: 45 },
+    { label: "12 PM", height: 85 },
+    { label: "2 PM", height: 55 },
+    { label: "4 PM", height: 40 },
+    { label: "6 PM", height: 95 },
+    { label: "8 PM", height: 75 },
+  ]);
+
+  const orderSummary = ref([
+    { label: "Total Orders", value: "2,480", meta: "+12% vs last month" },
+    { label: "Refund Rate", value: "0.7%", meta: "-0.3% trend" },
+    { label: "Repeat Guests", value: "38%", meta: "+4% last 30 days" },
+  ]);
+
+  const orderHeaders = ref([
+    { title: "Order ID", key: "id" },
+    { title: "Customer", key: "customer" },
+    { title: "Items", key: "items" },
+    { title: "Status", key: "status" },
+    { title: "Amount", key: "amount", align: "end" },
+  ]);
+
+  const recentOrders = ref([
+    {
+      id: "MD-9284",
+      initials: "RC",
+      color: "success",
+      customer: "Rithy Chann",
+      items: "Fish Amok x2, Cambodia Beer x4",
+      status: "COMPLETED",
+      statusColor: "success",
+      amount: "$124.50",
+    },
+    {
+      id: "MD-9283",
+      initials: "SM",
+      color: "orange",
+      customer: "Sokha Meas",
+      items: "Beef Lok Lak x3, Fresh Juices x3",
+      status: "PREPARING",
+      statusColor: "warning",
+      amount: "$86.20",
+    },
+    {
+      id: "MD-9281",
+      initials: "JP",
+      color: "blue",
+      customer: "John Pierce",
+      items: "Signature Seafood Platter x1",
+      status: "COMPLETED",
+      statusColor: "success",
+      amount: "$55.00",
+    },
+  ]);
+
+  const chartPoints = ref("50,80 150,60 250,65 350,45 450,30 550,20 650,25");
+  const weekDays = ref(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
+
+  function goTo(router, route) {
+    if (!route) return;
+    router.push(route);
+  }
+
+  return {
+    activeRange,
+    stats,
+    quickActions,
+    bestSelling,
+    peakHours,
+    orderSummary,
+    orderHeaders,
+    recentOrders,
+    chartPoints,
+    weekDays,
+    goTo,
+  };
+});
+</script>
+
 <script setup>
 import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
-import { useDashboardStore } from "@/stores";
 
 const router = useRouter();
 const dashboardStore = useDashboardStore();
@@ -60,10 +204,11 @@ const { goTo } = dashboardStore;
                 <div class="text-caption text-medium-emphasis mt-1">{{ stat.sub }}</div>
               </div>
               <v-avatar :color="stat.color" size="36" rounded="lg" variant="tonal">
-                <v-icon size="18" color="white">{{ stat.icon }}</v-icon>
+                <v-icon size="18">{{ stat.icon }}</v-icon>
               </v-avatar>
             </div>
             <v-chip :color="stat.up ? 'success' : 'error'" variant="tonal" size="x-small">
+              <v-icon start size="12">{{ stat.up ? 'mdi-trending-up' : 'mdi-trending-down' }}</v-icon>
               {{ stat.trend }} {{ stat.up ? 'UP' : 'DOWN' }}
             </v-chip>
           </v-card-text>
@@ -78,7 +223,13 @@ const { goTo } = dashboardStore;
           <div class="text-subtitle-1 font-weight-black">Order Statistics</div>
           <div class="text-caption text-medium-emphasis">Total volume over the selected period</div>
         </div>
-        <v-btn-toggle v-model="activeRange" rounded="lg" density="compact" color="var(--app-primary-600)" variant="outlined">
+        <v-btn-toggle
+          v-model="activeRange"
+          rounded="lg"
+          density="compact"
+          color="var(--app-primary-600)"
+          variant="outlined"
+        >
           <v-btn value="30days" size="small">Last 30 Days</v-btn>
           <v-btn value="7days" size="small">Last 7 Days</v-btn>
         </v-btn-toggle>
@@ -92,7 +243,14 @@ const { goTo } = dashboardStore;
             </linearGradient>
           </defs>
           <polygon :points="chartPoints + ' 650,120 50,120'" fill="url(#lineGrad)" />
-          <polyline :points="chartPoints" fill="none" stroke="var(--app-primary-600)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+          <polyline
+            :points="chartPoints"
+            fill="none"
+            stroke="var(--app-primary-600)"
+            stroke-width="2.5"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          />
         </svg>
         <div class="d-flex justify-space-between px-2 mt-1">
           <span v-for="d in weekDays" :key="d" class="text-caption text-medium-emphasis">{{ d }}</span>
@@ -122,7 +280,13 @@ const { goTo } = dashboardStore;
                 <span class="text-body-2 font-weight-medium">{{ item.name }}</span>
                 <span class="text-body-2 font-weight-bold">{{ item.sold }} sold</span>
               </div>
-              <v-progress-linear :model-value="item.pct" :color="item.color" rounded height="6" bg-color="grey-lighten-3" />
+              <v-progress-linear
+                :model-value="item.pct"
+                :color="item.color"
+                rounded
+                height="6"
+                bg-color="grey-lighten-3"
+              />
             </div>
           </v-card-text>
         </v-card>
@@ -135,19 +299,22 @@ const { goTo } = dashboardStore;
             <v-chip size="small" variant="tonal">24H CYCLE</v-chip>
           </v-card-title>
           <v-card-text>
-            <div class="d-flex align-end ga-2 mb-2" style="height:100px">
+            <div class="d-flex align-end ga-2 mb-2" style="height: 100px">
               <div
-                v-for="bar in peakHours" :key="bar.label"
-                style="flex:1; background:var(--app-primary-600); border-radius:4px 4px 0 0; opacity:0.75; min-height:8px; transition:height 0.3s"
+                v-for="bar in peakHours"
+                :key="bar.label"
+                class="peak-bar"
                 :style="{ height: bar.height + '%' }"
               />
             </div>
             <div class="d-flex justify-space-between mb-4">
-              <span v-for="bar in peakHours" :key="bar.label" class="text-caption text-medium-emphasis">{{ bar.label }}</span>
+              <span v-for="bar in peakHours" :key="bar.label" class="text-caption text-medium-emphasis">
+                {{ bar.label }}
+              </span>
             </div>
             <v-alert type="success" variant="tonal" rounded="lg" density="compact">
               <span class="text-caption">
-                Dinner service (6 PM - 8 PM) accounts for 42% of daily revenue.
+                Dinner service (6 PM – 8 PM) accounts for 42% of daily revenue.
                 Consider increasing floor staff during this window.
               </span>
             </v-alert>
@@ -160,10 +327,23 @@ const { goTo } = dashboardStore;
     <v-card rounded="xl" elevation="0" border>
       <v-card-title class="d-flex justify-space-between align-center pt-5 px-5">
         <span class="text-subtitle-1 font-weight-black">Recent High-Value Orders</span>
-        <v-btn variant="outlined" rounded="lg" size="small" prepend-icon="mdi-filter-outline" @click="goTo(router, '/home/sales-report')">Filter</v-btn>
+        <v-btn
+          variant="outlined"
+          rounded="lg"
+          size="small"
+          prepend-icon="mdi-filter-outline"
+          @click="goTo(router, '/home/sales-report')"
+        >
+          Filter
+        </v-btn>
       </v-card-title>
 
-      <v-data-table :headers="orderHeaders" :items="recentOrders" hide-default-footer items-per-page="-1">
+      <v-data-table
+        :headers="orderHeaders"
+        :items="recentOrders"
+        hide-default-footer
+        items-per-page="-1"
+      >
         <template #item.id="{ item }">
           <span class="text-primary font-weight-bold">#{{ item.id }}</span>
         </template>
@@ -204,6 +384,13 @@ const { goTo } = dashboardStore;
   transform: translateY(-3px);
   box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
 }
+
+.peak-bar {
+  flex: 1;
+  background: var(--app-primary-600);
+  border-radius: 4px 4px 0 0;
+  opacity: 0.75;
+  min-height: 8px;
+  transition: height 0.3s ease;
+}
 </style>
-
-

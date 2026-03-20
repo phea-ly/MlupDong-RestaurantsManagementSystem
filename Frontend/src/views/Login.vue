@@ -1,15 +1,77 @@
+<script>
+import { defineStore } from "pinia";
+import { ref } from "vue";
+import { useAuthStore } from "./auth.store";
+
+export const useLoginStore = defineStore("login", () => {
+  const auth = useAuthStore();
+
+  const email    = ref("");
+  const password = ref("");
+  const error    = ref("");
+  const loading  = ref(false);
+  const showPass = ref(false);
+  const remember = ref(false);
+
+  function clearError() {
+    error.value = "";
+  }
+
+  function toggleShowPass() {
+    showPass.value = !showPass.value;
+  }
+
+  async function login(router) {
+    error.value   = "";
+    loading.value = true;
+    try {
+      await auth.login(email.value, password.value);
+      await router.replace("/home");
+    } catch (e) {
+      if (e.response?.status === 422) {
+        const errors = e.response.data.errors;
+        error.value = errors
+          ? Object.values(errors).map((msg) => msg[0]).join(" ")
+          : e.response.data.message;
+      } else if (e.response?.status === 401) {
+        const msg = e.response?.data?.message?.toLowerCase() ?? "";
+        if (msg.includes("email"))         error.value = "Email address not found.";
+        else if (msg.includes("password")) error.value = "Incorrect password.";
+        else                               error.value = "Invalid credentials.";
+      } else {
+        error.value = e.message || "Something went wrong. Please try again.";
+      }
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  return {
+    email,
+    password,
+    error,
+    loading,
+    showPass,
+    remember,
+    clearError,
+    toggleShowPass,
+    login,
+  };
+});
+</script>
+
 <script setup>
-import { useRouter } from 'vue-router'
-import { storeToRefs } from 'pinia'
-import { useLoginStore } from '@/stores'
+import { useRouter } from "vue-router";
+import { storeToRefs } from "pinia";
 
-const router = useRouter()
-const loginStore = useLoginStore()
-const { email, password, error, loading, showPass, remember } = storeToRefs(loginStore)
+const router     = useRouter();
+const loginStore = useLoginStore();
 
-const login = () => loginStore.login(router)
-const clearError = loginStore.clearError
-const toggleShowPass = loginStore.toggleShowPass
+const { email, password, error, loading, showPass, remember } = storeToRefs(loginStore);
+
+const login          = () => loginStore.login(router);
+const clearError     = loginStore.clearError;
+const toggleShowPass = loginStore.toggleShowPass;
 </script>
 
 <template>
@@ -39,7 +101,12 @@ const toggleShowPass = loginStore.toggleShowPass
                 <div class="login-title mb-1">Sign In</div>
                 <div class="login-sub mb-6">Welcome back! Please enter your credentials.</div>
 
-                <v-alert v-if="error" type="error" variant="tonal" rounded="lg" density="compact" closable class="mb-4" @click:close="clearError">
+                <v-alert
+                  v-if="error"
+                  type="error" variant="tonal" rounded="lg" density="compact" closable
+                  class="mb-4"
+                  @click:close="clearError"
+                >
                   {{ error }}
                 </v-alert>
 
@@ -48,9 +115,7 @@ const toggleShowPass = loginStore.toggleShowPass
                   placeholder="Email address"
                   type="email"
                   append-inner-icon="mdi-account-outline"
-                  variant="outlined"
-                  rounded="lg"
-                  density="comfortable"
+                  variant="outlined" rounded="lg" density="comfortable"
                   class="glass-field mb-3"
                   hide-details="auto"
                   @keyup.enter="login"
@@ -61,9 +126,7 @@ const toggleShowPass = loginStore.toggleShowPass
                   placeholder="Password"
                   :type="showPass ? 'text' : 'password'"
                   :append-inner-icon="showPass ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
-                  variant="outlined"
-                  rounded="lg"
-                  density="comfortable"
+                  variant="outlined" rounded="lg" density="comfortable"
                   class="glass-field mb-3"
                   hide-details="auto"
                   @click:append-inner="toggleShowPass"
@@ -146,11 +209,11 @@ const toggleShowPass = loginStore.toggleShowPass
 .login-title { font-family: "Playfair Display", serif; font-size: 32px; font-weight: 700; color: #fff; }
 .login-sub   { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.5; }
 
-.glass-field :deep(.v-field)            { background: rgba(255,255,255,0.12) !important; border: 1px solid rgba(255,255,255,0.25) !important; }
-.glass-field :deep(.v-field__outline)   { display: none; }
-.glass-field :deep(input)               { color: #fff !important; font-family: "Manrope", sans-serif; font-weight: 500; }
-.glass-field :deep(input::placeholder)  { color: rgba(255,255,255,0.55) !important; }
-.glass-field :deep(.v-icon)             { color: rgba(255,255,255,0.6) !important; }
+.glass-field :deep(.v-field)           { background: rgba(255,255,255,0.12) !important; border: 1px solid rgba(255,255,255,0.25) !important; }
+.glass-field :deep(.v-field__outline)  { display: none; }
+.glass-field :deep(input)              { color: #fff !important; font-family: "Manrope", sans-serif; font-weight: 500; }
+.glass-field :deep(input::placeholder) { color: rgba(255,255,255,0.55) !important; }
+.glass-field :deep(.v-icon)            { color: rgba(255,255,255,0.6) !important; }
 
 :deep(.v-checkbox .v-label) { color: rgba(255,255,255,0.85) !important; font-size: 13.5px; font-weight: 600; }
 
