@@ -9,12 +9,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
     public function index()
     {
-        $orders = Cache::tags(['orders'])->remember('orders_all', 300, fn() =>
+        $orders = Cache::tags(['orders'])->remember(
+            'orders_all',
+            300,
+            fn() =>
             Order::query()
                 ->with(['user', 'table', 'discount', 'restaurant', 'orderItems.menuItem', 'payments', 'statusLogs'])
                 ->latest('order_id')
@@ -41,29 +45,38 @@ class OrderController extends Controller
         ]);
 
         try {
-            return DB::transaction(function () use ($validated) {
-                // Generate order number if not provided
+            $order = DB::transaction(function () use ($validated) {
                 if (empty($validated['order_number'])) {
                     $validated['order_number'] = 'ORD-' . strtoupper(Str::random(8));
                 }
 
-        Cache::tags(['orders'])->flush();
+                return Order::create($validated);
+            });
 
-        $payload = KdsPayload::fromOrder($order);
-        event(new KdsOrderEvent('order.created', $payload));
+            Cache::tags(['orders'])->flush();
 
-        return response()->json(
-            $order->load(['user', 'table', 'discount', 'restaurant', 'orderItems', 'payments', 'statusLogs']),
-            201
-        );
+            $payload = KdsPayload::fromOrder($order);
+            event(new KdsOrderEvent('order.created', $payload));
+
+            return response()->json(
+                $order->load(['user', 'table', 'discount', 'restaurant', 'orderItems', 'payments', 'statusLogs']),
+                201
+            );
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     public function show(string $id)
     {
-        $order = Cache::tags(['orders'])->remember("order_{$id}", 300, fn() =>
+        $order = Cache::tags(['orders'])->remember(
+            "order_{$id}",
+            300,
+            fn() =>
             Order::query()
                 ->with(['user', 'table', 'discount', 'restaurant', 'orderItems', 'payments', 'statusLogs'])
                 ->findOrFail($id)
+
         );
 
         return response()->json($order);
@@ -102,7 +115,7 @@ class OrderController extends Controller
     public function destroy(string $id)
     {
         $order = Order::query()->findOrFail($id);
-        
+
         // Items are usually deleted by cascade or manually if not set up in DB
         $order->orderItems()->delete();
         $order->delete();

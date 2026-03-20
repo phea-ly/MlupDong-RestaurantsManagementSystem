@@ -74,16 +74,16 @@ const routes = [
       },
     ],
   },
-  // {
-  //   path: '/menu/:token',
-  //   name: 'customer-menu',
-  //   component: () => import('@/views/customer/menuView.vue'),
-  // },
   {
-    path: '/menu',
+    path: '/menu/:token',
     name: 'customer-menu',
     component: () => import('@/views/customer/menuView.vue'),
   },
+  // {
+  //   path: '/menu',
+  //   name: 'customer-menu',
+  //   component: () => import('@/views/customer/menuView.vue'),
+  // },
   {
     path: '/chef',
     name: 'customer-menu',
