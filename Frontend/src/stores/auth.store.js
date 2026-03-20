@@ -1,6 +1,7 @@
 // src/stores/auth.store.js
 import { defineStore } from "pinia";
-import api from "@/plugins/axios";
+// import api from "@/plugins/axios";
+import authapi from "@/api/auth.api"
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
@@ -14,7 +15,7 @@ export const useAuthStore = defineStore("auth", {
 
   actions: {
     async login(email, password) {
-      const { data } = await api.post("/login", { email, password });
+      const { data } = await authapi.loginApi("/login", { email, password });
       if (!data.token) throw new Error("No token received");
 
       this.token = data.token;
