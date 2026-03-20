@@ -162,7 +162,7 @@
       <!-- Exact "Unit Deployment" Header Area -->
       <v-row class="mb-6 page-header-wrap" align="center">
         <v-col cols="12" md="7">
-          <v-sheet color="transparent" class="d-flex align-center mb-1">
+          <!-- <v-sheet color="transparent" class="d-flex align-center mb-1">
             <v-sheet color="transparent" class="text-h3 font-weight-black mr-3 title-gradient-black"
               tag="h1">Table</v-sheet>
             <v-sheet color="transparent" class="text-h3 font-weight-black title-gradient-green"
@@ -171,7 +171,7 @@
           <v-sheet tag="p" color="transparent" class="text-subtitle-1 font-weight-medium text-grey-darken-1 mb-0"
             style="letter-spacing: -0.2px;">
             Configure your restaurant layout and manage digital access points
-          </v-sheet>
+          </v-sheet> -->
         </v-col>
 
         <v-col cols="12" md="5" class="d-flex justify-md-end align-center" style="gap: 12px;">

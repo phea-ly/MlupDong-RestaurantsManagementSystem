@@ -28,6 +28,7 @@ composer install
 composer require tymon/jwt-auth
 php artisan optimize:clear
 php artisan vendor:publish --provider="Tymon\JWTAuth\Providers\LaravelServiceProvider"
+composer require chillerlan/php-qrcode
 
 ```
 

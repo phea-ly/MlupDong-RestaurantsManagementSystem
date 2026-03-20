@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import { orderApi } from '@/api/order.api'
+import { order } from '@/api/order.api'
 
 export const useCartStore = defineStore('cart', () => {
   const items = ref([])
@@ -71,7 +71,7 @@ export const useCartStore = defineStore('cart', () => {
   async function placeOrder(details = {}) {
     if (items.value.length === 0) return { success: false, message: 'Cart is empty' }
 
-    const payload = {
+    const data = {
       order_type: details.order_type || 'dine_in',
       table_id: details.table_id || 1, // Default to table 1 if not specified
       total_amount: cartSubtotal.value,
@@ -88,7 +88,7 @@ export const useCartStore = defineStore('cart', () => {
     }
 
     try {
-      await orderApi.create(payload)
+      await order.create(data)
       clearCart()
       return { success: true }
     } catch (e) {

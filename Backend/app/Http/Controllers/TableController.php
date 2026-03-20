@@ -59,7 +59,7 @@ class TableController extends Controller
 
             return response()->json($table->load('restaurant'));
         } catch (\Exception $e) {
-            \Log::error('QR Generation Error: ' . $e->getMessage());
+            Log::error('QR Generation Error: ' . $e->getMessage());
             return response()->json([
                 'error' => 'Failed to generate QR code',
                 'message' => $e->getMessage()

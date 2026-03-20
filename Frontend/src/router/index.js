@@ -74,8 +74,13 @@ const routes = [
       },
     ],
   },
+  // {
+  //   path: '/menu/:token',
+  //   name: 'customer-menu',
+  //   component: () => import('@/views/customer/menuView.vue'),
+  // },
   {
-    path: '/menu/:token',
+    path: '/menu',
     name: 'customer-menu',
     component: () => import('@/views/customer/menuView.vue'),
   },
@@ -97,7 +102,9 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
 
-  const token = localStorage.getItem('token')   
+  const authStore = useAuthStore()
+
+  const token = authStore.token 
 
   if (to.meta.requiresAuth && !token) {
     next('/login')

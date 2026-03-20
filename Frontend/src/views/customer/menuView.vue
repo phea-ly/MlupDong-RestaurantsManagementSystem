@@ -12,26 +12,26 @@ const searchQuery = ref("");
 const activeCategory = ref("All");
 
 // Get token from route params
-const tableToken = computed(() => route.params.token);
+// const tableToken = computed(() => route.params.token);
 
-// Fetch table details based on token
-const tableInfo = ref(null);
+// // Fetch table details based on token
+// const tableInfo = ref(null);
 
-onMounted(async () => {
-  await menuStore.fetchCategories();
-  await menuStore.fetchMenuItems();
+// onMounted(async () => {
+//   await menuStore.fetchCategories();
+//   await menuStore.fetchMenuItems();
 
-  // If token exists, fetch table info
-  if (tableToken.value) {
-    try {
-      // Find table by QR code URL token
-      const response = await api.get(`/tables/by-token/${tableToken.value}`);
-      tableInfo.value = response.data;
-    } catch (error) {
-      console.error("Failed to fetch table info:", error);
-    }
-  }
-});
+//   // If token exists, fetch table info
+//   if (tableToken.value) {
+//     try {
+//       // Find table by QR code URL token
+//       const response = await api.get(`/tables/by-token/${tableToken.value}`);
+//       tableInfo.value = response.data;
+//     } catch (error) {
+//       console.error("Failed to fetch table info:", error);
+//     }
+//   }
+// });
 
 const categories = computed(() => {
   const allCat = {

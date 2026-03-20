@@ -1,18 +1,18 @@
 import api from './api'
 
-export const orderApi = {
+export const order = {
   getAll: () =>
     api.get('/orders'),
 
-  getOne: (id) =>
+  getById: (id) =>
     api.get(`/orders/${id}`),
 
-  create: (payload) =>
-    api.post('/orders', payload),
+  create: (data) =>
+    api.post('/orders', data),
 
-  update: (id, payload) =>
-    api.put(`/orders/${id}`, payload),
+  update: (id, data) =>
+    api.put(`/orders/${id}`, data),
 
-  destroy: (id) =>
+  delete: (id) =>
     api.delete(`/orders/${id}`),
 }
