@@ -76,6 +76,7 @@ jobs:
           username: ${{ secrets.AWS_USER }}
           key: ${{ secrets.AWS_SSH_KEY }}
           envs: DOCKER_USER,DOCKER_PASS
+          command_timeout: 30m
           script: |
             cd /home/ubuntu/mlup_dong
             echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
