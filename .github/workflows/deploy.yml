@@ -51,7 +51,7 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -80,6 +80,7 @@ jobs:
           script: |
             cd /home/ubuntu/mlup_dong
             echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+            docker system prune -af --filter "until=24h"
             docker compose pull
             docker compose up -d --remove-orphans
             docker exec mlupdong_backend php artisan migrate --force
