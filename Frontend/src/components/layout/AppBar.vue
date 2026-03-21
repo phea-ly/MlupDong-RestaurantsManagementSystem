@@ -51,7 +51,7 @@ function logout() {
 </script>
 
 <template>
-  <v-app-bar flat height="88" color="white" border="b" class="appbar">
+  <v-app-bar flat height="72" color="white" border="b" class="appbar">
     <v-app-bar-title>
       <div class="appbar-title">{{ title }}</div>
       <div class="appbar-subtitle">{{ subtitle }}</div>

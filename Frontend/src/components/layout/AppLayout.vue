@@ -116,8 +116,6 @@ async function saveProfile() {
 
         <v-card-title class="d-flex align-center justify-space-between pt-5 px-6">
           <div>
-            <div class="text-h6 font-weight-black">Account Settings</div>
-            <div class="text-caption text-medium-emphasis">Manage your profile and security</div>
           </div>
           <v-btn icon size="small" variant="text" @click="editDialog = false">
             <v-icon>mdi-close</v-icon>

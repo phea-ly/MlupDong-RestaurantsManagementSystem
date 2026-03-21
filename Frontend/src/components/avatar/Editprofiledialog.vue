@@ -35,7 +35,7 @@ const normUser = computed(() => {
 function resolveAvatarUrl(url) {
   if (!url) return null
   if (url.startsWith('http://') || url.startsWith('https://')) return url
-  const base = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000')
+  const base = (import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api')
     .replace(/\/api\/?$/, '').replace(/\/$/, '')
   return `${base}/${url.replace(/^\/+/, '')}`
 }
@@ -181,7 +181,6 @@ function handleSave() {
 
           <div class="text-center mt-2">
             <div class="text-caption text-medium-emphasis">Click or drag &amp; drop to upload</div>
-            <div class="text-caption text-disabled">PNG, JPG, WEBP · max 2 MB</div>
           </div>
           <div v-if="errors.avatar" class="text-caption text-error mt-1">{{ errors.avatar }}</div>
           <v-btn
