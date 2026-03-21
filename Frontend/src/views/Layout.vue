@@ -1,23 +1,39 @@
+<script>
+import { defineStore } from "pinia";
+
+const metaByPath = {
+  "/home/admin-dashboard": { title: "Dashboard", subtitle: "Restaurant overview" },
+  "/home/menu": { title: "Menu", subtitle: "Manage menu items & categories" },
+  "/home/staff": { title: "Staff", subtitle: "Manage your team" },
+  "/home/table": { title: "Tables", subtitle: "Manage tables & QR codes" },
+  "/home/sales-report": { title: "Sales Report", subtitle: "View sales analytics" },
+  "/home/user": { title: "Users", subtitle: "Manage accounts" },
+  "/home/activity": { title: "Activity Log", subtitle: "View system activity" },
+  "/home/settings": { title: "Settings", subtitle: "System configuration" },
+};
+
+const defaultMeta = { title: "Dashboard", subtitle: "Restaurant overview" };
+
+export const useLayoutStore = defineStore("layout", () => {
+  function getMeta(path) {
+    return metaByPath[path] ?? defaultMeta;
+  }
+
+  return {
+    getMeta,
+  };
+});
+</script>
+
 <script setup>
-import AppLayout from '@/components/layout/AppLayout.vue'
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import AppLayout from "@/components/layout/AppLayout.vue";
+import { computed } from "vue";
+import { useRoute } from "vue-router";
 
-const route = useRoute()
+const route = useRoute();
+const layoutStore = useLayoutStore();
 
-const pageMeta = {
-  '/home/admin-dashboard': { title: 'Dashboard',    subtitle: 'Overview of your restaurant' },
-  '/home/menu':            { title: 'Menu',         subtitle: 'Manage your menu items'       },
-  '/home/staff':           { title: 'Staff',        subtitle: 'Manage your team'             },
-  '/home/table':           { title: 'Tables',       subtitle: 'Manage restaurant tables'     },
-  '/home/sales-report':    { title: 'Sales Report', subtitle: 'View sales analytics'         },
-  '/home/user':            { title: 'User',         subtitle: 'Manage system accounts'       },
-  '/home/settings':        { title: 'Settings',     subtitle: 'System configuration'         },
-}
-
-const meta = computed(() =>
-  pageMeta[route.path] ?? { title: 'Dashboard', subtitle: 'Overview of your restaurant' }
-)
+const meta = computed(() => layoutStore.getMeta(route.path));
 </script>
 
 <template>

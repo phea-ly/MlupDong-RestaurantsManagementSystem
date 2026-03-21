@@ -36,29 +36,26 @@ export function getUserRole() {
 export function getDashboardPathByRole() {
   const role = getUserRole()
   if (role === 'admin') return '/home/admin-dashboard'
-  return '/home/admin-dashboard' // ✅ everyone goes here for now
+  return '/home/admin-dashboard' 
 }
 
 // ── Auth actions ────────────────────────────────────────────────────
 export async function loginSession({ email, password }) {
-  // 🔧 Replace this with your real API call
-  // Example: const res = await fetch('/api/login', { method: 'POST', body: JSON.stringify({ email, password }) })
 
-  // Mock login for now
   if (email === 'admin@test.com' && password === 'password') {
     saveSession({ name: 'Admin User', email, role: 'admin' })
     return
   }
   if (email === 'staff@test.com' && password === 'password') {
-    saveSession({ name: 'Sophal K.', email, role: 'manager' })
+    saveSession({ name: 'Sophal K.', email, role: 'staff' })
     return
   }
   throw new Error('Invalid email or password')
 }
 
 export async function registerSession({ name, email, password }) {
-  // 🔧 Replace with your real API call later
-  const role = email.includes('admin') ? 'admin' : 'manager'
+
+  const role = email.includes('admin') ? 'admin' : 'admin'
   saveSession({ name, email, role })
 }
 
@@ -67,7 +64,5 @@ export async function logoutSession() {
 }
 
 export async function syncAuthSession() {
-  // 🔧 Replace with API token validation if needed
-  // e.g. verify token with backend, refresh if expired
   return isAuthenticated()
 }

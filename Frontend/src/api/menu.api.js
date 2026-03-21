@@ -1,68 +1,52 @@
 import api from './api'
 
-// ── Menu Items ──────────────────────────────────────────────────────
+// ── Menu Items ───
 export const menuItemApi = {
-    /** GET /api/menu-items */
-    getAll() {
-        return api.get('/menu-items')
-    },
+  getAll: () =>
+    api.get('/menu-items'),
 
-    /** GET /api/menu-items/:id */
-    getOne(id) {
-        return api.get(`/menu-items/${id}`)
-    },
+  getOne: (id) =>
+    api.get(`/menu-items/${id}`),
 
-    /** POST /api/menu-items  (multipart if image file, else JSON) */
-    create(payload) {
-        return api.post('/menu-items', payload, {
-            headers: payload instanceof FormData
-                ? { 'Content-Type': 'multipart/form-data' }
-                : {}
-        })
-    },
+  create: (payload) => {
+    const isFormData = payload instanceof FormData
+    return api.post('/menu-items', payload, {
+      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {},
+    })
+  },
 
-    /** PUT /api/menu-items/:id */
-    update(id, payload) {
-        // Laravel doesn't parse multipart PUT, so use POST + _method spoofing
-        if (payload instanceof FormData) {
-            payload.append('_method', 'PUT')
-            return api.post(`/menu-items/${id}`, payload, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
-        }
-        return api.put(`/menu-items/${id}`, payload)
-    },
+  update: (id, payload) => {
+    const isFormData = payload instanceof FormData
+    if (isFormData) {
+      payload.append('_method', 'PUT')
+      return api.post(`/menu-items/${id}`, payload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+    return api.put(`/menu-items/${id}`, payload)
+  },
 
-    /** DELETE /api/menu-items/:id */
-    destroy(id) {
-        return api.delete(`/menu-items/${id}`)
-    },
+  destroy: (id) =>
+    api.delete(`/menu-items/${id}`),
 
-    /** PATCH /api/menu/{id}/availability */
-    toggleStatus(id, status) {
-        return api.patch(`/menu/${id}/availability`, { status })
-    },
+  toggleStatus: (id, status) =>
+    api.patch(`/menu/${id}/availability`, { status }),
 }
 
-// ── Categories ─────────────────────────────────────────────────────
+// ── Categories ────
 export const categoryApi = {
-    /** GET /api/categories */
-    getAll() {
-        return api.get('/categories')
-    },
+  getAll: () =>
+    api.get('/categories'),
 
-    /** POST /api/categories */
-    create(payload) {
-        return api.post('/categories', payload)
-    },
+  getOne: (id) =>
+    api.get(`/categories/${id}`),
 
-    /** PUT /api/categories/:id */
-    update(id, payload) {
-        return api.put(`/categories/${id}`, payload)
-    },
+  create: (payload) =>
+    api.post('/categories', payload),
 
-    /** DELETE /api/categories/:id */
-    destroy(id) {
-        return api.delete(`/categories/${id}`)
-    },
+  update: (id, payload) =>
+    api.put(`/categories/${id}`, payload),
+
+  destroy: (id) =>
+    api.delete(`/categories/${id}`),
 }

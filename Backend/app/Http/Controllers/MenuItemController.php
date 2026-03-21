@@ -18,7 +18,7 @@ class MenuItemController extends Controller
         $validated = $request->validate([
             'item_name'   => ['required', 'string', 'max:150'],
             'price'       => ['required', 'numeric', 'min:0'],
-            'image'       => ['nullable'],         // accept either URL string or file
+            'image'       => ['nullable'],         
             'description' => ['nullable', 'string'],
             'status'      => ['nullable', 'boolean'],
             'category_id' => ['nullable', 'exists:categories,category_id'],
@@ -53,9 +53,7 @@ class MenuItemController extends Controller
             'category_id' => ['nullable', 'exists:categories,category_id'],
         ]);
 
-        // Handle uploaded image file (replaces old one)
         if ($request->hasFile('image')) {
-            // Delete old stored image if it exists
             if ($menuItem->image && str_starts_with($menuItem->image, '/storage/')) {
                 $oldPath = str_replace('/storage/', 'public/', $menuItem->image);
                 Storage::delete($oldPath);

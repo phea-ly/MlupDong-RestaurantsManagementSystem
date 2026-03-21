@@ -1,4 +1,3 @@
-// src/stores/auth.store.js
 import { defineStore } from "pinia";
 // import api from "@/plugins/axios";
 import * as authApi from "@/api/auth.api"
@@ -32,6 +31,19 @@ export const useAuthStore = defineStore("auth", {
       localStorage.removeItem("user");
       api.post("/logout").catch(() => {});
     },
+    // Called in App.vue on mount so the profile is always up-to-date after refresh.
+    async fetchUser() {
+      try {
+        const { data } = await api.get("/user")
+        this.user = data
+        localStorage.setItem("user", JSON.stringify(data))
+      } catch {
+        this.token = null
+        this.user  = null
+        localStorage.removeItem("token")
+        localStorage.removeItem("user")
+      }
+    },
 
     // Instantly show local preview in AppBar while upload is in-flight
     patchAvatar(avatarUrl) {
@@ -47,14 +59,12 @@ export const useAuthStore = defineStore("auth", {
         if (payload.first_name) form.append("first_name", payload.first_name);
         if (payload.last_name)  form.append("last_name",  payload.last_name);
         form.append("avatar",  payload.avatar);
-        form.append("_method", "PUT"); // ✅ Laravel method spoofing
+        form.append("_method", "PUT");
 
-        // ✅ FIXED: was "/user/update" — correct route is "/user"
         response = await api.post("/user", form, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       } else {
-        // ✅ FIXED: was "/user/update" — correct route is "/user"
         response = await api.put("/user", payload);
       }
 

@@ -1,542 +1,492 @@
+<script>
+import { defineStore } from "pinia";
+import { ref, computed } from "vue";
+import api from "@/api/api";
+
+export const useStaffStore = defineStore("staff", () => {
+  const search = ref("");
+  const showAddDialog = ref(false);
+  const showEditDialog = ref(false);
+  const showDeleteDialog = ref(false);
+  const deletingId = ref(null);
+  const editTarget = ref(null);
+  const loading = ref(false);
+  const saving = ref(false);
+  const deleting = ref(false);
+  const snackbar = ref({ show: false, message: "", color: "success" });
+
+  const staffList = ref([]);
+  const userOptions = ref([]);
+
+  const newStaff = ref({ user_id: null, position: "", status: "Active", hire_date: "" });
+  const editForm = ref({ user_id: null, position: "", status: "Active", hire_date: "" });
+
+  const roleColors = { CHEF: "success", ADMIN: "deep-purple", WAITER: "teal", MANAGER: "blue" };
+
+  const headers = ref([
+    { title: "Staff Member", key: "name",       sortable: true  },
+    { title: "Role",         key: "role",       sortable: true  },
+    { title: "Date Joined",  key: "dateJoined", sortable: false },
+    { title: "Status",       key: "status",     sortable: true  },
+    { title: "Actions",      key: "actions",    sortable: false, align: "end" },
+  ]);
+
+  const activeCount  = computed(() => staffList.value.filter((s) => s.status === "Active").length);
+  const kitchenCount = computed(() => staffList.value.filter((s) => s.role === "CHEF").length);
+  const serviceCount = computed(() => staffList.value.filter((s) => s.role === "WAITER").length);
+
+  const statusOptions = ["Active", "Inactive"];
+
+  function notify(message, color = "success") {
+    snackbar.value = { show: true, message, color };
+  }
+
+  function mapUserOption(u) {
+    const firstName = u.first_name ?? "";
+    const lastName  = u.last_name  ?? "";
+    const name = `${firstName} ${lastName}`.trim() || u.name || "User";
+    return { id: u.id, name, email: u.email ?? "", role: u.role ?? u.role_name ?? "" };
+  }
+
+  function mapStaff(s) {
+    const u         = s.user ?? {};
+    const firstName = u.first_name ?? "";
+    const lastName  = u.last_name  ?? "";
+    const name      = `${firstName} ${lastName}`.trim() || u.name || "-";
+    const initials  = ((firstName[0] ?? "") + (lastName[0] ?? "")).toUpperCase() || "??";
+    const role      = u.role ?? u.role_name ?? "STAFF";
+    return {
+      id:         s.staff_id,
+      user_id:    s.user_id,
+      position:   s.position ?? "",
+      hire_date:  s.hire_date ?? "",
+      name,
+      email:      u.email ?? "",
+      role,
+      dateJoined: s.hire_date
+        ? new Date(s.hire_date).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
+        : s.created_at
+          ? new Date(s.created_at).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })
+          : "-",
+      status:   s.is_active ? "Active" : "Inactive",
+      initials,
+      color: roleColors[role] || "success",
+    };
+  }
+
+  async function fetchUsers() {
+    try {
+      const { data } = await api.get("/users");
+      const list = Array.isArray(data) ? data : data.data ?? [];
+      userOptions.value = list.map(mapUserOption);
+    } catch {
+      notify("Failed to load users.", "error");
+    }
+  }
+
+  async function fetchStaff() {
+    loading.value = true;
+    try {
+      const { data } = await api.get("/staffs");
+      const list = Array.isArray(data) ? data : data.data ?? [];
+      staffList.value = list.map(mapStaff);
+    } catch {
+      notify("Failed to load staff.", "error");
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  function openAddDialog() {
+    newStaff.value = { user_id: null, position: "", status: "Active", hire_date: "" };
+    showAddDialog.value = true;
+  }
+
+  async function addStaff() {
+    if (!newStaff.value.user_id || saving.value) return;
+    saving.value = true;
+    try {
+      const payload = {
+        user_id:   newStaff.value.user_id,
+        position:  newStaff.value.position || null,
+        hire_date: newStaff.value.hire_date || null,
+        is_active: newStaff.value.status === "Active",
+      };
+      const { data } = await api.post("/staffs", payload);
+      staffList.value.unshift(mapStaff(data));
+      showAddDialog.value = false;
+      notify("Staff created successfully.");
+    } catch (err) {
+      notify(err.response?.data?.message ?? "Failed to create staff.", "error");
+    } finally {
+      saving.value = false;
+    }
+  }
+
+  function openEditDialog(member) {
+    editTarget.value = { ...member };
+    editForm.value = {
+      user_id:   member.user_id,
+      position:  member.position ?? "",
+      status:    member.status,
+      hire_date: member.hire_date ?? "",
+    };
+    showEditDialog.value = true;
+  }
+
+  async function saveEdit() {
+    if (!editTarget.value || saving.value) return;
+    saving.value = true;
+    try {
+      const payload = {
+        user_id:   editForm.value.user_id,
+        position:  editForm.value.position || null,
+        hire_date: editForm.value.hire_date || null,
+        is_active: editForm.value.status === "Active",
+      };
+      const { data } = await api.put(`/staffs/${editTarget.value.id}`, payload);
+      const idx    = staffList.value.findIndex((s) => s.id === editTarget.value.id);
+      const mapped = mapStaff(data);
+      if (idx !== -1) staffList.value[idx] = mapped;
+      showEditDialog.value = false;
+      notify("Staff updated successfully.");
+    } catch (err) {
+      notify(err.response?.data?.message ?? "Failed to update staff.", "error");
+    } finally {
+      saving.value = false;
+    }
+  }
+
+  function confirmDelete(id) {
+    deletingId.value = id;
+    showDeleteDialog.value = true;
+  }
+
+  async function handleDelete() {
+    if (!deletingId.value || deleting.value) return;
+    deleting.value = true;
+    try {
+      await api.delete(`/staffs/${deletingId.value}`);
+      staffList.value = staffList.value.filter((s) => s.id !== deletingId.value);
+      showDeleteDialog.value = false;
+      deletingId.value = null;
+      notify("Staff deleted.");
+    } catch (err) {
+      notify(err.response?.data?.message ?? "Failed to delete staff.", "error");
+    } finally {
+      deleting.value = false;
+    }
+  }
+
+  async function init() {
+    await Promise.all([fetchUsers(), fetchStaff()]);
+  }
+
+  return {
+    search,
+    showAddDialog,
+    showEditDialog,
+    showDeleteDialog,
+    deletingId,
+    editTarget,
+    loading,
+    saving,
+    deleting,
+    snackbar,
+    staffList,
+    userOptions,
+    newStaff,
+    editForm,
+    roleColors,
+    headers,
+    activeCount,
+    kitchenCount,
+    serviceCount,
+    statusOptions,
+    init,
+    openAddDialog,
+    addStaff,
+    openEditDialog,
+    saveEdit,
+    confirmDelete,
+    handleDelete,
+  };
+});
+</script>
+
 <script setup>
-import { ref, computed } from 'vue'
+import { onMounted } from "vue";
+import { storeToRefs } from "pinia";
 
-const search         = ref('')
-const showAddDialog  = ref(false)
-const showEditDialog = ref(false)
-const editTarget     = ref(null)
+const staffStore = useStaffStore();
 
-const newStaff = ref({ name: '', email: '', role: '', status: 'Active' })
-const editForm = ref({ name: '', email: '', role: '', status: 'Active' })
+const {
+  search,
+  showAddDialog,
+  showEditDialog,
+  showDeleteDialog,
+  loading,
+  saving,
+  deleting,
+  snackbar,
+  staffList,
+  userOptions,
+  newStaff,
+  editForm,
+  activeCount,
+  kitchenCount,
+  serviceCount,
+  headers,
+} = storeToRefs(staffStore);
 
-const staffList = ref([
-  { id: 1, name: 'Marcus Nguyen', email: 'marcus@mlupdong.com',  role: 'CHEF',   dateJoined: 'Oct 12, 2022', status: 'Active',   initials: 'MN', color: '#e8f5e9', textColor: '#2e7d32' },
-  { id: 2, name: 'Sarah Jenkins', email: 'sarah.j@mlupdong.com', role: 'ADMIN',  dateJoined: 'Jan 05, 2021', status: 'Active',   initials: 'SJ', color: '#fce4ec', textColor: '#c62828' },
-  { id: 3, name: 'David Chen',    email: 'david@mlupdong.com',   role: 'WAITER', dateJoined: 'Mar 22, 2023', status: 'Inactive', initials: 'DC', color: '#fff3e0', textColor: '#e65100' },
-  { id: 4, name: 'Jordan Lee',    email: 'j.lee@mlupdong.com',   role: 'CHEF',   dateJoined: 'Jun 15, 2022', status: 'Active',   initials: 'JL', color: '#fce4ec', textColor: '#ad1457' },
-  { id: 5, name: 'Maya Patel',    email: 'maya.p@mlupdong.com',  role: 'WAITER', dateJoined: 'Nov 30, 2023', status: 'Active',   initials: 'MP', color: '#e8eaf6', textColor: '#283593' },
-])
+const {
+  roleColors,
+  statusOptions,
+  init,
+  openAddDialog,
+  addStaff,
+  openEditDialog,
+  saveEdit,
+  confirmDelete,
+  handleDelete,
+} = staffStore;
 
-const filteredStaff = computed(() =>
-  staffList.value.filter(s =>
-    s.name.toLowerCase().includes(search.value.toLowerCase()) ||
-    s.role.toLowerCase().includes(search.value.toLowerCase()) ||
-    s.email.toLowerCase().includes(search.value.toLowerCase())
-  )
-)
-
-const activeCount  = computed(() => staffList.value.filter(s => s.status === 'Active').length)
-const kitchenCount = computed(() => staffList.value.filter(s => s.role === 'CHEF').length)
-const serviceCount = computed(() => staffList.value.filter(s => s.role === 'WAITER').length)
-
-// ── Add ────────────────────────────────────────────────
-function openAddDialog() {
-  newStaff.value = { name: '', email: '', role: 'Chef', status: 'Active' }
-  showAddDialog.value = true
-}
-
-function addStaff() {
-  if (!newStaff.value.name.trim()) return
-  const parts    = newStaff.value.name.trim().split(/\s+/)
-  const initials = parts.map(p => p[0]).join('').toUpperCase().slice(0, 2)
-  staffList.value.push({
-    id:         Date.now(),
-    name:       newStaff.value.name.trim(),
-    email:      newStaff.value.email.trim(),
-    role:       newStaff.value.role.toUpperCase(),
-    status:     newStaff.value.status,
-    dateJoined: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-    initials,
-    color:    '#e8f5e9',
-    textColor:'#2e7d32',
-  })
-  showAddDialog.value = false
-}
-
-// ── Edit ───────────────────────────────────────────────
-function openEditDialog(member) {
-  editTarget.value = member
-  editForm.value   = { name: member.name, email: member.email, role: member.role, status: member.status }
-  showEditDialog.value = true
-}
-
-function saveEdit() {
-  if (!editTarget.value) return
-  Object.assign(editTarget.value, {
-    name:   editForm.value.name.trim(),
-    email:  editForm.value.email.trim(),
-    role:   editForm.value.role.toUpperCase(),
-    status: editForm.value.status,
-  })
-  const parts    = editTarget.value.name.split(/\s+/)
-  editTarget.value.initials = parts.map(p => p[0]).join('').toUpperCase().slice(0, 2)
-  showEditDialog.value = false
-}
-
-// ── Delete ─────────────────────────────────────────────
-function deleteStaff(id) {
-  staffList.value = staffList.value.filter(s => s.id !== id)
-}
-
-// ── Role chip color ────────────────────────────────────
-function roleColor(role) {
-  const map = { CHEF: '#e8f5e9', ADMIN: '#ede7f6', WAITER: '#e0f2f1', MANAGER: '#e3f2fd' }
-  return map[role] || '#f5f5f5'
-}
-function roleTextColor(role) {
-  const map = { CHEF: '#2e7d32', ADMIN: '#4527a0', WAITER: '#00695c', MANAGER: '#1565c0' }
-  return map[role] || '#555'
-}
-
-// ── Pagination ─────────────────────────────────────────
-const page      = ref(1)
-const perPage   = 8
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredStaff.value.length / perPage)))
-const pagedStaff = computed(() => {
-  const start = (page.value - 1) * perPage
-  return filteredStaff.value.slice(start, start + perPage)
-})
+onMounted(init);
 </script>
 
 <template>
-
-  <!-- ── Top Action Bar ── -->
-  <div class="action-bar">
-    <div class="search-bar">
-      <v-icon size="17" color="#9aabbd">mdi-magnify</v-icon>
-      <input v-model="search" placeholder="Search staff by name or role..." />
-    </div>
-    <button class="btn-filter" @click="() => {}">
-      <v-icon size="16">mdi-filter-outline</v-icon>
-      Filters
-    </button>
-    <button class="btn-export" @click="() => {}">
-      <v-icon size="16">mdi-download-outline</v-icon>
-      Export
-    </button>
-    <button class="btn-add" @click="openAddDialog">
-      <v-icon size="17" color="#063824">mdi-plus</v-icon>
-      Add Staff
-    </button>
-  </div>
-
-  <!-- ── Staff Table ── -->
-  <div class="table-card mb-4">
-
-    <div class="table-head">
-      <div class="th">Name</div>
-      <div class="th">Role</div>
-      <div class="th">Date Joined</div>
-      <div class="th">Status</div>
-      <div class="th">Actions</div>
-    </div>
-
-    <div v-for="member in pagedStaff" :key="member.id" class="table-row">
-
-      <!-- Name -->
-      <div class="d-flex align-center ga-3">
-        <v-avatar :color="member.color" size="38" rounded="lg">
-          <span :style="{ color: member.textColor, fontSize: '13px', fontWeight: 800 }">{{ member.initials }}</span>
-        </v-avatar>
-        <div>
-          <p class="member-name">{{ member.name }}</p>
-          <p class="member-email">{{ member.email }}</p>
-        </div>
-      </div>
-
-      <!-- Role -->
-      <div>
-        <span class="role-chip" :style="{ background: roleColor(member.role), color: roleTextColor(member.role) }">
-          {{ member.role }}
-        </span>
-      </div>
-
-      <!-- Date Joined -->
-      <p class="date-cell">{{ member.dateJoined }}</p>
-
-      <!-- Status -->
-      <div class="d-flex align-center ga-1">
-        <span class="status-dot" :style="{ background: member.status === 'Active' ? '#0f9e5f' : '#b0bec5' }" />
-        <span :class="member.status === 'Active' ? 'status-active' : 'status-inactive'">{{ member.status }}</span>
-      </div>
-
-      <!-- Actions -->
-      <div class="d-flex align-center ga-1">
-        <button class="act-btn" @click="openEditDialog(member)" title="Edit">
-          <v-icon size="17">mdi-playlist-edit</v-icon>
-        </button>
-        <button class="act-btn del" @click="deleteStaff(member.id)" title="Delete">
-          <v-icon size="17">mdi-delete-outline</v-icon>
-        </button>
-      </div>
-
-    </div>
-
-    <!-- Empty state -->
-    <div v-if="pagedStaff.length === 0" class="empty-state">
-      <v-icon size="36" color="#d1dce4">mdi-account-search-outline</v-icon>
-      <p>No staff found</p>
-    </div>
-
-    <!-- Pagination -->
-    <div class="pagination">
-      <span class="showing-text">
-        Showing {{ filteredStaff.length === 0 ? 0 : (page - 1) * perPage + 1 }}–{{ Math.min(page * perPage, filteredStaff.length) }}
-        of {{ filteredStaff.length }} staff members
-      </span>
-      <div class="d-flex align-center ga-1">
-        <button class="pag-btn" :disabled="page <= 1" @click="page--">
-          <v-icon size="15">mdi-chevron-left</v-icon>
-        </button>
-        <button
-          v-for="p in totalPages" :key="p"
-          class="pag-btn" :class="{ active: p === page }"
-          @click="page = p"
-        >{{ p }}</button>
-        <button class="pag-btn" :disabled="page >= totalPages" @click="page++">
-          <v-icon size="15">mdi-chevron-right</v-icon>
-        </button>
-      </div>
-    </div>
-
-  </div>
-
   <!-- ── Summary Cards ── -->
-  <div class="summary-grid">
+  <v-row class="mb-5">
+    <v-col cols="12" sm="4">
+      <v-card rounded="xl" elevation="0" border>
+        <v-card-text class="d-flex align-center ga-4">
+          <v-avatar color="success" variant="tonal" size="48" rounded="lg">
+            <v-icon>mdi-account-check-outline</v-icon>
+          </v-avatar>
+          <div>
+            <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis">Active Staff</div>
+            <div class="text-h5 font-weight-black">{{ activeCount }}</div>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-col>
+    <v-col cols="12" sm="4">
+      <v-card rounded="xl" elevation="0" border>
+        <v-card-text class="d-flex align-center ga-4">
+          <v-avatar color="blue" variant="tonal" size="48" rounded="lg">
+            <v-icon>mdi-silverware-fork-knife</v-icon>
+          </v-avatar>
+          <div>
+            <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis">Kitchen Team</div>
+            <div class="text-h5 font-weight-black">{{ kitchenCount }}</div>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-col>
+    <v-col cols="12" sm="4">
+      <v-card rounded="xl" elevation="0" border>
+        <v-card-text class="d-flex align-center ga-4">
+          <v-avatar color="teal" variant="tonal" size="48" rounded="lg">
+            <v-icon>mdi-room-service-outline</v-icon>
+          </v-avatar>
+          <div>
+            <div class="text-caption font-weight-bold text-uppercase text-medium-emphasis">Service Team</div>
+            <div class="text-h5 font-weight-black">{{ serviceCount }}</div>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-col>
+  </v-row>
 
-    <div class="summary-card">
-      <v-avatar color="#e6f9f0" size="44" rounded="lg">
-        <v-icon color="#0f9e5f" size="22">mdi-account-check-outline</v-icon>
-      </v-avatar>
-      <div>
-        <p class="summary-label">Active Staff</p>
-        <p class="summary-value">{{ activeCount }}</p>
+  <!-- ── Data Table Card ── -->
+  <v-card rounded="xl" elevation="0" border>
+    <v-card-text>
+      <div class="d-flex align-center ga-3 flex-wrap">
+        <v-text-field
+          v-model="search"
+          placeholder="Search staff..."
+          prepend-inner-icon="mdi-magnify"
+          variant="outlined"
+          density="compact"
+          rounded="lg"
+          hide-details
+          style="min-width:220px; max-width:320px"
+        />
+        <v-spacer />
+        <v-btn variant="outlined" rounded="lg" prepend-icon="mdi-filter-outline">Filters</v-btn>
+        <v-btn variant="outlined" rounded="lg" prepend-icon="mdi-download-outline">Export</v-btn>
+        <v-btn color="var(--app-primary)" rounded="lg" prepend-icon="mdi-plus" @click="openAddDialog">
+          <span style="color:#063824;font-weight:800">Add Staff</span>
+        </v-btn>
       </div>
-    </div>
+    </v-card-text>
 
-    <div class="summary-card">
-      <v-avatar color="#e8f0fe" size="44" rounded="lg">
-        <v-icon color="#3c6bc4" size="22">mdi-silverware-fork-knife</v-icon>
-      </v-avatar>
-      <div>
-        <p class="summary-label">Kitchen Team</p>
-        <p class="summary-value">{{ kitchenCount }}</p>
-      </div>
-    </div>
-
-    <div class="summary-card">
-      <v-avatar color="#e6f9f0" size="44" rounded="lg">
-        <v-icon color="#0f9e5f" size="22">mdi-map-marker-outline</v-icon>
-      </v-avatar>
-      <div>
-        <p class="summary-label">Service Team</p>
-        <p class="summary-value">{{ serviceCount }}</p>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ── Add Staff Dialog ── -->
-  <v-dialog v-model="showAddDialog" max-width="440" rounded="xl">
-    <v-card rounded="xl" class="pa-6" elevation="0">
-      <p class="dialog-title mb-5">Add New Staff</p>
-      <div class="mb-3">
-        <label class="form-label">Full Name</label>
-        <input class="form-input" v-model="newStaff.name" placeholder="e.g. Marcus Nguyen" />
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Email</label>
-        <input class="form-input" v-model="newStaff.email" placeholder="e.g. marcus@mlupdong.com" type="email" />
-      </div>
-      <div class="d-flex ga-3 mb-3">
-        <div style="flex:1">
-          <label class="form-label">Role</label>
-          <select class="form-input" v-model="newStaff.role">
-            <option>Chef</option>
-            <option>Waiter</option>
-            <option>Admin</option>
-            <option>Manager</option>
-          </select>
+    <v-data-table
+      :headers="headers"
+      :items="staffList"
+      :search="search"
+      items-per-page="8"
+    >
+      <template #item.name="{ item }">
+        <div class="d-flex align-center ga-3 py-1">
+          <v-avatar :color="item.color" variant="tonal" size="38" rounded="lg">
+            <span class="text-caption font-weight-bold">{{ item.initials }}</span>
+          </v-avatar>
+          <div>
+            <div class="font-weight-bold">{{ item.name }}</div>
+            <div class="text-caption text-medium-emphasis">{{ item.email }}</div>
+          </div>
         </div>
-        <div style="flex:1">
-          <label class="form-label">Status</label>
-          <select class="form-input" v-model="newStaff.status">
-            <option>Active</option>
-            <option>Inactive</option>
-          </select>
-        </div>
-      </div>
-      <div class="d-flex justify-end ga-2 mt-4">
-        <button class="btn-cancel" @click="showAddDialog = false">Cancel</button>
-        <button class="btn-save" @click="addStaff">Add Staff</button>
-      </div>
+      </template>
+
+      <template #item.role="{ item }">
+        <v-chip :color="roleColors[item.role] || 'grey'" size="small" variant="tonal" rounded="lg">
+          {{ item.role }}
+        </v-chip>
+      </template>
+
+      <template #item.status="{ item }">
+        <v-chip
+          :color="item.status === 'Active' ? 'success' : 'default'"
+          size="small" variant="tonal" rounded="lg"
+        >
+          <template #prepend><v-icon size="8">mdi-circle</v-icon></template>
+          {{ item.status }}
+        </v-chip>
+      </template>
+
+      <template #item.actions="{ item }">
+        <v-btn icon size="small" variant="text" color="primary" @click="openEditDialog(item)">
+          <v-icon size="18">mdi-pencil-outline</v-icon>
+          <v-tooltip activator="parent" location="top">Edit</v-tooltip>
+        </v-btn>
+        <v-btn icon size="small" variant="text" color="error" @click="confirmDelete(item.id)">
+          <v-icon size="18">mdi-delete-outline</v-icon>
+          <v-tooltip activator="parent" location="top">Delete</v-tooltip>
+        </v-btn>
+      </template>
+    </v-data-table>
+  </v-card>
+
+  <!-- ── Add Dialog ── -->
+  <v-dialog v-model="showAddDialog" max-width="480" rounded="xl">
+    <v-card rounded="xl" elevation="0">
+      <v-card-title class="d-flex align-center ga-3 pt-6 px-6">
+        <v-avatar color="success" variant="tonal" size="40" rounded="lg">
+          <v-icon size="20">mdi-account-plus-outline</v-icon>
+        </v-avatar>
+        <span class="text-h6 font-weight-black">Add New Staff</span>
+      </v-card-title>
+      <v-card-text class="px-6 pt-3">
+        <v-select
+          v-model="newStaff.user_id"
+          :items="userOptions"
+          item-title="name"
+          item-value="id"
+          label="User"
+          variant="outlined"
+          rounded="lg"
+          density="comfortable"
+          class="mb-2"
+        />
+        <v-text-field
+          v-model="newStaff.position"
+          label="Position"
+          variant="outlined"
+          rounded="lg"
+          density="comfortable"
+          class="mb-2"
+        />
+        <v-row dense>
+          <v-col cols="6">
+            <v-select v-model="newStaff.status" :items="statusOptions" label="Status" variant="outlined" rounded="lg" density="comfortable" />
+          </v-col>
+          <v-col cols="6">
+            <v-text-field v-model="newStaff.hire_date" label="Hire Date" type="date" variant="outlined" rounded="lg" density="comfortable" />
+          </v-col>
+        </v-row>
+      </v-card-text>
+      <v-card-actions class="px-6 pb-6">
+        <v-spacer />
+        <v-btn variant="outlined" rounded="lg" @click="showAddDialog = false">Cancel</v-btn>
+        <v-btn color="var(--app-primary)" rounded="lg" :loading="saving" @click="addStaff">
+          <span style="color:#063824;font-weight:800">Add Staff</span>
+        </v-btn>
+      </v-card-actions>
     </v-card>
   </v-dialog>
 
-  <!-- ── Edit Staff Dialog ── -->
-  <v-dialog v-model="showEditDialog" max-width="440" rounded="xl">
-    <v-card rounded="xl" class="pa-6" elevation="0">
-      <p class="dialog-title mb-5">Edit Staff</p>
-      <div class="mb-3">
-        <label class="form-label">Full Name</label>
-        <input class="form-input" v-model="editForm.name" placeholder="Full name" />
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Email</label>
-        <input class="form-input" v-model="editForm.email" placeholder="Email" type="email" />
-      </div>
-      <div class="d-flex ga-3 mb-3">
-        <div style="flex:1">
-          <label class="form-label">Role</label>
-          <select class="form-input" v-model="editForm.role">
-            <option>CHEF</option>
-            <option>WAITER</option>
-            <option>ADMIN</option>
-            <option>MANAGER</option>
-          </select>
-        </div>
-        <div style="flex:1">
-          <label class="form-label">Status</label>
-          <select class="form-input" v-model="editForm.status">
-            <option>Active</option>
-            <option>Inactive</option>
-          </select>
-        </div>
-      </div>
-      <div class="d-flex justify-end ga-2 mt-4">
-        <button class="btn-cancel" @click="showEditDialog = false">Cancel</button>
-        <button class="btn-save" @click="saveEdit">Save Changes</button>
-      </div>
+  <!-- ── Edit Dialog ── -->
+  <v-dialog v-model="showEditDialog" max-width="480" rounded="xl">
+    <v-card rounded="xl" elevation="0">
+      <v-card-title class="d-flex align-center ga-3 pt-6 px-6">
+        <v-avatar color="primary" variant="tonal" size="40" rounded="lg">
+          <v-icon size="20">mdi-account-edit-outline</v-icon>
+        </v-avatar>
+        <span class="text-h6 font-weight-black">Edit Staff</span>
+      </v-card-title>
+      <v-card-text class="px-6 pt-3">
+        <v-select
+          v-model="editForm.user_id"
+          :items="userOptions"
+          item-title="name"
+          item-value="id"
+          label="User"
+          variant="outlined"
+          rounded="lg"
+          density="comfortable"
+          class="mb-2"
+        />
+        <v-text-field
+          v-model="editForm.position"
+          label="Position"
+          variant="outlined"
+          rounded="lg"
+          density="comfortable"
+          class="mb-2"
+        />
+        <v-row dense>
+          <v-col cols="6">
+            <v-select v-model="editForm.status" :items="statusOptions" label="Status" variant="outlined" rounded="lg" density="comfortable" />
+          </v-col>
+          <v-col cols="6">
+            <v-text-field v-model="editForm.hire_date" label="Hire Date" type="date" variant="outlined" rounded="lg" density="comfortable" />
+          </v-col>
+        </v-row>
+      </v-card-text>
+      <v-card-actions class="px-6 pb-6">
+        <v-spacer />
+        <v-btn variant="outlined" rounded="lg" @click="showEditDialog = false">Cancel</v-btn>
+        <v-btn color="primary" rounded="lg" :loading="saving" @click="saveEdit">Save Changes</v-btn>
+      </v-card-actions>
     </v-card>
   </v-dialog>
 
+  <!-- ── Delete Dialog ── -->
+  <v-dialog v-model="showDeleteDialog" max-width="400" rounded="xl">
+    <v-card rounded="xl" elevation="0">
+      <v-card-title class="d-flex align-center ga-3 pt-6 px-6">
+        <v-avatar color="error" variant="tonal" size="40" rounded="lg">
+          <v-icon size="20">mdi-delete-outline</v-icon>
+        </v-avatar>
+        <span class="text-h6 font-weight-black">Delete Staff</span>
+      </v-card-title>
+      <v-card-text class="px-6">
+        Are you sure you want to delete this staff member? This cannot be undone.
+      </v-card-text>
+      <v-card-actions class="px-6 pb-6">
+        <v-spacer />
+        <v-btn variant="outlined" rounded="lg" @click="showDeleteDialog = false">Cancel</v-btn>
+        <v-btn color="error" rounded="lg" :loading="deleting" @click="handleDelete">Delete</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- ── Snackbar ── -->
+  <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="bottom right" rounded="lg" :timeout="3000">
+    {{ snackbar.message }}
+    <template #actions>
+      <v-btn variant="text" icon="mdi-close" size="small" @click="snackbar.show = false" />
+    </template>
+  </v-snackbar>
 </template>
-
-<style scoped>
-/* ── Action Bar ── */
-.action-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-.search-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #fff;
-  border: 1px solid #dbe3e7;
-  border-radius: 8px;
-  padding: 0 14px;
-  height: 38px;
-  flex: 1;
-  min-width: 200px;
-}
-
-.search-bar input {
-  border: none;
-  background: transparent;
-  outline: none;
-  font-size: 13px;
-  color: #3d5166;
-  font-family: inherit;
-  width: 100%;
-}
-
-.search-bar input::placeholder { color: #9aabbd; }
-
-.btn-filter,
-.btn-export {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 38px;
-  padding: 0 16px;
-  border-radius: 8px;
-  border: 1px solid #dbe3e7;
-  background: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  color: #3d5166;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.15s;
-  white-space: nowrap;
-}
-.btn-filter:hover,
-.btn-export:hover { background: #f6f9f8; }
-
-.btn-add {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 38px;
-  padding: 0 18px;
-  border-radius: 8px;
-  border: none;
-  background: #14dc8b;
-  color: #063824;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  white-space: nowrap;
-  transition: background 0.15s;
-}
-.btn-add:hover { background: #0fcb7e; }
-
-/* ── Table ── */
-.table-card {
-  background: #fff;
-  border: 1px solid #dbe3e7;
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-.table-head,
-.table-row {
-  display: grid;
-  grid-template-columns: 1fr 130px 140px 120px 90px;
-  padding: 12px 20px;
-  align-items: center;
-}
-
-.table-head {
-  background: #f6f9f8;
-  border-bottom: 1px solid #dbe3e7;
-}
-
-.th {
-  font-size: 10px;
-  font-weight: 800;
-  color: #9aabbd;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-.table-row {
-  border-bottom: 1px solid #dbe3e7;
-  transition: background 0.12s;
-}
-.table-row:last-child { border-bottom: none; }
-.table-row:hover      { background: #f6f9f8; }
-
-.member-name  { font-size: 14px; font-weight: 700; color: #122039; margin: 0; }
-.member-email { font-size: 12px; color: #9aabbd; margin: 0; }
-
-.role-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
-
-.date-cell { font-size: 13px; color: #4b5d74; margin: 0; }
-
-.status-dot     { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-.status-active  { font-size: 13px; font-weight: 600; color: #0f9e5f; }
-.status-inactive{ font-size: 13px; font-weight: 600; color: #9aabbd; }
-
-/* Action buttons */
-.act-btn {
-  width: 30px; height: 30px; border-radius: 7px;
-  border: 1px solid #dbe3e7; background: #fff;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; color: #9aabbd; transition: all 0.15s;
-}
-.act-btn :deep(.v-icon) { color: inherit; }
-.act-btn:hover     { border-color: #0f9e5f; background: #d4f7e8; color: #0f9e5f; }
-.act-btn.del:hover { border-color: #fca5a5; background: #fff1f2; color: #ef4444; }
-
-/* Empty state */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 40px 20px;
-  color: #9aabbd;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-/* ── Pagination ── */
-.pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 20px;
-  border-top: 1px solid #dbe3e7;
-}
-
-.showing-text { font-size: 12px; color: #9aabbd; }
-
-.pag-btn {
-  min-width: 30px; height: 30px; border-radius: 7px;
-  border: 1px solid #dbe3e7; background: #fff;
-  font-size: 13px; font-weight: 700; color: #3d5166;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; padding: 0 6px; transition: all 0.15s;
-}
-.pag-btn:hover:not(:disabled) { border-color: #14dc8b; color: #0a7a4a; }
-.pag-btn.active  { background: #14dc8b; color: #063824; border-color: #14dc8b; }
-.pag-btn:disabled{ opacity: 0.4; cursor: default; }
-
-/* ── Summary Cards ── */
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-.summary-card {
-  background: #fff;
-  border: 1px solid #dbe3e7;
-  border-radius: 14px;
-  padding: 18px 20px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.summary-label { font-size: 10px; font-weight: 800; color: #9aabbd; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 4px; }
-.summary-value { font-size: 26px; font-weight: 900; color: #122039; margin: 0; line-height: 1; }
-
-/* ── Dialogs ── */
-.dialog-title { font-size: 18px; font-weight: 900; color: #122039; margin: 0; }
-
-.form-label {
-  font-size: 10px; font-weight: 800; color: #6b7f96;
-  letter-spacing: 0.07em; text-transform: uppercase;
-  display: block; margin-bottom: 5px;
-}
-
-.form-input {
-  width: 100%; padding: 9px 12px;
-  border: 1px solid #dbe3e7; border-radius: 8px;
-  font-size: 13.5px; color: #122039; outline: none;
-  font-family: inherit; box-sizing: border-box;
-  transition: border-color 0.15s; background: #fff;
-}
-.form-input:focus { border-color: #14dc8b; }
-
-.btn-cancel {
-  padding: 9px 18px; border-radius: 8px;
-  border: 1px solid #dbe3e7; background: #fff;
-  font-size: 13.5px; font-weight: 700; color: #3d5166;
-  cursor: pointer; font-family: inherit;
-}
-.btn-save {
-  padding: 9px 20px; border-radius: 8px; border: none;
-  background: #14dc8b; color: #063824;
-  font-size: 13.5px; font-weight: 700;
-  cursor: pointer; font-family: inherit;
-  transition: background 0.15s;
-}
-.btn-save:hover { background: #0fcb7e; }
-</style>

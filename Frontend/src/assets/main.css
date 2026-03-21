@@ -1,35 +1,62 @@
-@import './base.css';
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --app-font: 'Plus Jakarta Sans', 'Segoe UI', Inter, system-ui, sans-serif;
+  --app-primary: #1FE57A;
+  --app-primary-600: #16B861;
+  --app-primary-100: #D7FBE8;
+  --page-horizontal-padding: 24px;
+  --page-vertical-padding: 20px;
+  /* Vuetify theme overrides (RGB values) */
+  --v-theme-primary: 31, 229, 122;
+  --v-theme-on-primary: 255, 255, 255;
+  --v-theme-secondary: 22, 184, 97;
+  --v-theme-on-secondary: 255, 255, 255;
+}
+
+html,
+body,
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+  margin: 0;
+  padding: 0;
+  font-family: var(--app-font);
+  font-size: 15px;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge legacy */
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+/* Force Vuetify components to use the same font */
+.v-application,
+.v-overlay__content {
+  font-family: var(--app-font) !important;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+/* Hide scrollbars but keep scroll */
+body::-webkit-scrollbar,
+.v-main::-webkit-scrollbar,
+.v-application::-webkit-scrollbar,
+.v-overlay__content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
+.page-shell {
+  width: 100%;
+  padding: var(--page-vertical-padding) var(--page-horizontal-padding);
+  box-sizing: border-box;
+}
 
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+/* Ensure primary buttons have readable text */
+.v-btn.bg-primary,
+.v-btn.v-btn--variant-flat,
+.v-btn.v-btn--variant-elevated {
+  color: #ffffff !important;
 }

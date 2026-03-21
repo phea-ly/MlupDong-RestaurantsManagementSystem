@@ -25,6 +25,11 @@ Backend:
 ```bash
 cd Backend
 composer install
+composer require tymon/jwt-auth
+php artisan optimize:clear
+php artisan vendor:publish --provider="Tymon\JWTAuth\Providers\LaravelServiceProvider"
+composer require chillerlan/php-qrcode
+
 ```
 
 Frontend:
@@ -79,6 +84,26 @@ npm run dev
 ```
 
 Frontend Vite proxy forwards `/api/*` to `http://localhost:8000` (see `Frontend/vite.config.js`).
+
+### 5. Start KDS (Kitchen Display System)
+Option A: run a dedicated KDS dev server (separate port):
+```bash
+cd Frontend
+npm run kds
+```
+Open: `http://localhost:6173`
+
+Option B: use the main dev server:
+```bash
+cd Frontend
+npm run dev
+```
+Open: `http://localhost:5173/kds-entry.html`
+
+### 6. Required services
+Make sure these services are running and match `Backend/.env`:
+- MySQL on `127.0.0.1:3306` using `DB_DATABASE=mlupdong_restaurant_db`
+- Redis on `127.0.0.1:6379` (used by KDS real-time updates)
 
 ## Available Scripts
 

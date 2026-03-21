@@ -2,7 +2,7 @@ import axios from 'axios'
 import { getToken, clearSession } from '@/utils/auth'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://44.221.70.191/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api',
   withCredentials: true,
   headers: {
     Accept: 'application/json',
@@ -18,7 +18,7 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// ── Response interceptor: handle 401 Unauthorized ──────────────────
+// ── Response interceptor: handle 401 Unauthorized hi──────────────────
 api.interceptors.response.use(
   (response) => response,
   (error) => {

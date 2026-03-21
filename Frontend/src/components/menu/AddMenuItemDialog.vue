@@ -1,428 +1,331 @@
 <script setup>
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useMenuStore } from '@/stores'
 
 const props = defineProps({
-  modelValue: Boolean,
-  editItem: { type: Object, default: null }
+  modelValue: { type: Boolean, default: false },
+  editItem:   { type: Object,  default: null  },
 })
-
 const emit = defineEmits(['update:modelValue', 'saved'])
 
 const menuStore = useMenuStore()
 
-// ── Form state ────────────────────────────────────────────────────
-const form = ref({
-  item_name:   '',
-  description: '',
-  price:       '',
-  category_id: null,
-  image:       '',
-  status:      true,
-})
+const defaultForm = () => ({ item_name: '', price: '', description: '', category_id: null, status: true })
 
+const form         = ref(defaultForm())
 const imageFile    = ref(null)
-const imagePreview = ref('')
-const imageMode    = ref('url')   // 'url' | 'file'
-const formRef      = ref(null)
-const snackbar     = ref({ show: false, message: '', color: '' })
+const imagePreview = ref(null)
+const imageSource  = ref('upload') // upload | url
+const imageUrl     = ref('')
+const objectUrl    = ref(null)
+const saving       = ref(false)
+const errors       = ref({})
+const fileInput    = ref(null)
+const imageUrlInput = ref(null)
 
-// ── Validation rules ──────────────────────────────────────────────
-const rules = {
-  required: v => !!v || 'This field is required',
-  price:    v => (!v || parseFloat(v) >= 0) || 'Price must be ≥ 0',
-}
+const isEdit = computed(() => !!props.editItem)
+const title  = computed(() => isEdit.value ? 'Edit Menu Item' : 'Add Menu Item')
 
-// ── Category options from API ─────────────────────────────────────
 const categoryItems = computed(() =>
-  menuStore.categories.map(c => ({
-    title: c.category_name,
-    value: c.category_id,
-  }))
+  menuStore.categories.map(c => ({ title: c.category_name, value: c.category_id }))
 )
 
-// ── Watch props ───────────────────────────────────────────────────
-watch(() => props.editItem, (item) => {
-  if (item) {
-    form.value = {
-      item_name:   item.name        ?? '',
-      description: item.description ?? '',
-      price:       item.price       ?? '',
-      category_id: item.category_id ?? null,
-      image:       item.image       ?? '',
-      status:      item.status      ?? true,
+watch(
+  () => [props.modelValue, props.editItem],
+  ([open]) => {
+    if (!open) return
+    errors.value    = {}
+    imageFile.value = null
+    imageUrl.value  = ''
+    imageSource.value = 'upload'
+    if (props.editItem) {
+      form.value = {
+        item_name:   props.editItem.name,
+        price:       props.editItem.price,
+        description: props.editItem.description ?? '',
+        category_id: props.editItem.category_id ?? null,
+        status:      props.editItem.status ?? true,
+      }
+      imagePreview.value = props.editItem.image ? resolveImageUrl(props.editItem.image) : null
+      if (props.editItem.image?.startsWith('http')) {
+        imageSource.value = 'url'
+        imageUrl.value = props.editItem.image
+      }
+    } else {
+      form.value         = defaultForm()
+      imagePreview.value = null
     }
-    imagePreview.value = item.image ?? ''
-    imageFile.value    = null
-    imageMode.value    = 'url'
-  } else {
-    resetForm()
-  }
-}, { immediate: true })
+  },
+  { immediate: true }
+)
 
-// ── Image handling ────────────────────────────────────────────────
-function onFileChange(file) {
-  if (!file) { imagePreview.value = ''; return }
-  const reader = new FileReader()
-  reader.onload = e => { imagePreview.value = e.target.result }
-  reader.readAsDataURL(file)
+function resolveImageUrl(path) {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  const base = import.meta.env.VITE_API_URL?.replace('/api', '') ?? 'http://localhost:8000'
+  return `${base}${path}`
 }
 
-watch(imageFile, onFileChange)
-watch(() => form.value.image, url => {
-  if (imageMode.value === 'url') imagePreview.value = url
+function close() { emit('update:modelValue', false) }
+
+function triggerFileInput() { fileInput.value?.click() }
+function selectUpload() { imageSource.value = 'upload' }
+function selectUrl() {
+  imageSource.value = 'url'
+  nextTick(() => imageUrlInput.value?.focus?.())
+}
+
+function onFileChange(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  imageSource.value = 'upload'
+  imageFile.value = file
+  if (objectUrl.value) URL.revokeObjectURL(objectUrl.value)
+  objectUrl.value = URL.createObjectURL(file)
+  imagePreview.value = objectUrl.value
+}
+
+function removeImage() {
+  imageFile.value    = null
+  imagePreview.value = null
+  imageUrl.value     = ''
+  if (objectUrl.value) {
+    URL.revokeObjectURL(objectUrl.value)
+    objectUrl.value = null
+  }
+  if (fileInput.value) fileInput.value.value = ''
+}
+
+watch(imageSource, (val) => {
+  if (val === 'url') {
+    imageFile.value = null
+    if (fileInput.value) fileInput.value.value = ''
+  } else {
+    imageUrl.value = ''
+  }
 })
 
-function switchMode(mode) {
-  imageMode.value    = mode
-  imageFile.value    = null
-  imagePreview.value = mode === 'url' ? form.value.image : ''
+watch(imageUrl, (val) => {
+  if (imageSource.value !== 'url') return
+  imagePreview.value = val?.trim() ? val.trim() : null
+})
+
+function validate() {
+  const e = {}
+  if (!form.value.item_name.trim())                          e.item_name = 'Name is required.'
+  if (form.value.price === '' || form.value.price === null)  e.price     = 'Price is required.'
+  if (isNaN(Number(form.value.price)) || Number(form.value.price) < 0) e.price = 'Enter a valid price.'
+  const hasExistingImage = isEdit.value && !!props.editItem?.image
+  if (imageSource.value === 'upload') {
+    if (!imageFile.value && !hasExistingImage) e.image = 'Please upload an image.'
+  } else if (imageSource.value === 'url') {
+    const val = imageUrl.value.trim()
+    if (!val) e.image = 'Please enter an image URL.'
+    else if (!/^https?:\/\//i.test(val)) e.image = 'Image URL must start with http:// or https://'
+  }
+  errors.value = e
+  return Object.keys(e).length === 0
 }
 
-// ── Submit ────────────────────────────────────────────────────────
 async function handleSave() {
-  const { valid } = await formRef.value.validate()
-  if (!valid) return
+  if (!validate()) return
+  saving.value = true
 
   let payload
-  if (imageMode.value === 'file' && imageFile.value) {
+  if (imageSource.value === 'upload' && imageFile.value) {
     payload = new FormData()
-    payload.append('item_name',   form.value.item_name)
-    payload.append('description', form.value.description)
+    payload.append('item_name',   form.value.item_name.trim())
     payload.append('price',       form.value.price)
-    payload.append('status',      form.value.status ? 1 : 0)
+    payload.append('description', form.value.description ?? '')
+    payload.append('status',      form.value.status ? '1' : '0')
     if (form.value.category_id) payload.append('category_id', form.value.category_id)
     payload.append('image', imageFile.value)
   } else {
     payload = {
-      item_name:   form.value.item_name,
-      description: form.value.description,
-      price:       parseFloat(form.value.price),
-      category_id: form.value.category_id,
-      image:       imageMode.value === 'url' ? form.value.image : '',
+      item_name:   form.value.item_name.trim(),
+      price:       form.value.price,
+      description: form.value.description ?? '',
       status:      form.value.status,
+      category_id: form.value.category_id ?? null,
     }
+    if (imageSource.value === 'url' && imageUrl.value.trim()) payload.image = imageUrl.value.trim()
+    if (isEdit.value && !imagePreview.value && props.editItem?.image) payload.image = null
   }
 
-  let result
-  if (props.editItem) {
-    result = await menuStore.updateMenuItem(props.editItem.id, payload)
-  } else {
-    result = await menuStore.addMenuItem(payload)
-  }
+  const result = isEdit.value
+    ? await menuStore.updateMenuItem(props.editItem.id, payload)
+    : await menuStore.addMenuItem(payload)
+
+  saving.value = false
 
   if (result.success) {
-    snackbar.value = { show: true, message: props.editItem ? 'Menu item updated!' : 'Menu item added!', color: 'success' }
     emit('saved')
-    handleClose()
-  } else {
-    snackbar.value = { show: true, message: menuStore.error || 'Something went wrong', color: 'error' }
+    close()
+  } else if (result.errors) {
+    const mapped = {}
+    for (const [field, msgs] of Object.entries(result.errors)) {
+      mapped[field] = Array.isArray(msgs) ? msgs[0] : msgs
+    }
+    errors.value = mapped
   }
 }
-
-function handleClose() {
-  emit('update:modelValue', false)
-  resetForm()
-}
-
-function resetForm() {
-  form.value = {
-    item_name:   '',
-    description: '',
-    price:       '',
-    category_id: null,
-    image:       '',
-    status:      true,
-  }
-  imageFile.value    = null
-  imagePreview.value = ''
-  imageMode.value    = 'url'
-  formRef.value?.resetValidation()
-}
-
-onMounted(() => {
-  if (!menuStore.categories.length) menuStore.fetchCategories()
-})
 </script>
 
 <template>
-  <!-- Single root wrapper fixes [vue/no-multiple-template-root] -->
-  <div>
+  <v-dialog
+    :model-value="modelValue"
+    max-width="520"
+    rounded="xl"
+    persistent
+    @update:model-value="emit('update:modelValue', $event)"
+  >
+    <v-card rounded="xl" elevation="0">
 
-    <v-dialog :model-value="modelValue" max-width="640" scrollable @update:model-value="handleClose">
-      <v-card rounded="xl" elevation="0" class="dialog-card">
+      <!-- Header -->
+      <v-card-title class="d-flex align-center justify-space-between pt-6 px-6">
+        <div class="d-flex align-center ga-3">
+          <v-avatar color="var(--app-primary)" variant="tonal" size="40" rounded="lg">
+            <v-icon size="20" color="var(--app-primary-600)">{{ isEdit ? 'mdi-pencil-outline' : 'mdi-silverware-fork-knife' }}</v-icon>
+          </v-avatar>
+          <span class="text-h6 font-weight-black">{{ title }}</span>
+        </div>
+        <v-btn icon size="small" variant="text" @click="close">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+      </v-card-title>
 
-        <!-- Header -->
-        <div class="dialog-header">
-          <div class="d-flex align-center ga-3">
-            <div class="header-icon-wrap">
-              <v-icon size="20" color="#14dc8b">
-                {{ editItem ? 'mdi-pencil-outline' : 'mdi-plus' }}
-              </v-icon>
-            </div>
-            <div>
-              <p class="dialog-title">{{ editItem ? 'Edit Menu Item' : 'Add New Menu Item' }}</p>
-              <p class="dialog-sub">{{ editItem ? 'Update item details below' : 'Fill in the details for the new item' }}</p>
-            </div>
-          </div>
-          <v-btn icon size="small" variant="text" @click="handleClose">
-            <v-icon color="#9aabbd">mdi-close</v-icon>
+      <v-card-text class="px-6 pt-3">
+        <!-- Image Source -->
+        <div class="d-flex align-center ga-2 mb-1">
+          <v-btn
+            size="small"
+            rounded="lg"
+            prepend-icon="mdi-upload"
+            :variant="imageSource === 'upload' ? 'flat' : 'outlined'"
+            color="var(--app-primary)"
+            @click="selectUpload"
+          >
+            Upload (Local)
+          </v-btn>
+          <v-btn
+            size="small"
+            rounded="lg"
+            prepend-icon="mdi-link-variant"
+            :variant="imageSource === 'url' ? 'flat' : 'outlined'"
+            color="var(--app-primary)"
+            @click="selectUrl"
+          >
+            Paste Image URL
           </v-btn>
         </div>
 
-        <v-divider />
-
-        <!-- Body -->
-        <v-card-text class="pa-6">
-          <v-form ref="formRef">
-
-            <!-- Image Preview -->
-            <div v-if="imagePreview" class="image-preview-wrap mb-4">
-              <img :src="imagePreview" class="image-preview" alt="Preview" />
-            </div>
-
-            <!-- Image source toggle -->
-            <div class="d-flex ga-2 mb-4">
-              <button
-                type="button"
-                class="mode-btn"
-                :class="{ active: imageMode === 'url' }"
-                @click="switchMode('url')"
-              >
-                <v-icon size="14">mdi-link</v-icon> Image URL
-              </button>
-              <button
-                type="button"
-                class="mode-btn"
-                :class="{ active: imageMode === 'file' }"
-                @click="switchMode('file')"
-              >
-                <v-icon size="14">mdi-upload</v-icon> Upload File
-              </button>
-            </div>
-
-            <!-- URL input -->
-            <v-text-field
-              v-if="imageMode === 'url'"
-              v-model="form.image"
-              label="Image URL"
-              variant="outlined"
-              density="comfortable"
-              placeholder="https://example.com/image.jpg"
-              class="mb-4"
-              hide-details="auto"
-            >
-              <template #prepend-inner>
-                <v-icon size="16" color="#9aabbd">mdi-image-outline</v-icon>
-              </template>
-            </v-text-field>
-
-            <!-- File upload -->
-            <v-file-input
-              v-else
-              v-model="imageFile"
-              label="Choose Image"
-              variant="outlined"
-              density="comfortable"
-              accept="image/*"
-              prepend-icon=""
-              class="mb-4"
-              hide-details="auto"
-            >
-              <template #prepend-inner>
-                <v-icon size="16" color="#9aabbd">mdi-file-image-outline</v-icon>
-              </template>
-            </v-file-input>
-
-            <!-- Item Name -->
-            <v-text-field
-              v-model="form.item_name"
-              label="Item Name"
-              variant="outlined"
-              density="comfortable"
-              class="mb-4"
-              :rules="[rules.required]"
-              hide-details="auto"
-            />
-
-            <!-- Description -->
-            <v-textarea
-              v-model="form.description"
-              label="Description"
-              variant="outlined"
-              density="comfortable"
-              rows="2"
-              class="mb-4"
-              hide-details="auto"
-            />
-
-            <!-- Price & Category row -->
-            <v-row dense class="mb-2">
-              <v-col cols="6">
-                <v-text-field
-                  v-model="form.price"
-                  label="Price"
-                  variant="outlined"
-                  density="comfortable"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  prefix="$"
-                  :rules="[rules.required, rules.price]"
-                  hide-details="auto"
-                />
-              </v-col>
-              <v-col cols="6">
-                <v-select
-                  v-model="form.category_id"
-                  label="Category"
-                  variant="outlined"
-                  density="comfortable"
-                  :items="categoryItems"
-                  item-title="title"
-                  item-value="value"
-                  clearable
-                  hide-details="auto"
-                />
-              </v-col>
-            </v-row>
-
-            <!-- Status -->
-            <div class="status-row mt-4">
-              <div>
-                <p class="status-label">Status</p>
-                <p class="status-hint">{{ form.status ? 'Active – visible to customers' : 'Inactive – hidden from menu' }}</p>
-              </div>
-              <v-switch
-                v-model="form.status"
-                color="#14dc8b"
-                density="compact"
-                hide-details
-                inset
-              />
-            </div>
-
-          </v-form>
-        </v-card-text>
-
-        <v-divider />
-
-        <!-- Footer -->
-        <div class="dialog-footer">
-          <button class="btn-cancel" type="button" @click="handleClose">Cancel</button>
-          <button
-            class="btn-save"
-            type="button"
-            :disabled="menuStore.saving"
-            @click="handleSave"
+        <!-- Image Upload / URL -->
+        <template v-if="imageSource === 'upload'">
+          <div
+            class="d-flex align-center justify-center mb-4"
+            style="height:58px; border:2px dashed #dbe3e7; border-radius:12px; cursor:pointer; overflow:hidden; position:relative; transition:border-color 0.2s, background 0.2s;"
+            @click="triggerFileInput"
           >
-            <v-progress-circular v-if="menuStore.saving" size="14" width="2" indeterminate color="#063824" />
-            <v-icon v-else size="16" color="#063824">mdi-check</v-icon>
-            {{ editItem ? 'Update Item' : 'Add Item' }}
-          </button>
-        </div>
+            <v-img v-if="imagePreview" :src="imagePreview" height="58" cover />
+            <div v-else class="d-flex flex-column align-center ga-1">
+              <v-icon size="24" color="grey-lighten-1">mdi-image-plus-outline</v-icon>
+              <span class="text-caption font-weight-bold text-medium-emphasis">Click to upload from local storage</span>
+              <span class="text-caption text-disabled">PNG, JPG, WEBP - max 2 MB</span>
+            </div>
+            <v-btn
+              v-if="imagePreview"
+              icon size="x-small"
+              color="white"
+              style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.5);"
+              @click.stop="removeImage"
+            >
+              <v-icon size="14">mdi-close</v-icon>
+            </v-btn>
+          </div>
+          <div v-if="errors.image" class="text-caption text-error mt-1">{{ errors.image }}</div>
+          <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="onFileChange" />
+        </template>
 
-      </v-card>
-    </v-dialog>
+        <template v-else>
+          <div class="mb-3">
+            <v-text-field
+              v-model="imageUrl"
+              ref="imageUrlInput"
+              label="Image URL"
+              placeholder="https://example.com/image.jpg"
+              prepend-inner-icon="mdi-link-variant"
+              variant="outlined"
+              rounded="lg"
+              density="comfortable"
+              :error-messages="errors.image"
+            />
+            <v-card v-if="imagePreview" rounded="lg" border flat style="overflow:hidden">
+              <v-img :src="imagePreview" height="58" cover />
+            </v-card>
+          </div>
+        </template>
 
-    <!-- Snackbar feedback — must live inside the single root <div> -->
-    <v-snackbar
-      v-model="snackbar.show"
-      :color="snackbar.color"
-      location="bottom right"
-      :timeout="3000"
-    >
-      {{ snackbar.message }}
-    </v-snackbar>
+        <!-- Fields -->
+        <v-text-field
+          v-model="form.item_name"
+          label="Item Name *"
+          variant="outlined" rounded="lg" density="comfortable"
+          :error-messages="errors.item_name"
+          class="mb-3"
+        />
 
-  </div>
+        <v-row dense class="mb-3">
+          <v-col cols="6">
+            <v-text-field
+              v-model="form.price"
+              label="Price (USD) *"
+              type="number" min="0" step="0.01"
+              variant="outlined" rounded="lg" density="comfortable"
+              prefix="$"
+              :error-messages="errors.price"
+            />
+          </v-col>
+          <v-col cols="6">
+            <v-select
+              v-model="form.category_id"
+              :items="categoryItems"
+              label="Category"
+              variant="outlined" rounded="lg" density="comfortable"
+              clearable
+            />
+          </v-col>
+        </v-row>
+
+        <v-textarea
+          v-model="form.description"
+          label="Description"
+          variant="outlined" rounded="lg"
+          rows="2" no-resize
+          class="mb-3"
+        />
+
+        <v-card rounded="lg" variant="tonal" color="grey-lighten-3">
+          <v-card-text class="d-flex align-center justify-space-between py-3">
+            <div>
+              <div class="text-body-2 font-weight-bold">Availability</div>
+              <div class="text-caption text-medium-emphasis">{{ form.status ? 'Visible on menu' : 'Hidden from menu' }}</div>
+            </div>
+            <v-switch v-model="form.status" color="var(--app-primary)" hide-details inset density="compact" />
+          </v-card-text>
+        </v-card>
+
+      </v-card-text>
+
+      <v-card-actions class="px-6 pb-6">
+        <v-spacer />
+        <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="close">Cancel</v-btn>
+        <v-btn color="var(--app-primary)" rounded="lg" :loading="saving" @click="handleSave">
+          <span style="color:#063824;font-weight:800">{{ isEdit ? 'Save Changes' : 'Add Item' }}</span>
+        </v-btn>
+      </v-card-actions>
+
+    </v-card>
+  </v-dialog>
 </template>
 
-<style scoped>
-.dialog-card { border: 1px solid #e8edf2; }
 
-/* Header */
-.dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px;
-}
-.header-icon-wrap {
-  width: 40px; height: 40px;
-  border-radius: 10px;
-  background: rgba(20, 220, 139, 0.12);
-  border: 1px solid rgba(20, 220, 139, 0.2);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.dialog-title { font-size: 16px; font-weight: 800; color: #122039; margin: 0; }
-.dialog-sub   { font-size: 12px; color: #9aabbd; margin: 0; }
-
-/* Image preview */
-.image-preview-wrap {
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid #e8edf2;
-  max-height: 180px;
-}
-.image-preview {
-  width: 100%; height: 180px;
-  object-fit: cover;
-  display: block;
-}
-
-/* Mode toggle */
-.mode-btn {
-  display: flex; align-items: center; gap: 5px;
-  padding: 6px 14px;
-  border-radius: 7px;
-  font-size: 12.5px; font-weight: 700;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.15s;
-  border: 1px solid #dbe3e7;
-  background: #fff;
-  color: #6b7f96;
-}
-.mode-btn:hover { background: #f4f8f6; }
-.mode-btn.active {
-  background: #122039;
-  color: #fff;
-  border-color: #122039;
-}
-
-/* Status row */
-.status-row {
-  display: flex; align-items: center; justify-content: space-between;
-  background: #f6f9f8;
-  border: 1px solid #e8edf2;
-  border-radius: 10px;
-  padding: 12px 16px;
-}
-.status-label { font-size: 13px; font-weight: 700; color: #3d5166; margin: 0; }
-.status-hint  { font-size: 11px; color: #9aabbd; margin: 0; }
-
-/* Footer */
-.dialog-footer {
-  display: flex; justify-content: flex-end; gap: 10px;
-  padding: 16px 24px;
-}
-.btn-cancel {
-  padding: 9px 20px; border-radius: 8px;
-  border: 1px solid #dbe3e7; background: #fff;
-  font-size: 13.5px; font-weight: 700; color: #3d5166;
-  cursor: pointer; font-family: inherit; transition: background 0.15s;
-}
-.btn-cancel:hover { background: #f6f9f8; }
-
-.btn-save {
-  display: flex; align-items: center; gap: 6px;
-  padding: 9px 20px; border-radius: 8px;
-  border: none; background: #14dc8b;
-  font-size: 13.5px; font-weight: 700; color: #063824;
-  cursor: pointer; font-family: inherit; transition: background 0.15s;
-}
-.btn-save:hover:not(:disabled) { background: #0fcb7e; }
-.btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
-</style>
