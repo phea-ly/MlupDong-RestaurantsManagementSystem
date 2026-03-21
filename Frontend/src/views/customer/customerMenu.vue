@@ -164,7 +164,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useMenuStore } from "@/stores/menu.store";
 import { useCartStore } from "@/stores/cart.store";
-import { tableApi } from "@/api/order.api"; // uses publicHttp — no JWT attached
+import { tableApi } from "@/api/order.api"; 
 
 const menuStore = useMenuStore();
 const cartStore = useCartStore();

@@ -195,8 +195,6 @@ const estimatedWait        = ref(null);
 const confirmedWaitMinutes = ref(0);
 
 onMounted(async () => {
-  // If the customer navigated directly to /order/:token (e.g. browser refresh),
-  // re-hydrate the tableId from the URL token so the page still works.
   const token = route.params.token;
   if (token && !cartStore.tableId) {
     cartStore.setTableId(token, token);
@@ -205,7 +203,6 @@ onMounted(async () => {
   await fetchQueueDepth();
 });
 
-/** Pull the live queue count from the KDS endpoint to show an accurate wait. */
 async function fetchQueueDepth() {
   try {
     const { data } = await kdsApi.getActiveOrders();
