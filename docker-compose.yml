@@ -1,4 +1,3 @@
-
 # docker-compose.yml
 services:
   backend:
@@ -19,50 +18,49 @@ services:
       test: ["CMD", "php", "-r", "echo 'ok';"]
       interval: 30s
       retries: 3
-      start_period: 30s  # ✅ ADDED: wait for Laravel to boot before health checks start
+      start_period: 30s
 
   frontend:
     image: mesasmos/mlupdong_frontend:latest
     container_name: mlupdong_frontend
     restart: always
     networks: [web]
+    healthcheck:                                      # ← ADD healthcheck to frontend
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 10s
+      retries: 3
+      start_period: 10s
 
   webserver:
-    build:
-      context: ./Backend/nginx
-      dockerfile: Dockerfile
     image: mesasmos/mlupdong_webserver:latest
     container_name: mlupdong_webserver
     restart: unless-stopped
     ports: ["80:80", "443:443"]
     volumes:
-      - ./backend/public:/var/www/html/public
-      - backend_storage:/var/www/html/storage
+      - backend_storage:/var/www/html/storage        # ← REMOVED ./backend/public mount
       - ./certbot/conf:/etc/letsencrypt
     networks: [web]
     depends_on:
       backend:
         condition: service_healthy
       frontend:
-        condition: service_started  # frontend doesn't have a healthcheck, so we just check if it started
-
+        condition: service_healthy                   # ← now uses healthcheck
 
   db:
     image: mysql
     container_name: mlupdong_container_db
     restart: always
     environment:
-      MYSQL_DATABASE: mlupdong_db # Was MYSQL_DB (wrong env var name)
+      MYSQL_DATABASE: mlupdong_db
       MYSQL_ROOT_PASSWORD: root
     volumes:
-      - mysql_data:/var/lib/mysql         # Was postgresql path
+      - mysql_data:/var/lib/mysql
     networks: [web]
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
       interval: 10s
       retries: 10
-      start_period: 60s  # give MySQL time to initialize on first boot
-
+      start_period: 60s
 
   redis:
     image: redis:7-alpine
@@ -75,8 +73,7 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       retries: 3
-      start_period: 10s  # give Redis time to start on first boot
-
+      start_period: 10s
 
 networks:
   web:
@@ -87,4 +84,3 @@ volumes:
   backend_cache:
   mysql_data:
   redis_data:
-
