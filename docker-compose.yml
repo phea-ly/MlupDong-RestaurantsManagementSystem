@@ -25,17 +25,12 @@ services:
     container_name: mlupdong_frontend
     restart: always
     networks: [web]
-    healthcheck:                                      # ← ADD healthcheck to frontend
-      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
-      interval: 10s
-      retries: 3
-      start_period: 10s
 
   webserver:
     image: mesasmos/mlupdong_webserver:latest
     container_name: mlupdong_webserver
     restart: unless-stopped
-    ports: ["80:80", "443:443"]
+    ports: ["82:80", "443:443"]
     volumes:
       - backend_storage:/var/www/html/storage        # ← REMOVED ./backend/public mount
       - ./certbot/conf:/etc/letsencrypt
