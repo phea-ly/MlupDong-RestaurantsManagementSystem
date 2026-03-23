@@ -1,13 +1,16 @@
 import api from './api'
 
-export const settingsApi = {
-  get() {
-    return api.get('/app-settings')
-  },
-  update(payload) {
-    const isFormData = payload instanceof FormData
-    return api.put('/app-settings', payload, {
-      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {},
-    })
-  },
+const settingsApi = {
+
+  get: () =>
+    api.get('/app-settings'),
+
+  update: (payload) =>
+    api.put('/app-settings', payload, {
+      headers: payload instanceof FormData
+        ? { 'Content-Type': 'multipart/form-data' }
+        : { 'Content-Type': 'application/json' },
+    }),
 }
+
+export default settingsApi

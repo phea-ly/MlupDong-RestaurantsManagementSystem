@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DiscountController;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\KdsController;
 use App\Http\Controllers\MenuItemController;
 use App\Http\Controllers\OrderController;
@@ -15,6 +16,8 @@ use App\Http\Controllers\TableController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AppSettingController;
+use App\Http\Controllers\SalesReportController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -38,9 +41,28 @@ Route::apiResource('order-status-logs', OrderStastusLogController::class);
 Route::get('app-settings', [AppSettingController::class, 'show']);
 Route::put('app-settings', [AppSettingController::class, 'update']);
 
+Route::get('activity-logs/summary', [ActivityLogController::class, 'summary']);
+Route::get('activity-logs/{id}',    [ActivityLogController::class, 'show']);
+Route::delete('activity-logs',      [ActivityLogController::class, 'clear']);
+Route::apiResource('activity-logs', ActivityLogController::class)->only(['index', 'destroy']);
+
+Route::prefix('sales-report')->group(function () {
+    Route::get('summary',    [SalesReportController::class, 'summary']);
+    Route::get('chart',      [SalesReportController::class, 'chart']);
+    Route::get('categories', [SalesReportController::class, 'categories']);
+    Route::get('orders',     [SalesReportController::class, 'orders']);
+});
+
+Route::prefix('dashboard')->group(function () {
+    Route::get('kpi',           [DashboardController::class, 'kpi']);
+    Route::get('best-selling',  [DashboardController::class, 'bestSelling']);
+    Route::get('peak-hours',    [DashboardController::class, 'peakHours']);
+    Route::get('order-summary', [DashboardController::class, 'orderSummary']);
+});
+
 Route::get('kds/orders', [KdsController::class, 'orders']);
 Route::patch('kds/orders/{id}/status', [KdsController::class, 'updateStatus']);
-Route::get('kds/stream', [KdsController::class, 'stream']);
+// Route::get('kds/stream', [KdsController::class, 'stream']);
 
 Route::get('/', function () {
     return response()->json(['message' => 'Hello world!']);

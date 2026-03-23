@@ -2,16 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\User;
+use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;   
+use Illuminate\Support\Facades\Storage;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
+    use LogsActivity;
+
     public function login(Request $request)
     {
         $request->validate([
@@ -21,24 +25,48 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
+        // User not found
         if (!$user) {
+            // Log without Auth::id() — user doesn't exist
+            ActivityLog::create([
+                'user_id'     => null,
+                'event_type'  => 'user',
+                'action'      => 'login_failed',
+                'description' => "Failed login — email \"{$request->email}\" not found.",
+                'ip_address'  => $request->ip(),
+                'user_agent'  => $request->userAgent(),
+            ]);
             return response()->json(['message' => 'Email not found.'], 401);
         }
 
         if (!$token = JWTAuth::attempt($request->only('email', 'password'))) {
+            // User exists but wrong password
+            ActivityLog::create([
+                'user_id'     => $user->user_id,
+                'event_type'  => 'user',
+                'action'      => 'login_failed',
+                'description' => "Failed login — incorrect password for \"{$request->email}\".",
+                'ip_address'  => $request->ip(),
+                'user_agent'  => $request->userAgent(),
+            ]);
             return response()->json(['message' => 'Incorrect password.'], 401);
         }
+
+        // Successful login
+        $this->logActivity('user', 'login', "User \"{$user->email}\" logged in.");
 
         return response()->json([
             'token'      => $token,
             'expires_in' => config('jwt.ttl') * 60,
-            'user'       => $this->formatUser($user), // ✅ now includes avatar_url
+            'user'       => $this->formatUser($user),
         ]);
     }
 
     public function logout()
     {
         try {
+            $user = auth('api')->user();
+            $this->logActivity('user', 'logout', "User \"{$user?->email}\" logged out.");
             JWTAuth::invalidate(JWTAuth::getToken());
         } catch (JWTException $e) {
             return response()->json(['error' => 'Failed to logout, please try again'], 500);
@@ -86,10 +114,12 @@ class AuthController extends Controller
                 return response()->json(['message' => 'Current password is incorrect.'], 422);
             }
             $data['password'] = Hash::make($request->password);
+            // Log password change explicitly (observer shows 'updated' but not what changed)
+            $this->logActivity('user', 'password_changed', "User \"{$user->email}\" changed their password.");
         }
 
         $user->update($data);
-        $user->refresh(); 
+        $user->refresh();
 
         return response()->json([
             'success' => true,

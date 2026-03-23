@@ -1,9 +1,9 @@
+// src/utils/auth.js
 const SESSION_KEY = 'auth_session'
 
-
-// ── Save / clear session ────────────────────────────────────────────
-export function saveSession(user) {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(user))
+// ── Save / clear session ────────────────────────────────────────────────────
+export function saveSession(data) {
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(data))
 }
 
 export function clearSession() {
@@ -23,46 +23,21 @@ export function getToken() {
   return getSessionUser()?.token ?? null
 }
 
-// ── Auth state ──────────────────────────────────────────────────────
+// ── Auth state helpers ──────────────────────────────────────────────────────
 export function isAuthenticated() {
-  return !!getSessionUser()
+  return !!getToken()               // token must exist, not just the session object
 }
 
 export function getUserRole() {
   return getSessionUser()?.role ?? null
 }
 
-// ── Route helper ────────────────────────────────────────────────────
 export function getDashboardPathByRole() {
+  // Extend this switch when you add more roles
   const role = getUserRole()
-  if (role === 'admin') return '/home/admin-dashboard'
-  return '/home/admin-dashboard' 
-}
-
-// ── Auth actions ────────────────────────────────────────────────────
-export async function loginSession({ email, password }) {
-
-  if (email === 'admin@test.com' && password === 'password') {
-    saveSession({ name: 'Admin User', email, role: 'admin' })
-    return
+  switch (role) {
+    case 'admin':   return '/home/admin-dashboard'
+    case 'manager': return '/home/admin-dashboard'
+    default:        return '/home/admin-dashboard'
   }
-  if (email === 'staff@test.com' && password === 'password') {
-    saveSession({ name: 'Sophal K.', email, role: 'staff' })
-    return
-  }
-  throw new Error('Invalid email or password')
-}
-
-export async function registerSession({ name, email, password }) {
-
-  const role = email.includes('admin') ? 'admin' : 'admin'
-  saveSession({ name, email, role })
-}
-
-export async function logoutSession() {
-  clearSession()
-}
-
-export async function syncAuthSession() {
-  return isAuthenticated()
 }

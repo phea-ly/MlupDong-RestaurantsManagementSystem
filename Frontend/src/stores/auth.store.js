@@ -1,86 +1,163 @@
-import { defineStore } from "pinia";
-import * as authApi from "@/api/auth.api";
+import { defineStore } from 'pinia'
+import * as authApi    from '@/api/auth.api'
+import {
+  saveSession,
+  clearSession,
+  getSessionUser,
+  isAuthenticated,
+} from '@/utils/auth'
 
-export const useAuthStore = defineStore("auth", {
-  state: () => ({
-    user:  JSON.parse(localStorage.getItem("user")) ?? null,
-    token: localStorage.getItem("token")            ?? null,
-  }),
+export const useAuthStore = defineStore('auth', {
 
-  getters: {
-    isAuthenticated: (state) => !!state.token,
+  // ── State ─────────────────────────────────────────────────────────────────
+  state: () => {
+    const session = getSessionUser()
+    return {
+      user:    session?.user  ?? null,
+      token:   session?.token ?? null,
+      loading: false,
+      error:   null,
+      errors:  {},
+    }
   },
 
+  // ── Getters ───────────────────────────────────────────────────────────────
+  getters: {
+    isAuthenticated: (state) => !!state.token,
+    fullName:        (state) => state.user?.name  ?? '',
+    userEmail:       (state) => state.user?.email ?? '',
+    avatar:          (state) => state.user?.avatar ?? null,
+    role:            (state) => state.user?.role   ?? null,
+  },
+
+  // ── Actions ───────────────────────────────────────────────────────────────
   actions: {
-    async login(email, password) {
-      const { data } = await authApi.loginApi({ email, password });
-      if (!data.token) throw new Error("No token received");
 
-      this.token = data.token;
-      this.user  = data.user ?? null;
-
-      localStorage.setItem("token", data.token);
-      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+    // ── Private helpers ────────────────────────────────────────────────────
+    _persist(token, user) {
+      this.token = token
+      this.user  = user
+      saveSession({ token, user })
     },
 
+    _patchUser(partial = {}) {
+      this.user = { ...this.user, ...partial }
+      saveSession({ token: this.token, user: this.user })
+    },
+
+    clearError() {
+      this.error  = null
+      this.errors = {}
+    },
+
+    // ── clearSession — local wipe only, no HTTP call ───────────────────────
+    clearSession() {
+      this.token = null
+      this.user  = null
+      clearSession()
+    },
+
+    // ── logout — wipe locally + notify server ─────────────────────────────
     async logout() {
-      this.token = null;
-      this.user  = null;
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      api.post("/logout").catch(() => {});
+      this.clearSession()
+      authApi.logoutApi().catch(() => {})   
     },
-    // Called in App.vue on mount so the profile is always up-to-date after refresh.
-    async fetchUser() {
+
+    // ── login ──────────────────────────────────────────────────────────────
+    async login(email, password) {
+      this.loading = true
+      this.error   = null
+      this.errors  = {}
       try {
-        const { data } = await api.get("/user")
-        this.user = data
-        localStorage.setItem("user", JSON.stringify(data))
+        const { data } = await authApi.loginApi({ email, password })
+
+        if (!data.token) throw new Error('No token received from server.')
+
+        this._persist(data.token, data.user ?? null)
+        return data
+      } catch (err) {
+        this.error  = err.message
+        this.errors = err.errors ?? {}
+        throw err
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // ── fetchUser — call on app mount to verify token still valid ──────────
+    async fetchUser() {
+      if (!this.token) return
+      this.loading = true
+      try {
+        const { data } = await authApi.fetchApi()
+        this._patchUser(data)
       } catch {
-        this.token = null
-        this.user  = null
-        localStorage.removeItem("token")
-        localStorage.removeItem("user")
+        // 401 is handled by the axios interceptor (clears session + redirects)
+      } finally {
+        this.loading = false
       }
     },
 
-    // Instantly show local preview in AppBar while upload is in-flight
-    patchAvatar(avatarUrl) {
-      if (!this.user) return;
-      this.user = { ...this.user, avatar: avatarUrl };
-    },
-
+    // ── Profile updates ────────────────────────────────────────────────────
     async updateProfile(payload) {
-      let response;
-
-      if (payload.avatar instanceof File) {
-        const form = new FormData();
-        if (payload.first_name) form.append("first_name", payload.first_name);
-        if (payload.last_name)  form.append("last_name",  payload.last_name);
-        form.append("avatar",  payload.avatar);
-        form.append("_method", "PUT");
-
-        response = await api.post("/user", form, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-      } else {
-        response = await api.put("/user", payload);
+      this.loading = true
+      this.error   = null
+      this.errors  = {}
+      try {
+        const { data } = await authApi.updateApi(payload)
+        this._patchUser(data.user ?? data)
+      } catch (err) {
+        this.error  = err.message ?? 'Failed to update profile.'
+        this.errors = err.errors  ?? {}
+        throw err
+      } finally {
+        this.loading = false
       }
+    },
 
-      const serverUser = response.data.user ?? {};
+    async updateAvatar(payload) {
+      this.loading = true
+      this.error   = null
+      try {
+        const { data } = await authApi.putApi('/user/avatar', payload)
+        this._patchUser(data.user ?? data)
+      } catch (err) {
+        this.error = err.message ?? 'Failed to update avatar.'
+        throw err
+      } finally {
+        this.loading = false
+      }
+    },
 
-      const updatedUser = {
-        ...this.user,
-        ...serverUser,
-        avatar: serverUser.avatar ?? this.user?.avatar ?? null,
-      };
-
-      this.user = updatedUser;
-      localStorage.setItem("user", JSON.stringify(updatedUser));
+    async updateEmail(payload) {
+      this.loading = true
+      this.error   = null
+      this.errors  = {}
+      try {
+        const { data } = await authApi.putApi('/user/email', payload)
+        this._patchUser(data.user ?? data)
+      } catch (err) {
+        this.error  = err.message ?? 'Failed to update email.'
+        this.errors = err.errors  ?? {}
+        throw err
+      } finally {
+        this.loading = false
+      }
     },
 
     async updatePassword(payload) {
-      await api.put("/user/password", payload);
+      this.loading = true
+      this.error   = null
+      this.errors  = {}
+      try {
+        await authApi.updatePasswordApi(payload)
+      } catch (err) {
+        this.error  = err.message ?? 'Failed to update password.'
+        this.errors = err.errors  ?? {}
+        throw err
+      } finally {
+        this.loading = false
+      }
     },
   },
-});
+})

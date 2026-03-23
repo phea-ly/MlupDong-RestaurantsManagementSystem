@@ -1,56 +1,36 @@
-import api from "./api";
-import axios from "axios";
+// src/api/order.api.js
+import api from '@/api/api'
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+// ── Public (no JWT) ─────────────────────────────────────────────────
+import axios from 'axios'
 
-// ── Unauthenticated instance for customer-facing requests ──────────────────
-// Does NOT attach JWT and does NOT redirect to /login on 401.
-// Used for: resolving QR token, placing orders as a customer.
 const publicHttp = axios.create({
-  baseURL: BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  },
-});
+  baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api',
+  headers: { Accept: 'application/json' },
+})
 
-// ── KDS instance (no auth — KDS routes are public in routes/api.php) ───────
-const kdsHttp = axios.create({
-  baseURL: BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  },
-});
-
-// ── Customer order API (no auth needed) ────────────────────────────────────
-export const orderApi = {
-  create: (payload) => publicHttp.post("/orders", payload),
-  getOne: (id)      => publicHttp.get(`/orders/${id}`),
-  getAll: ()        => publicHttp.get("/orders"),
-};
-
-// ── Public table API ───────────────────────────────────────────────────────
 export const tableApi = {
-  // Resolves QR token → { table_id, table_number, ... }
+  // GET /api/tables/by-token/:token  — no auth needed (customer scan)
   getByToken: (token) => publicHttp.get(`/tables/by-token/${token}`),
-};
+}
 
-// ── KDS API ────────────────────────────────────────────────────────────────
+export const orderApi = {
+  getAll:    ()           => api.get('/orders'),
+  getOne:    (id)         => api.get(`/orders/${id}`),
+  create:    (payload)    => api.post('/orders', payload),
+  update:    (id, payload) => api.patch(`/orders/${id}`, payload),
+  delete:    (id)         => api.delete(`/orders/${id}`),
+}
+
+export const orderItemApi = {
+  create: (payload) => api.post('/order-items', payload),
+  update: (id, payload) => api.patch(`/order-items/${id}`, payload),
+  delete: (id)         => api.delete(`/order-items/${id}`),
+}
+
+// Alias used in KdsView + OrderView
 export const kdsApi = {
-  getActiveOrders:   ()           => kdsHttp.get("/kds/orders"),
-  updateOrderStatus: (id, status) => kdsHttp.patch(`/kds/orders/${id}/status`, { order_status: status }),
-};
-
-// ── SSE stream ─────────────────────────────────────────────────────────────
-export function connectKdsStream(onEvent, onError, onOpen) {
-  const es = new EventSource(`${BASE_URL}/kds/stream`);
-
-  es.onopen    = () => onOpen?.();
-  es.onmessage = (e) => {
-    try { onEvent(JSON.parse(e.data)); } catch { /* ignore malformed frames */ }
-  };
-  es.onerror   = (err) => onError?.(err);
-
-  return es;
+  getActiveOrders: () => api.get('/orders'),
+  updateStatus:    (id, status) =>
+    api.patch(`/orders/${id}`, { order_status: status }),
 }

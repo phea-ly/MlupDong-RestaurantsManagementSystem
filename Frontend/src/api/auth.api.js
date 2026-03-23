@@ -1,17 +1,21 @@
+// src/api/auth.api.js
 import api from './api'
 
-export const loginApi = ({ email, password }) => {
-  return api.post('/login', { email, password })
-}
+// ── Auth endpoints ──────────────────────────────────────────────────────────
+export const loginApi           = (credentials) => api.post('/login', credentials)
+export const logoutApi          = ()             => api.post('/logout')
+export const fetchApi           = ()             => api.get('/user')
+export const updateApi          = (data)         => api.put('/user', data)
+export const updatePasswordApi  = (data)         => api.put('/user/password', data)
 
-export const registerApi = (data) => {
-  return api.post('/register', data)
-}
+// ── Generic HTTP helpers ────────────────────────────────────────────────────
+export const getApi    = (url)        => api.get(url)
+export const postApi   = (url, data)  => api.post(url, data)
+export const putApi    = (url, data)  => api.put(url, data)
+export const patchApi  = (url, data)  => api.patch(url, data)
+export const deleteApi = (url)        => api.delete(url)
 
-export const meApi = () => {
-  return api.get('/user')
-}
-
-export const logoutApi = () => {
-  return api.post('/logout')
+export default {
+  loginApi, logoutApi, fetchApi, updateApi, updatePasswordApi,
+  getApi, postApi, putApi, patchApi, deleteApi,
 }
