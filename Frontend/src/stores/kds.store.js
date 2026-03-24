@@ -1,45 +1,86 @@
 // src/stores/kds.store.js
-import { defineStore } from 'pinia'
+import { defineStore }   from 'pinia'
 import { ref, computed } from 'vue'
-import { kdsApi } from '@/api/order.api'
-import echo from '@/echo'
+import { echo }          from '@/echo'
+import { kdsApi }        from '@/api/order.api'
 
-const ACTIVE_STATUSES = ['new', 'received', 'confirmed', 'preparing']
+const STATUS_LABEL = {
+  new:       'Incoming',
+  received:  'Received',
+  confirmed: 'Confirmed',
+  preparing: 'Preparing',
+  ready:     'Ready',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+}
+
+const STATUS_COLOR = {
+  new:       'blue',
+  received:  'indigo',
+  confirmed: 'orange',
+  preparing: 'teal',
+  ready:     'success',
+  completed: 'grey',
+  cancelled: 'error',
+}
 
 export const useKdsStore = defineStore('kds', () => {
 
-  // ── State ────────────────────────────────────────────────────────
-  const orders    = ref([])
-  const loading   = ref(false)
-  const connected = ref(false)
-  const error     = ref(null)
-  const tab       = ref('active')
-
-  const currentTime = ref(formatClock())
+  // ── State ──────────────────────────────────────────────────────────────────
+  const orders      = ref([])
+  const loading     = ref(false)
+  const connected   = ref(false)
+  const error       = ref(null)
+  const tab         = ref('active')
+  const snackbar    = ref({ show: false, message: '', color: 'success' })
+  const currentTime = ref(new Date().toLocaleTimeString())
   let clockTimer    = null
-  let echoChannel   = null
 
-  const snackbar = ref({ show: false, message: '', color: 'green' })
-
-  // ── Derived order lists ──────────────────────────────────────────
-  const incomingOrders  = computed(() => orders.value.filter((o) => o.order_status === 'new'))
-  const receivedOrders  = computed(() => orders.value.filter((o) => o.order_status === 'received'))
-  const confirmedOrders = computed(() => orders.value.filter((o) => o.order_status === 'confirmed'))
-  const preparingOrders = computed(() => orders.value.filter((o) => o.order_status === 'preparing'))
-  const readyOrders     = computed(() => orders.value.filter((o) => o.order_status === 'ready'))
-  const completedOrders = computed(() => orders.value.filter((o) => o.order_status === 'completed'))
+  // ── Computed ───────────────────────────────────────────────────────────────
+  const incomingOrders  = computed(() => orders.value.filter(o => o.order_status === 'new'))
+  const receivedOrders  = computed(() => orders.value.filter(o => o.order_status === 'received'))
+  const confirmedOrders = computed(() => orders.value.filter(o => o.order_status === 'confirmed'))
+  const preparingOrders = computed(() => orders.value.filter(o => o.order_status === 'preparing'))
+  const readyOrders     = computed(() => orders.value.filter(o => o.order_status === 'ready'))
+  const completedOrders = computed(() => orders.value.filter(o => o.order_status === 'completed'))
 
   const activeCount = computed(() =>
-    orders.value.filter((o) => ACTIVE_STATUSES.includes(o.order_status)).length,
+    incomingOrders.value.length +
+    receivedOrders.value.length +
+    confirmedOrders.value.length +
+    preparingOrders.value.length
   )
 
-  const estimatedWaitMinutes = computed(() => {
-    const active = orders.value.filter((o) => ACTIVE_STATUSES.includes(o.order_status)).length
-    return 5 + active * 3
-  })
+  const estimatedWaitMinutes = computed(() => Math.max(5, activeCount.value * 5))
 
-  // ── Helpers used by OrderCard ────────────────────────────────────
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function notify(message, color = 'success') {
+    snackbar.value = { show: true, message, color }
+  }
+
+  // Normalise: backend may send 'id' or 'order_id'
+  function normalise(payload) {
+    return { ...payload, id: payload.id ?? payload.order_id }
+  }
+
+  function upsertOrder(raw, flash = false) {
+    const payload = normalise(raw)
+    const idx     = orders.value.findIndex(o => o.id === payload.id)
+    const order   = { ...payload, _flash: flash }
+    if (idx !== -1) {
+      orders.value[idx] = order
+    } else {
+      orders.value.unshift(order)
+    }
+  }
+
+  function removeOrder(id) {
+    orders.value = orders.value.filter(o => o.id !== id)
+  }
+
+  // ── Time helpers ───────────────────────────────────────────────────────────
   function getElapsedSeconds(order) {
+    if (!order.created_at) return 0
     return Math.floor((Date.now() - new Date(order.created_at).getTime()) / 1000)
   }
 
@@ -50,192 +91,122 @@ export const useKdsStore = defineStore('kds', () => {
   }
 
   function getTimerClass(seconds) {
-    if (seconds > 900) return 'timer-critical'   
-    if (seconds > 480) return 'timer-warn'        
+    if (seconds > 900) return 'timer-critical'
+    if (seconds > 600) return 'timer-warn'
     return 'timer-ok'
   }
 
   function getOrderWaitMinutes(order) {
-    if (!ACTIVE_STATUSES.includes(order.order_status)) return null
-    const elapsed = Math.floor(getElapsedSeconds(order) / 60)
-    const budget  = estimatedWaitMinutes.value
-    return Math.max(0, budget - elapsed)
+    const active = ['new', 'received', 'confirmed', 'preparing']
+    if (!active.includes(order.order_status)) return null
+    const ahead = orders.value.filter(
+      o => active.includes(o.order_status) && o.id < order.id
+    ).length
+    return Math.max(5, ahead * 5)
   }
 
-  function getStatusLabel(status) {
-    return {
-      new:       'New',
-      received:  'Received',
-      confirmed: 'Confirmed',
-      preparing: 'Preparing',
-      ready:     'Ready',
-      completed: 'Completed',
-      cancelled: 'Cancelled',
-    }[status] ?? status
-  }
+  function getStatusLabel(status) { return STATUS_LABEL[status] ?? status }
+  function getStatusColor(status) { return STATUS_COLOR[status] ?? 'grey' }
 
-  function getStatusColor(status) {
-    return {
-      new:       'blue',
-      received:  'indigo',
-      confirmed: 'amber',
-      preparing: 'teal',
-      ready:     'green',
-      completed: 'grey',
-      cancelled: 'red',
-    }[status] ?? 'grey'
-  }
-
-  // ── Normalise order from API or Echo payload ─────────────────────
-  function normaliseOrder(raw) {
-    return {
-      id:           raw.order_id ?? raw.id,
-      order_number: raw.order_number ?? '—',
-      order_status: raw.order_status ?? raw.status ?? 'new',
-      order_type:   raw.order_type ?? 'dine_in',
-      table_name:   raw.table?.table_number ?? raw.table_number ?? '—',
-      created_at:   raw.created_at,
-      _flash:       false,
-      items: (raw.orderItems ?? raw.items ?? []).map((i) => ({
-        id:       i.order_item_id ?? i.id,
-        name:     i.menuItem?.name ?? i.name ?? '—',
-        quantity: i.quantity,
-        note:     i.note ?? i.special_instructions ?? null,
-      })),
-    }
-  }
-
-  // ── API calls ────────────────────────────────────────────────────
+  // ── Fetch ──────────────────────────────────────────────────────────────────
   async function fetchOrders() {
     loading.value = true
     error.value   = null
     try {
       const { data } = await kdsApi.getActiveOrders()
-      orders.value = data
-        .filter((o) => o.order_status !== 'cancelled')
-        .map(normaliseOrder)
-    } catch (e) {
-      error.value = 'Failed to load orders. Check your connection.'
+      orders.value   = (Array.isArray(data) ? data : []).map(normalise)
+    } catch (err) {
+      error.value = err.message ?? 'Failed to load orders.'
     } finally {
       loading.value = false
     }
   }
 
-  async function updateStatus(orderId, newStatus) {
+  // ── Status actions ─────────────────────────────────────────────────────────
+  async function updateStatus(orderId, status, label) {
     try {
-      await kdsApi.updateStatus(orderId, newStatus)
-
-      const order = orders.value.find((o) => o.id === orderId)
-      if (order) {
-        order.order_status = newStatus
-        order._flash       = true
-        setTimeout(() => { order._flash = false }, 1200)
-      }
-
-      notify(`Order marked as ${getStatusLabel(newStatus)}`, 'green')
-    } catch {
-      notify('Failed to update order status', 'red')
+      const { data } = await kdsApi.updateStatus(orderId, status)
+      upsertOrder(data)
+      notify(`Order ${data.order_number} → ${label}`)
+    } catch (err) {
+      notify(err.message ?? 'Failed to update status.', 'error')
     }
   }
 
-  // KDS action shortcuts
-  const receiveOrder  = (id) => updateStatus(id, 'received')
-  const confirmCooking = (id) => updateStatus(id, 'confirmed')
-  const prepareFood   = (id) => updateStatus(id, 'preparing')
-  const markReady     = (id) => updateStatus(id, 'ready')
+  const receiveOrder   = (id) => updateStatus(id, 'received',  'Received')
+  const confirmCooking = (id) => updateStatus(id, 'confirmed', 'Confirmed')
+  const prepareFood    = (id) => updateStatus(id, 'preparing', 'Preparing')
+  const markReady      = (id) => updateStatus(id, 'ready',     'Ready ✓')
 
-  // ── Echo — WebSocket connection to Laravel Reverb ────────────────
-  function connectEcho() {
-    // The kitchen channel receives all order events
-    echoChannel = echo.channel('kitchen')
+  // ── Echo WebSocket ─────────────────────────────────────────────────────────
+  let channel = null
 
-    echoChannel.listen('.order.created', (payload) => {
-      const exists = orders.value.find((o) => o.id === (payload.order_id ?? payload.id))
-      if (!exists) {
-        const newOrder = normaliseOrder({ ...payload, _flash: true })
-        orders.value.unshift(newOrder)
-        notify(`New order: ${newOrder.order_number}`, 'blue')
+  function subscribeEcho() {
+    // Subscribes to the 'kitchen' public channel defined in routes/channels.php
+    channel = echo.channel('kitchen')
+
+    channel.subscribed(() => { connected.value = true })
+
+    // New order arrives from customer QR menu
+    channel.listen('.order.created', (payload) => {
+      upsertOrder(payload, true)   // true = flash animation
+      notify(`🆕 New order: ${payload.order_number} — ${payload.table_name}`, 'success')
+    })
+
+    // Order status changed (by KDS button or back-office)
+    channel.listen('.order.status.updated', (payload) => {
+      if (payload.order_status === 'cancelled') {
+        removeOrder(payload.id ?? payload.order_id)
+        notify(`Order ${payload.order_number} cancelled`, 'error')
+      } else {
+        upsertOrder(payload)
       }
     })
 
-    echoChannel.listen('.order.status.updated', (payload) => {
-      const order = orders.value.find((o) => o.id === (payload.order_id ?? payload.id))
-      if (order) {
-        order.order_status = payload.order_status ?? payload.status
-        order._flash       = true
-        setTimeout(() => { order._flash = false }, 1200)
-      }
+    // Items changed (from back-office order edit)
+    channel.listen('.order.items.updated', (payload) => {
+      upsertOrder(payload)
     })
 
-    echoChannel.listen('.order.items.updated', (payload) => {
-      const order = orders.value.find((o) => o.id === (payload.order_id ?? payload.id))
-      if (order && payload.items) {
-        order.items = payload.items.map((i) => ({
-          id:       i.order_item_id ?? i.id,
-          name:     i.name,
-          quantity: i.quantity,
-          note:     i.note ?? null,
-        }))
-      }
-    })
-
-    // Monitor WebSocket connection state
-    echo.connector.pusher.connection.bind('connected', () => { connected.value = true })
+    // Track WebSocket connection state
     echo.connector.pusher.connection.bind('disconnected', () => { connected.value = false })
-    echo.connector.pusher.connection.bind('unavailable', () => { connected.value = false })
+    echo.connector.pusher.connection.bind('connected',    () => { connected.value = true  })
   }
 
-  function disconnectEcho() {
-    if (echoChannel) {
+  function unsubscribeEcho() {
+    if (channel) {
       echo.leaveChannel('kitchen')
-      echoChannel = null
+      channel = null
     }
   }
 
-  // ── Clock ────────────────────────────────────────────────────────
-  function formatClock() {
-    return new Date().toLocaleTimeString('en-US', {
-      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
-    })
-  }
-
-  function startClock() {
-    clockTimer = setInterval(() => { currentTime.value = formatClock() }, 1000)
-  }
-
-  function stopClock() {
-    if (clockTimer) clearInterval(clockTimer)
-  }
-
-  // ── Snackbar ─────────────────────────────────────────────────────
-  function notify(message, color = 'green') {
-    snackbar.value = { show: true, message, color }
-  }
-
-  // ── Lifecycle (called from KdsView onMounted / onUnmounted) ──────
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
   async function init() {
-    startClock()
-    connectEcho()
     await fetchOrders()
+    subscribeEcho()
+    clockTimer = setInterval(() => {
+      currentTime.value = new Date().toLocaleTimeString()
+    }, 1000)
   }
 
   function cleanup() {
-    stopClock()
-    disconnectEcho()
+    unsubscribeEcho()
+    if (clockTimer) { clearInterval(clockTimer); clockTimer = null }
   }
 
   return {
     // state
-    orders, loading, connected, error, tab, currentTime,
-    snackbar, activeCount, estimatedWaitMinutes,
-    // order lists
-    incomingOrders, receivedOrders, confirmedOrders,
-    preparingOrders, readyOrders, completedOrders,
-    // helpers (used by OrderCard)
+    orders, loading, connected, error, tab, snackbar, currentTime,
+    // computed
+    incomingOrders, receivedOrders, confirmedOrders, preparingOrders,
+    readyOrders, completedOrders, activeCount, estimatedWaitMinutes,
+    // helpers
     getElapsedSeconds, formatElapsed, getTimerClass,
     getOrderWaitMinutes, getStatusLabel, getStatusColor,
     // actions
-    fetchOrders, receiveOrder, confirmCooking,
-    prepareFood, markReady, init, cleanup, notify,
+    fetchOrders,
+    receiveOrder, confirmCooking, prepareFood, markReady,
+    // lifecycle
+    init, cleanup,
   }
 })

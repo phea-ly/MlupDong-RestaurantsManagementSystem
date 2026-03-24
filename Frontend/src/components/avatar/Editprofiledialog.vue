@@ -110,14 +110,13 @@ function validate() {
 }
 
 // ── Emit payload up — AppBar calls auth.updateProfile() ───────────
-// This keeps the dialog dumb (no API calls) and the store as the source of truth
 function handleSave() {
   if (!validate()) return
   emit('saved', {
     firstName:  form.value.firstName.trim(),
     lastName:   form.value.lastName.trim(),
     email:      form.value.email.trim(),
-    avatarFile: avatarFile.value ?? null,   // File object or null
+    avatarFile: avatarFile.value ?? null,   
   })
   close()
 }

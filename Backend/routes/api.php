@@ -18,6 +18,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AppSettingController;
 use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CustomerOrderController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -60,9 +61,13 @@ Route::prefix('dashboard')->group(function () {
     Route::get('order-summary', [DashboardController::class, 'orderSummary']);
 });
 
-Route::get('kds/orders', [KdsController::class, 'orders']);
-Route::patch('kds/orders/{id}/status', [KdsController::class, 'updateStatus']);
-// Route::get('kds/stream', [KdsController::class, 'stream']);
+
+Route::prefix('customer')->group(function () {
+    Route::post('orders', [CustomerOrderController::class, 'store']);
+});
+
+Route::get('kds/orders',                  [KdsController::class, 'orders']);
+Route::patch('kds/orders/{id}/status',    [KdsController::class, 'updateStatus']);
 
 Route::get('/', function () {
     return response()->json(['message' => 'Hello world!']);

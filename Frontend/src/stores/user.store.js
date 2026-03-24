@@ -1,4 +1,3 @@
-// src/stores/user.store.js
 import { defineStore }   from 'pinia'
 import { ref, computed } from 'vue'
 import { getApi, postApi, putApi, patchApi, deleteApi } from '@/api/auth.api'

@@ -1,4 +1,4 @@
-// src/utils/auth.js
+
 const SESSION_KEY = 'auth_session'
 
 // ── Save / clear session ────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ export function getToken() {
 
 // ── Auth state helpers ──────────────────────────────────────────────────────
 export function isAuthenticated() {
-  return !!getToken()               // token must exist, not just the session object
+  return !!getToken()               
 }
 
 export function getUserRole() {

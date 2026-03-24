@@ -87,7 +87,6 @@ watch(activeRange, fetchChart)
       <v-card-title class="d-flex align-center justify-space-between pt-5 px-5 flex-wrap ga-3">
         <div>
           <div class="text-subtitle-1 font-weight-black">Order Statistics</div>
-          <div class="text-caption text-medium-emphasis">Total volume over the selected period</div>
         </div>
         <v-btn-toggle
           v-model="activeRange"

@@ -16,12 +16,12 @@ const reportsMenu = [
 </script>
 
 <template>
-  <v-navigation-drawer permanent width="240" color="#ffffff" border="e">
+  <v-navigation-drawer color="#ffffff">
 
     <!-- Brand -->
     <template #prepend>
-      <div class="brand-wrap px-4 pt-5 pb-4">
-        <v-avatar size="36" rounded="lg" class="brand-avatar">
+      <div class="brand-wrap px-3 pt-5">
+        <v-avatar size="48" class="brand-avatar">
           <v-img src="/logo.png" cover />
         </v-avatar>
         <div class="brand-text">
@@ -29,11 +29,10 @@ const reportsMenu = [
           <div class="brand-subtitle">Restaurant</div>
         </div>
       </div>
-      <v-divider />
     </template>
 
     <!-- Main nav -->
-    <v-list nav density="compact" class="px-2 pt-3 pb-0">
+    <v-list nav density="compact" class="px-4 pt-3 ">
       <v-list-item
         v-for="item in menu"
         :key="item.to"
@@ -51,7 +50,7 @@ const reportsMenu = [
     <div class="section-label px-4 mt-4 mb-1">
       Reports
     </div>
-    <v-list nav density="compact" class="px-2 pb-0">
+    <v-list nav density="compact" class="px-4 pb-0">
       <v-list-item
         v-for="item in reportsMenu"
         :key="item.to"
