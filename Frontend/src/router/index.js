@@ -90,6 +90,12 @@ const routes = [
     component: () => import('@/views/kds/KdsApp.vue'),
   },
   {
+    path: '/waiter',
+    name: 'waiter-dashboard',
+    meta: { requiresAuth: true },
+    component: () => import('@/views/waiter/waiterApp.vue'),
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/login',
   },
