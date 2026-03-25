@@ -11,17 +11,10 @@ const { loading, error } = storeToRefs(authStore)
 
 const email    = ref('')
 const password = ref('')
-const remember = ref(false)
 const showPass = ref(false)
 
 onMounted(() => {
   authStore.clearSession()
-
-  const saved = localStorage.getItem('remembered_email')
-  if (saved) {
-    email.value    = saved
-    remember.value = true
-  }
 })
 
 // ── Handlers ──────────────────────────────────────────────────────────────────
@@ -32,11 +25,6 @@ async function login() {
   if (!email.value || !password.value) return
   try {
     await authStore.login(email.value, password.value)
-    if (remember.value) {
-      localStorage.setItem('remembered_email', email.value)
-    } else {
-      localStorage.removeItem('remembered_email')
-    }
     router.push('/home')
   } catch {
     // error already set in store — shown by v-alert
@@ -106,16 +94,6 @@ async function login() {
                   :disabled="loading"
                   @click:append-inner="toggleShowPass"
                   @keyup.enter="login"
-                />
-
-                <!-- Remember me -->
-                <v-checkbox
-                  v-model="remember"
-                  label="Remember me"
-                  color="var(--app-primary)"
-                  density="compact"
-                  hide-details
-                  class="mb-5"
                 />
 
                 <!-- Submit -->

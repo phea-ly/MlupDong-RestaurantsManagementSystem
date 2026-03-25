@@ -1,31 +1,25 @@
+let memorySession = null
 
-const SESSION_KEY = 'auth_session'
-
-// ── Save / clear session ────────────────────────────────────────────────────
+// Save / clear in-memory auth state (no session storage)
 export function saveSession(data) {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(data))
+  memorySession = data ?? null
 }
 
 export function clearSession() {
-  sessionStorage.removeItem(SESSION_KEY)
+  memorySession = null
 }
 
 export function getSessionUser() {
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
+  return memorySession
 }
 
 export function getToken() {
   return getSessionUser()?.token ?? null
 }
 
-// ── Auth state helpers ──────────────────────────────────────────────────────
+// Auth state helpers
 export function isAuthenticated() {
-  return !!getToken()               
+  return !!getToken()
 }
 
 export function getUserRole() {

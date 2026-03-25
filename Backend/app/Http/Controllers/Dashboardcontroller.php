@@ -46,14 +46,15 @@ class DashboardController extends Controller
      */
     public function peakHours()
     {
+        $hourExpr = $this->hourExpression('created_at');
         $rows = Order::query()
             ->where('created_at', '>=', now()->subDays(7))
             ->whereIn('order_status', ['completed', 'preparing', 'ready'])
-            ->selectRaw('HOUR(created_at) as hour, COUNT(*) as count')
+            ->selectRaw($hourExpr . ' as hour, COUNT(*) as count')
             ->groupBy('hour')
             ->orderBy('hour')
             ->pluck('count', 'hour')
-            ->toArray()   // keyed by hour 0–23
+            ->toArray()   // keyed by hour 0-23
         ;
 
         // Return a fixed set of display hours with counts
@@ -86,8 +87,13 @@ class DashboardController extends Controller
     public function orderSummary()
     {
         $now           = now();
-        $thisMonth     = Order::whereIn('order_status', ['completed'])->whereMonth('created_at', $now->month)->whereYear('created_at', $now->year);
-        $lastMonth     = Order::whereIn('order_status', ['completed'])->whereMonth('created_at', $now->copy()->subMonth()->month);
+        $thisMonth     = Order::whereIn('order_status', ['completed'])
+            ->whereMonth('created_at', $now->month)
+            ->whereYear('created_at', $now->year);
+        $lastMonthDate = $now->copy()->subMonth();
+        $lastMonth     = Order::whereIn('order_status', ['completed'])
+            ->whereMonth('created_at', $lastMonthDate->month)
+            ->whereYear('created_at', $lastMonthDate->year);
 
         $totalOrders   = (clone $thisMonth)->count();
         $lastMonthOrders = (clone $lastMonth)->count();
@@ -99,6 +105,7 @@ class DashboardController extends Controller
         $repeatGuests  = Order::whereIn('order_status', ['completed'])
             ->whereNotNull('user_id')
             ->whereMonth('created_at', $now->month)
+            ->whereYear('created_at', $now->year)
             ->selectRaw('user_id, COUNT(*) as cnt')
             ->groupBy('user_id')
             ->havingRaw('cnt > 1')
@@ -107,6 +114,7 @@ class DashboardController extends Controller
         $totalGuests   = Order::whereIn('order_status', ['completed'])
             ->whereNotNull('user_id')
             ->whereMonth('created_at', $now->month)
+            ->whereYear('created_at', $now->year)
             ->distinct('user_id')
             ->count('user_id');
 
@@ -162,7 +170,7 @@ class DashboardController extends Controller
             [
                 'label' => 'TOTAL REVENUE',
                 'value' => '$' . number_format($revenue, 2),
-                'sub'   => 'Today's performance',
+                'sub'   => "Today's performance",
                 'trend' => $this->trend($revenue,  $prevRev),
                 'up'    => $revenue >= $prevRev,
                 'color' => 'var(--app-primary-600)',
@@ -221,4 +229,20 @@ class DashboardController extends Controller
         $sign = $pct >= 0 ? '+' : '';
         return $sign . number_format($pct, 1) . '%';
     }
+
+    private function hourExpression(string $column): string
+    {
+        $driver = DB::getDriverName();
+
+        if ($driver === 'sqlite') {
+            return "CAST(strftime('%H', {$column}) AS INTEGER)";
+        }
+
+        if ($driver === 'pgsql') {
+            return "EXTRACT(HOUR FROM {$column})";
+        }
+
+        return "HOUR({$column})";
+    }
 }
+
