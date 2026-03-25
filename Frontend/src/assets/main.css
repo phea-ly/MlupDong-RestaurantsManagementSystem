@@ -12,6 +12,13 @@
   --app-primary-100: #D7FBE8;
   --page-horizontal-padding: 24px;
   --page-vertical-padding: 20px;
+  --app-radius-xs: 12px;
+  --app-radius-sm: 12px;
+  --app-radius-md: 12px;
+  --app-radius-lg: 12px;
+  --app-radius-xl: 12px;
+  --app-radius-2xl: 12px;
+  --app-radius-3xl: 12px;
   /* Vuetify theme overrides (RGB values) */
   --v-theme-primary: 31, 229, 122;
   --v-theme-on-primary: 255, 255, 255;
@@ -59,4 +66,43 @@ body::-webkit-scrollbar,
 .v-btn.v-btn--variant-flat,
 .v-btn.v-btn--variant-elevated {
   color: #ffffff !important;
+}
+
+/* Global radius reduction */
+.rounded-0 { border-radius: 0 !important; }
+.rounded-sm { border-radius: var(--app-radius-sm) !important; }
+.rounded { border-radius: var(--app-radius-md) !important; }
+.rounded-lg { border-radius: var(--app-radius-lg) !important; }
+.rounded-xl { border-radius: var(--app-radius-xl) !important; }
+.rounded-2xl { border-radius: var(--app-radius-2xl) !important; }
+.rounded-3xl { border-radius: var(--app-radius-3xl) !important; }
+.rounded-t-3xl { border-top-left-radius: var(--app-radius-3xl) !important; border-top-right-radius: var(--app-radius-3xl) !important; }
+
+/* Keep circles/pills intact */
+.rounded-circle { border-radius: 50% !important; }
+.rounded-pill { border-radius: 999px !important; }
+
+/* Common components (fallbacks) */
+.v-card,
+.v-sheet,
+.v-alert,
+.v-chip,
+.v-list,
+.v-menu .v-overlay__content,
+.v-dialog .v-overlay__content,
+.v-snackbar .v-snackbar__wrapper {
+  border-radius: var(--app-radius-xl) !important;
+}
+
+.v-btn,
+.v-field,
+.v-input,
+.v-toolbar {
+  border-radius: var(--app-radius-lg) !important;
+}
+
+.v-text-field .v-field,
+.v-select .v-field,
+.v-autocomplete .v-field {
+  border-radius: var(--app-radius-lg) !important;
 }

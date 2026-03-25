@@ -48,7 +48,7 @@ onMounted(init)
       :items="logs"
       :loading="loading"
       :meta="meta"
-      @page-change="fetchLogs"
+      @page-change="({ page, perPage }) => fetchLogs(page, perPage)"
       @delete="deleteLog"
     />
 

@@ -16,7 +16,7 @@ const reportsMenu = [
 </script>
 
 <template>
-  <v-navigation-drawer color="#ffffff">
+  <v-navigation-drawer color="#ffffff" class="sidebar-drawer">
 
     <!-- Brand -->
     <template #prepend>
@@ -68,6 +68,10 @@ const reportsMenu = [
 </template>
 
 <style scoped>
+/* Drawer */
+.sidebar-drawer {
+  border-radius: 12px;
+}
 /* Brand */
 .brand-wrap {
   display: flex;

@@ -12,7 +12,7 @@ export const useActivityStore = defineStore('activity', () => {
   const snackbar = ref({ show: false, message: '', color: 'success' })
 
   // Pagination
-  const meta = ref({ current_page: 1, last_page: 1, per_page: 15, total: 0 })
+  const meta = ref({ current_page: 1, last_page: 1, per_page: 10, total: 0 })
 
   // Filters
   const filters = ref({
@@ -21,7 +21,7 @@ export const useActivityStore = defineStore('activity', () => {
     action:     '',
     date_from:  '',
     date_to:    '',
-    per_page:   15,
+    per_page:   10,
   })
 
   // Detail dialog
@@ -107,9 +107,12 @@ export const useActivityStore = defineStore('activity', () => {
   }
 
   // ── Actions ────────────────────────────────────────────────────────────────
-  async function fetchLogs(page = 1) {
+  async function fetchLogs(page = 1, perPage = null) {
     loading.value = true
     try {
+      if (perPage) {
+        filters.value.per_page = perPage
+      }
       const { data } = await activityApi.getAll({
         ...filters.value,
         page,

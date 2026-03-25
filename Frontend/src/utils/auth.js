@@ -1,6 +1,6 @@
 let memorySession = null
 
-// Save / clear in-memory auth state (no session storage)
+// Save / clear in-memory auth state (no storage)
 export function saveSession(data) {
   memorySession = data ?? null
 }
