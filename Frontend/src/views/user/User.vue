@@ -2,9 +2,11 @@
 import { onMounted }    from 'vue'
 import { storeToRefs }  from 'pinia'
 import { useUserStore } from '@/stores/user.store'
+import { useAuthStore } from '@/stores/auth.store'
 import EditProfileDialog from '@/components/avatar/Editprofiledialog.vue'
 
 const userStore = useUserStore()
+const authStore = useAuthStore()
 
 const {
   search, filterRole, filterRestaurant,
@@ -222,9 +224,15 @@ const TABLE_HEADERS = [
               <v-icon size="16" color="grey">mdi-pencil-outline</v-icon>
               <v-tooltip activator="parent" location="top">Edit</v-tooltip>
             </v-btn>
-            <v-btn icon size="small" variant="text" @click="confirmDelete(item.id)">
+            <v-btn
+              icon size="small" variant="text"
+              :disabled="item.rawId === authStore.user?.id"
+              @click="confirmDelete(item.id)"
+            >
               <v-icon size="16" color="grey">mdi-delete-outline</v-icon>
-              <v-tooltip activator="parent" location="top">Delete</v-tooltip>
+              <v-tooltip activator="parent" location="top">
+                {{ item.rawId === authStore.user?.id ? 'You cannot delete your own account' : 'Delete' }}
+              </v-tooltip>
             </v-btn>
           </div>
         </template>

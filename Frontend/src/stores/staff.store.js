@@ -33,9 +33,12 @@ export const useStaffStore = defineStore('staff', () => {
   // ── Constants ──────────────────────────────────────────────────────────────
   const statusOptions = ['Active', 'Inactive']
 
-  const roleColors = {
+    const roleColors = {
     ADMINISTRATOR: 'deep-purple',
     MANAGER:       'blue',
+    STAFF:         'indigo',
+    CASHIER:       'pink',
+    WAITRESS:      'purple',
     CHEF:          'orange',
     SERVER:        'teal',
     HOST:          'pink',
@@ -53,7 +56,7 @@ export const useStaffStore = defineStore('staff', () => {
   // ── Computed ───────────────────────────────────────────────────────────────
   const activeCount  = computed(() => staffList.value.filter(s => s.status === 'Active').length)
   const kitchenCount = computed(() => staffList.value.filter(s => s.role === 'CHEF').length)
-  const serviceCount = computed(() => staffList.value.filter(s => ['SERVER', 'HOST'].includes(s.role)).length)
+  const serviceCount = computed(() => staffList.value.filter(s => ['SERVER', 'HOST', 'WAITRESS', 'CASHIER', 'STAFF'].includes(s.role)).length)
 
   const filteredStaff = computed(() => {
     const q = search.value.trim().toLowerCase()

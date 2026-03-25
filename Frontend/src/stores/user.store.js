@@ -47,6 +47,9 @@ export const useUserStore = defineStore('user', () => {
   const roleConfig = {
     ADMINISTRATOR: { bg: '#e6fff5', text: '#063824' },
     MANAGER:       { bg: '#eff6ff', text: '#1e40af' },
+    STAFF:         { bg: '#f5f3ff', text: '#5b21b6' },
+    CASHIER:       { bg: '#fff1f2', text: '#9f1239' },
+    WAITRESS:      { bg: '#fdf4ff', text: '#86198f' },
     CHEF:          { bg: '#fff7ed', text: '#9a3412' },
     SERVER:        { bg: '#f0fdfa', text: '#134e4a' },
     HOST:          { bg: '#faf5ff', text: '#6b21a8' },

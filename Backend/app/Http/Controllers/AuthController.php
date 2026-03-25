@@ -8,6 +8,7 @@ use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
@@ -114,6 +115,16 @@ class AuthController extends Controller
     public function getUser()
     {
         try {
+            if (config('app.debug')) {
+                $cookieName = config('jwt.cookie.name', 'auth_token');
+                $raw = request()->cookie($cookieName);
+                Log::info('Auth cookie debug', [
+                    'cookie_name' => $cookieName,
+                    'present'     => (bool) $raw,
+                    'length'      => $raw ? strlen($raw) : 0,
+                    'origin'      => request()->headers->get('origin'),
+                ]);
+            }
             $user = auth('api')->user();
             if (!$user) {
                 return response()->json(['error' => 'User not found'], 404);
