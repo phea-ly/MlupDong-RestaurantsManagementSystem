@@ -4,7 +4,7 @@ import {
   saveSession,
   clearSession,
   getSessionUser,
-} from '@/utils/auth'
+} from '../utils/auth'
 
 export const useAuthStore = defineStore('auth', {
 

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter }      from 'vue-router'
 import { storeToRefs }    from 'pinia'
 import { useAuthStore }   from '@/stores/auth.store'
@@ -13,11 +13,6 @@ const email    = ref('')
 const password = ref('')
 const showPass = ref(false)
 
-onMounted(() => {
-  authStore.clearSession()
-})
-
-// ── Handlers ──────────────────────────────────────────────────────────────────
 const toggleShowPass = () => (showPass.value = !showPass.value)
 const clearError     = () => authStore.clearError()
 
@@ -27,7 +22,7 @@ async function login() {
     await authStore.login(email.value, password.value)
     router.push('/home')
   } catch {
-    // error already set in store — shown by v-alert
+    // error already set in store - shown by v-alert
   }
 }
 </script>

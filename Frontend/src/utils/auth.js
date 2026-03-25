@@ -1,5 +1,6 @@
 let memorySession = null
 
+// Save / clear in-memory auth state (no storage)
 export function saveSession(data) {
   memorySession = data ?? null
 }
@@ -17,7 +18,6 @@ export function getUserRole() {
 }
 
 export function getDashboardPathByRole() {
-  // Extend this switch when you add more roles
   const role = getUserRole()
   switch (role) {
     case 'admin':   return '/home/admin-dashboard'
