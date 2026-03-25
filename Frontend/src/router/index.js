@@ -101,13 +101,14 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
-  const token = authStore.token;
+  await authStore.ensureAuthChecked();
+  const isAuthed = authStore.isAuthenticated;
 
-  if (to.meta.requiresAuth && !token) {
+  if (to.meta.requiresAuth && !isAuthed) {
     next("/login");
-  } else if (to.meta.guestOnly && token) {
+  } else if (to.meta.guestOnly && isAuthed) {
     next("/home");
   } else {
     next();

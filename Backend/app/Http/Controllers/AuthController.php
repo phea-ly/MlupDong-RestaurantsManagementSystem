@@ -55,11 +55,27 @@ class AuthController extends Controller
         // Successful login
         $this->logActivity('user', 'login', "User \"{$user->email}\" logged in.");
 
+        $cookieName = config('jwt.cookie.name', 'auth_token');
+        $cookieTtl  = (int) config('jwt.ttl', 60);
+        $cookiePath = config('jwt.cookie.path', '/');
+        $cookieDomain = config('jwt.cookie.domain');
+        $cookieSecure = (bool) config('jwt.cookie.secure', false);
+        $cookieSameSite = config('jwt.cookie.same_site', 'lax');
+
         return response()->json([
-            'token'      => $token,
-            'expires_in' => config('jwt.ttl') * 60,
             'user'       => $this->formatUser($user),
-        ]);
+            'expires_in' => $cookieTtl * 60,
+        ])->cookie(
+            $cookieName,
+            $token,
+            $cookieTtl,
+            $cookiePath,
+            $cookieDomain,
+            $cookieSecure,
+            true,
+            false,
+            $cookieSameSite
+        );
     }
 
     public function logout()
@@ -67,12 +83,32 @@ class AuthController extends Controller
         try {
             $user = auth('api')->user();
             $this->logActivity('user', 'logout', "User \"{$user?->email}\" logged out.");
-            JWTAuth::invalidate(JWTAuth::getToken());
+            $cookieName = config('jwt.cookie.name', 'auth_token');
+            $token = request()->bearerToken() ?: request()->cookie($cookieName);
+            if ($token) {
+                JWTAuth::setToken($token)->invalidate();
+            }
         } catch (JWTException $e) {
             return response()->json(['error' => 'Failed to logout, please try again'], 500);
         }
 
-        return response()->json(['message' => 'Successfully logged out']);
+        $cookieName = config('jwt.cookie.name', 'auth_token');
+        $cookiePath = config('jwt.cookie.path', '/');
+        $cookieDomain = config('jwt.cookie.domain');
+        $cookieSecure = (bool) config('jwt.cookie.secure', false);
+        $cookieSameSite = config('jwt.cookie.same_site', 'lax');
+
+        return response()->json(['message' => 'Successfully logged out'])->cookie(
+            $cookieName,
+            '',
+            -1,
+            $cookiePath,
+            $cookieDomain,
+            $cookieSecure,
+            true,
+            false,
+            $cookieSameSite
+        );
     }
 
     public function getUser()

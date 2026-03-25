@@ -1,6 +1,5 @@
 let memorySession = null
 
-// Save / clear in-memory auth state (no storage)
 export function saveSession(data) {
   memorySession = data ?? null
 }
@@ -13,17 +12,8 @@ export function getSessionUser() {
   return memorySession
 }
 
-export function getToken() {
-  return getSessionUser()?.token ?? null
-}
-
-// Auth state helpers
-export function isAuthenticated() {
-  return !!getToken()
-}
-
 export function getUserRole() {
-  return getSessionUser()?.role ?? null
+  return getSessionUser()?.user?.role ?? null
 }
 
 export function getDashboardPathByRole() {

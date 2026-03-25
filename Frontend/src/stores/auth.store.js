@@ -4,45 +4,39 @@ import {
   saveSession,
   clearSession,
   getSessionUser,
-  isAuthenticated,
 } from '@/utils/auth'
 
 export const useAuthStore = defineStore('auth', {
 
-  // ── State ─────────────────────────────────────────────────────────────────
   state: () => {
     const session = getSessionUser()
     return {
       user:    session?.user  ?? null,
-      token:   session?.token ?? null,
       loading: false,
       error:   null,
       errors:  {},
+      hasChecked: false,
     }
   },
 
-  // ── Getters ───────────────────────────────────────────────────────────────
   getters: {
-    isAuthenticated: (state) => !!state.token,
-    fullName:        (state) => state.user?.name  ?? '',
+    isAuthenticated: (state) => !!state.user,
+    fullName:        (state) => `${state.user?.first_name ?? ''} ${state.user?.last_name ?? ''}`.trim(),
     userEmail:       (state) => state.user?.email ?? '',
     avatar:          (state) => state.user?.avatar ?? null,
     role:            (state) => state.user?.role   ?? null,
   },
 
-  // ── Actions ───────────────────────────────────────────────────────────────
   actions: {
 
-    // ── Private helpers ────────────────────────────────────────────────────
-    _persist(token, user) {
-      this.token = token
+    _persistUser(user) {
       this.user  = user
-      saveSession({ token, user })
+      saveSession({ user })
     },
 
     _patchUser(partial = {}) {
       this.user = { ...this.user, ...partial }
-      saveSession({ token: this.token, user: this.user })
+      saveSession({ user: this.user })
     },
 
     clearError() {
@@ -50,30 +44,25 @@ export const useAuthStore = defineStore('auth', {
       this.errors = {}
     },
 
-    // ── clearSession — local wipe only, no HTTP call ───────────────────────
     clearSession() {
-      this.token = null
       this.user  = null
+      this.hasChecked = true
       clearSession()
     },
 
-    // ── logout — wipe locally + notify server ─────────────────────────────
     async logout() {
       this.clearSession()
-      authApi.logoutApi().catch(() => {})   
+      authApi.logoutApi().catch(() => {})
     },
 
-    // ── login ──────────────────────────────────────────────────────────────
     async login(email, password) {
       this.loading = true
       this.error   = null
       this.errors  = {}
       try {
         const { data } = await authApi.loginApi({ email, password })
-
-        if (!data.token) throw new Error('No token received from server.')
-
-        this._persist(data.token, data.user ?? null)
+        this._persistUser(data.user ?? null)
+        this.hasChecked = true
         return data
       } catch (err) {
         this.error  = err.message
@@ -84,21 +73,24 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    // ── fetchUser — call on app mount to verify token still valid ──────────
     async fetchUser() {
-      if (!this.token) return
       this.loading = true
       try {
         const { data } = await authApi.fetchApi()
-        this._patchUser(data)
+        this._persistUser(data.user ?? data)
       } catch {
         // 401 is handled by the axios interceptor (clears session + redirects)
       } finally {
         this.loading = false
+        this.hasChecked = true
       }
     },
 
-    // ── Profile updates ────────────────────────────────────────────────────
+    async ensureAuthChecked() {
+      if (this.hasChecked) return
+      await this.fetchUser()
+    },
+
     async updateProfile(payload) {
       this.loading = true
       this.error   = null

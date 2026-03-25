@@ -1,6 +1,6 @@
 // src/api/api.js
 import axios from 'axios'
-import { getToken, clearSession } from '@/utils/auth'
+import { clearSession } from '@/utils/auth'
 
 const api = axios.create({
   baseURL:         import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/api',
@@ -10,14 +10,7 @@ const api = axios.create({
   },
 })
 
-// ── Request: attach JWT from sessionStorage ─────────────────────────────────
-api.interceptors.request.use((config) => {
-  const token = getToken()
-  if (token) config.headers.Authorization = `Bearer ${token}`
-  return config
-})
-
-// ── Response: normalise errors + handle 401 ─────────────────────────────────
+// Response: normalise errors + handle 401
 api.interceptors.response.use(
   (response) => response,
 
@@ -36,7 +29,9 @@ api.interceptors.response.use(
     // Expired / invalid token → wipe session and go to login
     if (status === 401) {
       clearSession()
-      window.location.href = '/login'
+      if (window.location.pathname !== '/login') {
+        window.location.replace('/login')
+      }
       return Promise.reject({ message: 'Unauthenticated.', errors: {} })
     }
 
