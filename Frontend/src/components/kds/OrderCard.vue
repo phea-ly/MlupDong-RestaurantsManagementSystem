@@ -5,6 +5,7 @@ import { useKdsStore } from '@/stores/kds.store'
 const props = defineProps({
   order:       { type: Object, required: true },
   waitMinutes: { type: Number, default: null  },
+  queuePos:    { type: Number, default: null  },
 })
 
 defineEmits(['receive-order', 'confirm-cooking', 'prepare-food', 'mark-ready'])
@@ -28,14 +29,19 @@ const statusColor      = computed(() => kdsStore.getStatusColor(props.order.orde
         <div class="kds-card__num">{{ order.order_number }}</div>
       </div>
       <div class="kds-card__right">
-        <v-chip size="x-small" variant="tonal" :color="statusColor">{{ statusLabel }}</v-chip>
+        <div class="kds-card__meta">
+          <v-chip size="x-small" variant="tonal" :color="statusColor">{{ statusLabel }}</v-chip>
+          <v-chip v-if="queuePos" size="x-small" class="kds-queue" variant="outlined">
+            Queue #{{ queuePos }}
+          </v-chip>
+        </div>
         <div class="kds-card__timer" :class="timerClass">
           <v-icon size="14">mdi-timer-outline</v-icon>
           {{ elapsedFormatted }}
         </div>
         <div v-if="waitMinutes" class="kds-card__wait">
           <v-icon size="12">mdi-clock-outline</v-icon>
-          ~{{ waitMinutes }}m left
+          ~{{ waitMinutes }}m ETA
         </div>
       </div>
     </div>
@@ -119,6 +125,8 @@ const statusColor      = computed(() => kdsStore.getStatusColor(props.order.orde
 .kds-card__table   { font-size: 15px; font-weight: 700; color: #111827; }
 .kds-card__num     { font-size: 11px; color: #6b7280; font-family: monospace; }
 .kds-card__right   { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.kds-card__meta    { display: flex; align-items: center; gap: 6px; }
+.kds-queue         { border-color: #e5e7eb; color: #334155; font-weight: 700; }
 
 .kds-card__timer {
   display: flex; align-items: center; gap: 4px;

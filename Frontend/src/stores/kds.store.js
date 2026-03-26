@@ -37,12 +37,28 @@ export const useKdsStore = defineStore('kds', () => {
   let clockTimer    = null
 
   // ── Computed ───────────────────────────────────────────────────────────────
-  const incomingOrders  = computed(() => orders.value.filter(o => o.order_status === 'new'))
-  const receivedOrders  = computed(() => orders.value.filter(o => o.order_status === 'received'))
-  const confirmedOrders = computed(() => orders.value.filter(o => o.order_status === 'confirmed'))
-  const preparingOrders = computed(() => orders.value.filter(o => o.order_status === 'preparing'))
-  const readyOrders     = computed(() => orders.value.filter(o => o.order_status === 'ready'))
-  const completedOrders = computed(() => orders.value.filter(o => o.order_status === 'completed'))
+  const AVG_COOK_MINUTES = 5
+  const ACTIVE_STATUSES = ['new', 'received', 'confirmed', 'preparing']
+
+  function sortByCreatedAt(list) {
+    return [...list].sort((a, b) => {
+      const at = new Date(a.created_at ?? 0).getTime()
+      const bt = new Date(b.created_at ?? 0).getTime()
+      if (at !== bt) return at - bt
+      return (a.id ?? 0) - (b.id ?? 0)
+    })
+  }
+
+  const incomingOrders  = computed(() => sortByCreatedAt(orders.value.filter(o => o.order_status === 'new')))
+  const receivedOrders  = computed(() => sortByCreatedAt(orders.value.filter(o => o.order_status === 'received')))
+  const confirmedOrders = computed(() => sortByCreatedAt(orders.value.filter(o => o.order_status === 'confirmed')))
+  const preparingOrders = computed(() => sortByCreatedAt(orders.value.filter(o => o.order_status === 'preparing')))
+  const readyOrders     = computed(() => sortByCreatedAt(orders.value.filter(o => o.order_status === 'ready')))
+  const completedOrders = computed(() => sortByCreatedAt(orders.value.filter(o => o.order_status === 'completed')))
+
+  const activeQueue = computed(() =>
+    sortByCreatedAt(orders.value.filter(o => ACTIVE_STATUSES.includes(o.order_status)))
+  )
 
   const activeCount = computed(() =>
     incomingOrders.value.length +
@@ -51,7 +67,7 @@ export const useKdsStore = defineStore('kds', () => {
     preparingOrders.value.length
   )
 
-  const estimatedWaitMinutes = computed(() => Math.max(5, activeCount.value * 5))
+  const estimatedWaitMinutes = computed(() => Math.max(5, activeCount.value * AVG_COOK_MINUTES))
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   function notify(message, color = 'success') {
@@ -97,12 +113,17 @@ export const useKdsStore = defineStore('kds', () => {
   }
 
   function getOrderWaitMinutes(order) {
-    const active = ['new', 'received', 'confirmed', 'preparing']
-    if (!active.includes(order.order_status)) return null
-    const ahead = orders.value.filter(
-      o => active.includes(o.order_status) && o.id < order.id
-    ).length
-    return Math.max(5, ahead * 5)
+    if (!ACTIVE_STATUSES.includes(order.order_status)) return null
+    const position = getQueuePosition(order)
+    if (!position) return null
+    const elapsedMin = Math.floor(getElapsedSeconds(order) / 60)
+    const totalEta   = position * AVG_COOK_MINUTES
+    return Math.max(1, totalEta - elapsedMin)
+  }
+
+  function getQueuePosition(order) {
+    const idx = activeQueue.value.findIndex(o => o.id === order.id)
+    return idx === -1 ? null : idx + 1
   }
 
   function getStatusLabel(status) { return STATUS_LABEL[status] ?? status }
@@ -202,7 +223,7 @@ export const useKdsStore = defineStore('kds', () => {
     readyOrders, completedOrders, activeCount, estimatedWaitMinutes,
     // helpers
     getElapsedSeconds, formatElapsed, getTimerClass,
-    getOrderWaitMinutes, getStatusLabel, getStatusColor,
+    getOrderWaitMinutes, getQueuePosition, getStatusLabel, getStatusColor,
     // actions
     fetchOrders,
     receiveOrder, confirmCooking, prepareFood, markReady,

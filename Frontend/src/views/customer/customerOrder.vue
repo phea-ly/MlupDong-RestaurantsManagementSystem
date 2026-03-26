@@ -15,6 +15,7 @@ const activeOrdersAhead    = ref(0)
 const estimatedWait        = ref(null)
 const confirmedWaitMinutes = ref(0)
 const countdownSeconds     = ref(0)
+const countdownTotal       = ref(0)
 let countdownTimer         = null
 
 onMounted(async () => {
@@ -79,6 +80,7 @@ function startCountdown(minutes) {
   stopCountdown()
   const safeMinutes = Number.isFinite(minutes) ? minutes : 0
   countdownSeconds.value = Math.max(0, Math.round(safeMinutes * 60))
+  countdownTotal.value   = countdownSeconds.value
   if (countdownSeconds.value <= 0) return
   countdownTimer = setInterval(() => {
     if (countdownSeconds.value > 0) {
@@ -104,6 +106,10 @@ const countdownDisplay = computed(() => {
 })
 
 const isCountingDown = computed(() => countdownSeconds.value > 0)
+const countdownProgress = computed(() => {
+  if (!countdownTotal.value) return 0
+  return Math.max(0, Math.min(1, countdownSeconds.value / countdownTotal.value))
+})
 
 const statusStep = computed(() => {
   const status = cartStore.lastOrder?.order_status
@@ -112,6 +118,13 @@ const statusStep = computed(() => {
   if (status === 'ready' || status === 'served' || status === 'completed') return 4
   return 1
 })
+
+const statusLabels = computed(() => ([
+  { key: 'pending',   label: 'Pending'  },
+  { key: 'cooking',   label: 'Cooking'  },
+  { key: 'ready',     label: 'Ready'    },
+  { key: 'served',    label: 'Served'   },
+]))
 
 const statusText = computed(() => {
   const status = cartStore.lastOrder?.order_status
@@ -310,11 +323,21 @@ watch(showSuccess, (val) => {
           </p>
 
           <v-card class="rounded-xl pa-4 mb-4 w-100" color="rgba(255,255,255,0.12)" elevation="0">
-            <div class="d-flex align-center justify-center ga-3">
-              <v-icon color="#00e676" size="22">mdi-clock-check-outline</v-icon>
-              <div class="text-white">
+            <div class="d-flex align-center justify-center ga-4">
+              <div
+                class="wait-ring"
+                :class="{ active: isCountingDown }"
+                :style="{ '--p': countdownProgress }"
+              >
+                <div class="wait-ring-inner">
+                  <div class="text-caption" style="opacity:.75">Live</div>
+                  <div class="text-subtitle-1 font-weight-black">{{ isCountingDown ? countdownDisplay : '--:--' }}</div>
+                </div>
+              </div>
+              <div class="text-white text-left">
                 <div class="text-caption" style="opacity:.75">Estimated wait</div>
                 <div class="text-h6 font-weight-black">~{{ confirmedWaitMinutes }} min</div>
+                <div class="text-caption" style="opacity:.7">Updates live</div>
               </div>
             </div>
           </v-card>
@@ -334,6 +357,15 @@ watch(showSuccess, (val) => {
               <span class="dot" :class="{ active: statusStep >= 2 }"></span>
               <span class="dot" :class="{ active: statusStep >= 3 }"></span>
               <span class="dot" :class="{ active: statusStep >= 4 }"></span>
+            </div>
+            <div class="status-steps mt-3">
+              <div
+                v-for="(s, idx) in statusLabels" :key="s.key"
+                class="status-step"
+                :class="{ active: statusStep >= (idx + 1) }"
+              >
+                {{ s.label }}
+              </div>
             </div>
             <div class="text-caption text-green-lighten-4 mt-2" style="opacity:.8">
               Countdown starts when the chef confirms cooking.
@@ -376,11 +408,17 @@ watch(showSuccess, (val) => {
 .glass-success { background:rgba(33,87,50,.92) !important; backdrop-filter:blur(14px) !important; border:1px solid rgba(255,255,255,.12) !important; }
 .success-icon-box { width:100px; height:100px; background:rgba(255,255,255,.1); border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.2); }
 .status-card { border:1px solid rgba(255,255,255,.18) !important; }
+.wait-ring { --size:72px; width:var(--size); height:var(--size); border-radius:50%; background:conic-gradient(#00e676 calc(var(--p) * 360deg), rgba(255,255,255,.16) 0); display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 6px rgba(255,255,255,.06) inset; transition:all .3s ease; }
+.wait-ring.active { box-shadow:0 0 0 6px rgba(0,230,118,.15) inset, 0 0 18px rgba(0,230,118,.25); }
+.wait-ring-inner { width:56px; height:56px; border-radius:50%; background:rgba(13,36,24,.65); display:flex; align-items:center; justify-content:center; flex-direction:column; border:1px solid rgba(255,255,255,.18); }
 .countdown-badge { min-width:74px; text-align:center; padding:6px 10px; border-radius:999px; font-weight:800; font-size:14px; background:rgba(255,255,255,.16); color:#e6ffef; border:1px solid rgba(255,255,255,.25); }
 .countdown-badge.active { background:rgba(0,230,118,.18); color:#baffd8; border-color:rgba(0,230,118,.4); }
 .progress-dots { display:flex; gap:6px; }
 .dot { width:18px; height:6px; border-radius:999px; background:rgba(255,255,255,.18); transition:all .2s ease; }
 .dot.active { background:#00e676; box-shadow:0 0 10px rgba(0,230,118,.6); }
+.status-steps { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+.status-step { text-align:center; font-size:11px; padding:6px 4px; border-radius:999px; background:rgba(255,255,255,.08); color:rgba(255,255,255,.65); border:1px solid rgba(255,255,255,.14); font-weight:700; letter-spacing:.02em; }
+.status-step.active { background:rgba(0,230,118,.18); color:#d9ffe9; border-color:rgba(0,230,118,.35); }
 .fade-in { animation:fadeIn .4s ease-out; }
 @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 .rounded-2xl { border-radius:18px !important; }

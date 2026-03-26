@@ -15,7 +15,7 @@ const {
 
 const {
   receiveOrder, confirmCooking, prepareFood, markReady,
-  fetchOrders, init, cleanup, getOrderWaitMinutes,
+  fetchOrders, init, cleanup, getOrderWaitMinutes, getQueuePosition,
 } = store
 
 const columns = computed(() => [
@@ -108,6 +108,7 @@ onUnmounted(cleanup)
                   v-for="o in col.orders" :key="o.id"
                   :order="o"
                   :wait-minutes="getOrderWaitMinutes(o)"
+                  :queue-pos="getQueuePosition(o)"
                   @receive-order="receiveOrder"
                   @confirm-cooking="confirmCooking"
                   @prepare-food="prepareFood"
