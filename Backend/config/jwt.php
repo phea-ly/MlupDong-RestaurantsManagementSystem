@@ -253,6 +253,20 @@ return [
     'decrypt_cookies' => false,
 
     /*
+    |----------------------------------------------------------------------
+    | JWT Cookie Settings (HttpOnly)
+    |----------------------------------------------------------------------
+    */
+
+    'cookie' => [
+        'name'      => env('JWT_COOKIE_NAME', 'auth_token'),
+        'path'      => '/',
+        'domain'    => env('JWT_COOKIE_DOMAIN', null),
+        'secure'    => env('JWT_COOKIE_SECURE', false),
+        'same_site' => env('JWT_COOKIE_SAMESITE', 'lax'),
+    ],
+
+    /*
     |--------------------------------------------------------------------------
     | Providers
     |--------------------------------------------------------------------------

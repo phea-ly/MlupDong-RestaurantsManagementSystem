@@ -1,146 +1,135 @@
+// src/stores/cart.store.js
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
-import { orderApi } from '@/api/order.api'
+import { ref, computed } from 'vue'
+import { echo } from '@/echo'
+import { customerOrderApi } from '@/api/order.api'
 
 export const useCartStore = defineStore('cart', () => {
+
+  // ── State ──────────────────────────────────────────────────────────────────
   const items = ref([])
-  const specialInstructions = ref('')
   const tableId = ref(null)
   const tableNumber = ref(null)
+  const specialInstructions = ref('')
 
-  // Load from local storage
-  const savedCart = localStorage.getItem('cart_items')
-  if (savedCart) {
-    try { items.value = JSON.parse(savedCart) } catch (e) {}
+  // Last placed order — for tracking status live on customer screen
+  const lastOrder = ref(null)
+  let tableChannel = null
+
+  // ── Computed ───────────────────────────────────────────────────────────────
+  const cartCount = computed(() => items.value.reduce((s, i) => s + i.quantity, 0))
+  const cartSubtotal = computed(() => items.value.reduce((s, i) => s + i.price * i.quantity, 0))
+  const cartTax = computed(() => Math.round(cartSubtotal.value * 0.10 * 100) / 100)
+  const cartTotal = computed(() => Math.round((cartSubtotal.value + cartTax.value) * 100) / 100)
+
+  // ── Actions ────────────────────────────────────────────────────────────────
+  function setTableId(id, number) {
+    tableId.value = id
+    tableNumber.value = number
+    // Subscribe to per-table channel so customer can track their order live
+    if (number) _subscribeTableChannel(number)
   }
-  const savedInstructions = localStorage.getItem('cart_instructions')
-  if (savedInstructions) {
-    specialInstructions.value = savedInstructions
-  }
-  const savedTableId = localStorage.getItem('cart_table_id')
-  if (savedTableId) {
-    tableId.value = savedTableId
-  }
-  const savedTableNumber = localStorage.getItem('cart_table_number')
-  if (savedTableNumber) {
-    tableNumber.value = savedTableNumber
-  }
 
-  // Watch for changes and save to localStorage
-  watch(items, (newVal) => {
-    localStorage.setItem('cart_items', JSON.stringify(newVal))
-  }, { deep: true })
-
-  watch(specialInstructions, (newVal) => {
-    localStorage.setItem('cart_instructions', newVal)
-  })
-
-  watch(tableId, (newVal) => {
-    if (newVal) localStorage.setItem('cart_table_id', newVal)
-    else localStorage.removeItem('cart_table_id')
-  })
-
-  watch(tableNumber, (newVal) => {
-    if (newVal) localStorage.setItem('cart_table_number', newVal)
-    else localStorage.removeItem('cart_table_number')
-  })
-
-  const cartCount = computed(() => items.value.reduce((sum, item) => sum + item.quantity, 0))
-  const cartSubtotal = computed(() => items.value.reduce((sum, item) => sum + ((item.price || 0) * item.quantity), 0))
-  const taxRate = 0.10 // 10% tax
-  const cartTax = computed(() => cartSubtotal.value * taxRate)
-  const cartTotal = computed(() => cartSubtotal.value + cartTax.value)
-
-  function addToCart(product) {
-    const existing = items.value.find(i => i.id === product.id || i.id === product.menu_item_id)
+  function addToCart(item) {
+    const id = item.id ?? item.rawId
+    const existing = items.value.find(i => i.id === id)
     if (existing) {
       existing.quantity++
     } else {
       items.value.push({
-        id: product.id || product.menu_item_id,
-        name: product.name,
-        price: parseFloat(product.price || 0),
-        image: product.image,
-        quantity: 1
+        id,
+        menu_item_id: id,
+        name: item.name ?? item.item_name,
+        price: parseFloat(item.price),
+        image: item.image ?? null,
+        quantity: 1,
       })
     }
   }
 
-  function removeFromCart(productId) {
-    items.value = items.value.filter(i => i.id !== productId)
+  function updateQuantity(id, qty) {
+    if (qty <= 0) { removeFromCart(id); return }
+    const item = items.value.find(i => i.id === id)
+    if (item) item.quantity = qty
   }
 
-  function updateQuantity(productId, quantity) {
-    const existing = items.value.find(i => i.id === productId)
-    if (existing) {
-      if (quantity <= 0) {
-        removeFromCart(productId)
-      } else {
-        existing.quantity = quantity
-      }
-    }
+  function removeFromCart(id) {
+    items.value = items.value.filter(i => i.id !== id)
   }
 
   function clearCart() {
     items.value = []
     specialInstructions.value = ''
-    localStorage.removeItem('cart_items')
-    localStorage.removeItem('cart_instructions')
-    // tableId stays as it corresponds to the physical table
   }
 
-  function setTableId(id, number = null) {
-    tableId.value = id
-    if (number) tableNumber.value = number
+  // Rough wait estimate shown before placing order
+  function calcEstimatedWait(activeOrdersAhead) {
+    return Math.max(5, 5 + activeOrdersAhead * 5)
   }
 
-  async function placeOrder(details = {}) {
-    if (items.value.length === 0) return { success: false, message: 'Cart is empty' }
+  async function placeOrder({ order_type, table_id } = {}) {
+    if (!items.value.length) return { success: false, message: "Cart is empty." };
 
     const payload = {
-      order_type: details.order_type || 'dine_in',
-      table_id: details.table_id || tableId.value || 1, 
-      total_amount: cartSubtotal.value,
-      tax: cartTax.value,
-      final_amount: cartTotal.value,
-      order_status: 'new',
-      payment_status: 'pending',
-      items: items.value.map(item => ({
-        menu_item_id: item.id,
-        quantity: item.quantity,
-        unit_price: item.price,
-        note: specialInstructions.value
-      }))
+      table_id: table_id ?? tableId.value,
+      order_type: order_type ?? 'dine_in',
+      special_instructions: specialInstructions.value || null,
+      items: items.value.map(i => ({
+        menu_item_id: i.menu_item_id ?? i.id,
+        quantity: i.quantity,
+        note: i.note ?? null,
+      })),
     }
 
     try {
-      await orderApi.create(payload)
-      clearCart()
-      return { success: true }
-    } catch (e) {
-      console.error('Order placement failed', e)
-      return { 
-        success: false, 
-        message: e.response?.data?.message || 'Failed to place order' 
+      const { data } = await customerOrderApi.placeOrder(payload)
+      // Save last order so the success screen can show order number + wait
+      lastOrder.value = {
+        order_id: data.order_id,
+        order_number: data.order_number,
+        order_status: 'new',
+        total: data.total,
+        estimated_wait_minutes: data.estimated_wait_minutes,
       }
+      clearCart()
+      return { success: true, data }
+    } catch (err) {
+      const msg = err.response?.data?.message ?? err.message ?? 'Order failed.'
+      return { success: false, message: msg }
+    }
+  }
+
+  // ── Per-table Echo subscription ────────────────────────────────────────────
+  // Customer menu listens to table.{number} so it sees live status updates
+  // from the kitchen without polling
+  function _subscribeTableChannel(number) {
+    if (tableChannel !== null) {
+      echo.leaveChannel(`table.${tableChannel}`)
+    }
+    tableChannel = number
+
+    echo.channel(`table.${number}`)
+      .listen(".order.status.updated", (payload) => {
+        if (lastOrder.value && (payload.order_id === lastOrder.value.order_id || payload.id === lastOrder.value.order_id)) {
+          lastOrder.value = { ...lastOrder.value, order_status: payload.status };
+        }
+      });
+  }
+
+  function leaveTableChannel() {
+    if (tableChannel !== null) {
+      echo.leaveChannel(`table.${tableChannel}`)
+      tableChannel = null
     }
   }
 
   return {
-    items,
-    specialInstructions,
-    tableId,
-    tableNumber,
-    setTableId,
-    cartCount,
-    cartSubtotal,
-    cartTax,
-    cartTotal,
-    addToCart,
-    removeFromCart,
-    updateQuantity,
-    clearCart,
-    placeOrder
+    // state
+    items, tableId, tableNumber, specialInstructions, lastOrder,
+    // computed
+    cartCount, cartSubtotal, cartTax, cartTotal,
+    // actions
+    setTableId, addToCart, updateQuantity, removeFromCart, clearCart,
+    calcEstimatedWait, placeOrder, leaveTableChannel,
   }
 })
-

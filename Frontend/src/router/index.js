@@ -1,124 +1,124 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth.store'  
+import { createRouter, createWebHistory } from "vue-router";
+import { useAuthStore } from "@/stores/auth.store";
 
 const routes = [
   {
-    path: '/',
-    redirect: '/login',
+    path: "/",
+    redirect: "/login",
   },
   {
-    path: '/login',
-    name: 'login',
+    path: "/login",
+    name: "login",
     meta: { guestOnly: true },
-    component: () => import('@/views/Login.vue'),
+    component: () => import("@/views/Login.vue"),
   },
   {
-    path: '/home',
+    path: "/home",
     meta: { requiresAuth: true },
-    component: () => import('@/views/Layout.vue'),
+    component: () => import("@/views/Layout.vue"),
     children: [
-      { path: '', redirect: '/home/admin-dashboard' },
+      { path: "", redirect: "/home/admin-dashboard" },
       {
-        path: 'admin-dashboard',
-        name: 'home-dashboard',
+        path: "admin-dashboard",
+        name: "home-dashboard",
         meta: { requiresAuth: true },
-        component: () => import('@/views/dashboard/AdminDashboard.vue'),
+        component: () => import("@/views/dashboard/AdminDashboard.vue"),
       },
       {
-        path: 'menu',
-        name: 'home-menu',
+        path: "menu",
+        name: "home-menu",
         meta: { requiresAuth: true },
-        component: () => import('@/views/menu/Menu.vue'),
+        component: () => import("@/views/menu/Menu.vue"),
       },
       {
-        path: 'categories',
-        name: 'home-categories',
+        path: "categories",
+        name: "home-categories",
         meta: { requiresAuth: true },
-        component: () => import('@/views/categories/Categories.vue'),
+        component: () => import("@/views/categories/Categories.vue"),
       },
       {
-        path: 'staff',
-        name: 'home-staff',
+        path: "staff",
+        name: "home-staff",
         meta: { requiresAuth: true },
-        component: () => import('@/views/staff/Staff.vue'),
+        component: () => import("@/views/staff/Staff.vue"),
       },
       {
-        path: 'table',
-        name: 'home-table',
+        path: "table",
+        name: "home-table",
         meta: { requiresAuth: true },
-        component: () => import('@/views/table/Table.vue'),
+        component: () => import("@/views/table/Table.vue"),
       },
       {
-        path: 'user',
-        name: 'home-user',
+        path: "user",
+        name: "home-user",
         meta: { requiresAuth: true },
-        component: () => import('@/views/user/User.vue'),
+        component: () => import("@/views/user/User.vue"),
       },
       {
-        path: 'sales-report',
-        name: 'home-sales-report',
+        path: "sales-report",
+        name: "home-sales-report",
         meta: { requiresAuth: true },
-        component: () => import('@/views/salesReport/SalesReport.vue'),
+        component: () => import("@/views/salesReport/SalesReport.vue"),
       },
       {
-        path: 'activity',
-        name: 'home-activity',
+        path: "activity",
+        name: "home-activity",
         meta: { requiresAuth: true },
-        component: () => import('@/views/activity/Activity.vue'),
+        component: () => import("@/views/activity/Activity.vue"),
       },
       {
-        path: 'settings',
-        name: 'home-settings',
+        path: "settings",
+        name: "home-settings",
         meta: { requiresAuth: true },
-        component: () => import('@/views/setting/Settings.vue'),
+        component: () => import("@/views/setting/Settings.vue"),
       },
     ],
   },
   {
-    path: '/menu/:token',
-    name: 'customer-menu',
-    component: () => import('@/views/customer/menuView.vue'),
-  },
-  // {
-  //   path: '/menu',
-  //   name: 'customer-menu',
-  //   component: () => import('@/views/customer/menuView.vue'),
-  // },
-  {
-    path: '/chef',
-    name: 'customer-menu',
-    component: () => import('@/views/kds/KdsApp.vue'),
+    path: "/menu/:token",
+    name: "customer-menu",
+    component: () => import("@/views/customer/customerMenu.vue"),
   },
   {
-    path: '/waiter',
-    name: 'waiter-dashboard',
+    path: "/waiter",
+    name: "waiter-dashboard",
     meta: { requiresAuth: true },
-    component: () => import('@/views/waiter/waiterApp.vue'),
+    component: () => import("@/views/waiter/waiterApp.vue"),
   },
   {
-    path: '/:pathMatch(.*)*',
-    redirect: '/login',
+    path: "/order/:token",
+    name: "customer-order",
+    component: () => import("@/views/customer/customerOrder.vue"),
   },
-]
+
+  {
+    path: "/chef",
+    name: "chef-menu",
+    component: () => import("@/views/kds/KdsApp.vue"),
+  },
+  {
+    path: "/:pathMatch(.*)*",
+    redirect: "/login",
+  },
+];
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
-})
+});
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore();
+  await authStore.ensureAuthChecked();
+  const isAuthed = authStore.isAuthenticated;
 
-  const authStore = useAuthStore()
-  // const token = localStorage.getItem('token')
-  const token = authStore.token
-
-  if (to.meta.requiresAuth && !token) {
-    next('/login')
-  } else if (to.meta.guestOnly && token) {
-    next('/home')
+  if (to.meta.requiresAuth && !isAuthed) {
+    next("/login");
+  } else if (to.meta.guestOnly && isAuthed) {
+    next("/home");
   } else {
-    next()
+    next();
   }
-})
+});
 
-export default router
+export default router;

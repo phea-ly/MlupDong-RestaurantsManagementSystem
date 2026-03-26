@@ -1,4 +1,5 @@
 <?php
+// bootstrap/app.php
 
 use App\Http\Middleware\JwtMiddleware;
 use App\Http\Middleware\HandleAppearance;
@@ -19,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
         $middleware->validateCsrfTokens(except: ['api/auth/*']);
         $middleware->alias([
-            'jwt' => JwtMiddleware::class
+            'jwt' => JwtMiddleware::class,
         ]);
 
         $middleware->web(append: [
@@ -27,8 +28,11 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
-
     })
+    ->withProviders([
+        App\Providers\BroadcastServiceProvider::class,
+    ])
     ->withExceptions(function (Exceptions $exceptions): void {
         //
-    })->create();
+    })
+    ->create();

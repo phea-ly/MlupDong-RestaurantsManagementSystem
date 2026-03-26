@@ -1,10 +1,11 @@
 <?php
+// app/Http/Controllers/KdsController.php
 
 namespace App\Http\Controllers;
 
+use App\Events\KdsOrderEvent;
 use App\Models\Order;
 use App\Support\KdsPayload;
-use App\Events\KdsOrderEvent;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -18,57 +19,31 @@ class KdsController extends Controller
             ->latest('order_id')
             ->get();
 
+        // ✅ Fix: call ->toArray() so JSON response gets plain arrays, not objects
         return response()->json(
-            $orders->map(fn ($order) => KdsPayload::fromOrder($order))
+            $orders->map(fn ($order) => KdsPayload::fromOrder($order)->toArray())
         );
     }
 
     public function updateStatus(Request $request, string $id)
     {
         $validated = $request->validate([
-            'order_status' => ['required', Rule::in(['new', 'received', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'])],
+            // ✅ Fix: field is 'status' to match frontend PATCH body { status: '...' }
+            'status' => ['required', Rule::in(['new', 'received', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'])],
         ]);
 
-        $order = Order::query()->findOrFail($id);
-        $order->update(['order_status' => $validated['order_status']]);
+        $order = Order::query()
+            ->with(['table', 'orderItems.menuItem'])
+            ->findOrFail($id);
+
+        $order->update(['order_status' => $validated['status']]);
+        $order->refresh();
 
         $payload = KdsPayload::fromOrder($order);
-        $this->publish('order.status.updated', $payload);
 
-        return response()->json($payload);
-    }
+        // ✅ Fix: pass KdsPayload object (not array) — KdsOrderEvent expects KdsPayload
+        event(new KdsOrderEvent('order.status.updated', $payload));
 
-    public function stream()
-    {
-        $headers = [
-            'Content-Type' => 'text/event-stream',
-            'Cache-Control' => 'no-cache',
-            'Connection' => 'keep-alive',
-            'X-Accel-Buffering' => 'no',
-        ];
-
-        return response()->stream(function () {
-            $connected = json_encode([
-                'event' => 'connected',
-                'payload' => ['ts' => now()->toISOString()],
-            ]);
-            echo "data: {$connected}\n\n";
-            @ob_flush();
-            @flush();
-
-            Redis::subscribe(['kds'], function ($message) {
-                if (connection_aborted()) {
-                    return false;
-                }
-                echo "data: {$message}\n\n";
-                @ob_flush();
-                @flush();
-            });
-        }, 200, $headers);
-    }
-
-    private function publish(string $event, array $payload): void
-    {
-        event(new KdsOrderEvent($event, $payload));
+        return response()->json($payload->toArray());
     }
 }

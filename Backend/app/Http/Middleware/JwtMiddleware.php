@@ -14,7 +14,14 @@ class JwtMiddleware
     public function handle(Request $request, Closure $next)
     {
         try {
-            JWTAuth::parseToken()->authenticate();
+            $cookieName = config('jwt.cookie.name', 'auth_token');
+            $token = $request->bearerToken() ?: $request->cookie($cookieName);
+
+            if (!$token) {
+                throw new JWTException('Token missing or malformed');
+            }
+
+            JWTAuth::setToken($token)->authenticate();
         } catch (TokenExpiredException $e) {
             return response()->json(['error' => 'Token expired'], 401);
         } catch (TokenInvalidException $e) {

@@ -18,7 +18,7 @@ export const useUiStore = defineStore('ui', {
   state: () => ({
     sidebarOpen: true,
     theme: 'light',
-    language: normalizeLanguage(localStorage.getItem('appLanguage')),
+    language: normalizeLanguage(null),
   }),
   actions: {
     toggleSidebar() {
@@ -30,7 +30,6 @@ export const useUiStore = defineStore('ui', {
     setLanguage(language) {
       const normalized = normalizeLanguage(language)
       this.language = normalized
-      localStorage.setItem('appLanguage', normalized)
     },
   }
 })

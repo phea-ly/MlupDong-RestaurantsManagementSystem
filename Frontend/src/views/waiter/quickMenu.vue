@@ -1,106 +1,103 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useMenuStore } from '@/stores/menu.store';
+import { useTableStore } from '@/stores/table.store';
 import { order as orderApiObj } from '@/api/order.api';
-import api from '@/api/api';
 
-const menuStore = useMenuStore();
-const selectedCategory = ref('All Items');
-const loading = ref(true);
-
-const menuCategories = computed(() => {
-  return ['All Items', ...menuStore.categories.map(c => c.category_name)];
+const props = defineProps({
+  initialTableId: {
+    type: [Number, String],
+    default: null
+  }
 });
 
+const emit = defineEmits(['reset-table']);
+
+const menuStore = useMenuStore();
+const tableStore = useTableStore();
+
+const selectedCategoryId = ref('all');
+const submitting = ref(false);
+const posCart = ref([]);
+const selectedTable = ref(null);
+
+// Watch for prop changes (e.g. from Floor Plan)
+watch(() => props.initialTableId, (newVal) => {
+  if (newVal) selectedTable.value = newVal;
+}, { immediate: true });
+
+// Image resolution using store logic
 function getImageUrl(path) {
   if (!path) return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=200';
-  if (path.startsWith('http') || path.startsWith('data:')) return path;
   
-  // Prevent duplicate /storage/ paths
-  let cleanPath = path.replace(/^\/+/, '');
-  if (cleanPath.startsWith('storage/')) {
-    cleanPath = cleanPath.substring(8);
+  if (typeof menuStore.resolveImageUrl === 'function') {
+    return menuStore.resolveImageUrl(path);
   }
   
+  if (path.startsWith('http') || path.startsWith('data:')) return path;
   const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+  const cleanPath = path.replace(/^\/+/, '').replace(/^storage\//, '');
   return `${apiBase.replace(/\/api$/, "")}/storage/${cleanPath}`;
 }
 
 const posMenuItems = computed(() => {
-  return menuStore.menuItems.filter(i => i.status !== false).map(i => {
-    let catName = 'All Items';
-    if (i.category && i.category.category_name) catName = i.category.category_name;
-    else {
-      const cat = menuStore.categories.find(c => String(c.category_id) === String(i.category_id));
-      if (cat) catName = cat.category_name;
-    }
-    
-    return {
-      id: i.id,
-      name: i.name,
-      desc: i.description || 'No description available.',
-      price: i.price,
-      category: catName,
+  return menuStore.menuItems
+    .filter(i => i.status !== false)
+    .map(i => ({
+      ...i,
       image: getImageUrl(i.image),
       tag: i.is_popular ? 'POPULAR' : '',
       tagColor: '#00ff00',
       tagText: '#000'
-    };
-  });
+    }));
 });
 
-const availableTables = ref([]);
-const selectedTable = ref(null);
+const filteredItems = computed(() => {
+  if (selectedCategoryId.value === 'all') return posMenuItems.value;
+  return posMenuItems.value.filter(i => i.category_id === selectedCategoryId.value);
+});
 
 onMounted(async () => {
-  loading.value = true;
   await Promise.all([
-    menuStore.fetchCategories(),
-    menuStore.fetchMenuItems()
+    menuStore.init(),
+    tableStore.init()
   ]);
   
-  try {
-     const res = await api.get('/tables');
-     availableTables.value = res.data || [];
-     if (availableTables.value.length) {
-       // Auto select first table if empty
-       selectedTable.value = availableTables.value[0].table_id;
-     }
-  } catch(e) {}
-  
-  loading.value = false;
+  if (!selectedTable.value && tableStore.tables.length > 0) {
+    selectedTable.value = tableStore.tables[0].table_id;
+  }
 });
 
-const posCart = ref([]);
+// Cart Logic
 const cartSubtotal = computed(() => posCart.value.reduce((acc, i) => acc + (i.price * i.quantity), 0));
-const cartTax = computed(() => cartSubtotal.value * 0.1);
-const cartTotal = computed(() => cartSubtotal.value + cartTax.value);
+const cartTax      = computed(() => cartSubtotal.value * 0.1);
+const cartTotal    = computed(() => cartSubtotal.value + cartTax.value);
 
 function increaseQty(item) { item.quantity++; }
 function decreaseQty(item) {
   if (item.quantity > 1) item.quantity--;
   else posCart.value = posCart.value.filter(i => i.id !== item.id);
 }
+
 function addToCart(menuItem) {
-  const ex = posCart.value.find(i => i.menuItemId === menuItem.id);
-  if (ex) ex.quantity++;
-  else posCart.value.push({
-    id: Date.now(),
-    menuItemId: menuItem.id,
-    name: menuItem.name,
-    note: '',
-    price: menuItem.price,
-    quantity: 1
-  });
+  const existing = posCart.value.find(i => i.menuItemId === menuItem.id);
+  if (existing) {
+    existing.quantity++;
+  } else {
+    posCart.value.push({
+      id: Date.now(),
+      menuItemId: menuItem.id,
+      name: menuItem.name,
+      note: '',
+      price: menuItem.price,
+      quantity: 1
+    });
+  }
 }
 
-const submitting = ref(false);
 async function submitOrder() {
-  if (posCart.value.length === 0) {
-    alert("Cart is empty");
-    return;
-  }
-  if (!selectedTable.value && availableTables.value.length) {
+  if (posCart.value.length === 0) return;
+  if (!selectedTable.value) {
     alert("Please select a table to assign this order to.");
     return;
   }
@@ -108,7 +105,7 @@ async function submitOrder() {
   submitting.value = true;
   const orderPayload = {
     table_id: selectedTable.value,
-    order_type: 'dine-in',
+    order_type: 'dine_in',
     items: posCart.value.map(i => ({
       menu_item_id: i.menuItemId,
       quantity: i.quantity,
@@ -119,7 +116,8 @@ async function submitOrder() {
   try {
     await orderApiObj.create(orderPayload);
     posCart.value = [];
-    alert(`Order for Table ${selectedTable.value} submitted successfully!`);
+    emit('reset-table'); // Clear the pre-selected table in parent
+    alert(`Order submitted successfully!`);
   } catch(e) {
     console.error(e);
     alert(e.response?.data?.message || "Failed to submit order.");
@@ -129,34 +127,36 @@ async function submitOrder() {
 }
 </script>
 
+
 <template>
   <div class="d-flex flex-row h-100 position-relative w-100">
     
     <!-- Left: Menu Grid -->
-    <div class="flex-grow-1 h-100 pa-8 overflow-y-auto" style="background-color: #070a08;" v-if="!loading">
+    <div class="flex-grow-1 h-100 pa-8 overflow-y-auto" style="background-color: #070a08;" v-if="!menuStore.loading">
       
       <!-- Category Filters -->
       <div class="d-flex mb-8 align-center gap-4 filter-scroll" style="overflow-x: auto;">
-        <v-chip-group v-model="selectedCategory" mandatory color="#00ff00" selected-class="bg-neon-green text-black">
+        <v-chip-group v-model="selectedCategoryId" mandatory color="#00ff00" selected-class="bg-neon-green text-black">
           <v-chip
-            v-for="(cat, i) in menuCategories" :key="i"
-            :value="cat"
+            v-for="cat in menuStore.categoryTabs" :key="cat.value"
+            :value="cat.value"
             class="font-weight-bold text-body-1 px-6 mr-4"
             variant="outlined"
-            :color="selectedCategory === cat ? 'transparent': '#2e3a33'"
+            :color="selectedCategoryId === cat.value ? 'transparent': '#2e3a33'"
             size="large"
             style="height: 46px; border-radius: 23px;"
-            :class="selectedCategory !== cat ? 'bg-dark-olive text-white' : ''"
+            :class="selectedCategoryId !== cat.value ? 'bg-dark-olive text-white' : ''"
           >
-            {{ cat }}
+            <v-icon start size="18" v-if="cat.icon" class="mr-2">{{ cat.icon }}</v-icon>
+            {{ cat.label }}
           </v-chip>
         </v-chip-group>
       </div>
 
       <!-- Items Grid -->
-      <v-row v-if="posMenuItems.length">
-        <template v-for="item in posMenuItems" :key="item.id">
-          <v-col cols="12" sm="6" md="4" lg="3" xl="2" v-if="selectedCategory === 'All Items' || item.category === selectedCategory">
+      <v-row v-if="filteredItems.length">
+        <template v-for="item in filteredItems" :key="item.id">
+          <v-col cols="12" sm="6" md="4" lg="3" xl="2">
             <v-card 
               color="#111713" 
               class="rounded-xl border-dark overflow-hidden item-card-hover h-100 d-flex flex-column cursor-pointer" 
@@ -183,10 +183,10 @@ async function submitOrder() {
               <v-card-text class="pa-4 flex-grow-1 d-flex flex-column">
                 <div class="font-weight-black text-h6 text-white mb-1 line-height-1">{{item.name}}</div>
                 <div class="text-body-2 text-grey-darken-1 mb-4 flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3em;">
-                  {{item.desc}}
+                  {{item.description}}
                 </div>
                 <div class="d-flex justify-space-between align-center mt-auto">
-                   <span class="font-weight-black text-neon-green text-h6">${{item.price.toFixed(2)}}</span>
+                   <span class="font-weight-black text-neon-green text-h6">${{Number(item.price).toFixed(2)}}</span>
                    <v-btn icon="mdi-plus" color="#102613" size="small" class="add-btn-hover rounded" elevation="0"></v-btn>
                 </div>
               </v-card-text>
@@ -196,7 +196,7 @@ async function submitOrder() {
       </v-row>
       <div v-else class="text-center mt-12 text-grey-darken-1 text-body-1 font-weight-bold">
         <v-icon size="48" color="#2e3a33" class="mb-4">mdi-food-off-outline</v-icon>
-        <p>No active menu items available right now.</p>
+        <p>No items found in this category.</p>
       </div>
     </div>
     <div class="flex-grow-1 h-100 pa-8 d-flex align-center justify-center" style="background-color: #070a08;" v-else>
@@ -213,16 +213,16 @@ async function submitOrder() {
                 <span class="live-dot mr-3 mt-1" style="box-shadow: none; width:6px; height:6px;"></span>
                 <div class="text-h5 font-weight-black text-white">Quick Cart</div>
               </div>
-              <v-chip color="#00ff00" class="text-black font-weight-black text-caption rounded-lg text-uppercase" v-if="!availableTables.length">
+              <v-chip color="#00ff00" class="text-black font-weight-black text-caption rounded-lg text-uppercase" v-if="!selectedTable">
                 Table #
               </v-chip>
            </div>
            
-           <div class="d-flex align-center justify-space-between" v-if="availableTables.length">
+           <div class="d-flex align-center justify-space-between" v-if="tableStore.tables.length">
               <span class="text-caption text-grey-darken-1 font-weight-bold text-uppercase ls-1">ASSIGN TO:</span>
               <v-select
                 v-model="selectedTable"
-                :items="availableTables"
+                :items="tableStore.tables"
                 item-title="table_number"
                 item-value="table_id"
                 variant="solo-filled"
@@ -378,3 +378,4 @@ async function submitOrder() {
   box-shadow: 0 0 8px #00ff00;
 }
 </style>
+

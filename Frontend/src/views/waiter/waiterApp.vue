@@ -4,18 +4,23 @@ import { ref, computed } from 'vue';
 // Import child components
 import LiveOrder from './liveOrder.vue';
 import QuickMenu from './quickMenu.vue';
-import Report from './report.vue';
 import FloorPlan from './floorPlan.vue';
 
 const currentView = ref('Quick Menu');
 const search = ref('');
+const selectedTableId = ref(null);
 
 const sidebarMenu = computed(() => [
   { icon: 'mdi-view-grid-outline', text: 'Floor Plan', id: 'Floor Plan' },
   { icon: 'mdi-check-circle-outline', text: 'Live Orders', id: 'Live Orders' },
-  { icon: 'mdi-silverware-fork-knife', text: 'Quick Menu', id: 'Quick Menu' },
-  { icon: 'mdi-chart-box-outline', text: 'Reports', id: 'Reports' }
+  { icon: 'mdi-silverware-fork-knife', text: 'Quick Menu', id: 'Quick Menu' }
 ]);
+
+// Helper to switch view with a pre-selected table
+function startOrderWithTable(tableId) {
+  selectedTableId.value = tableId;
+  currentView.value = 'Quick Menu';
+}
 </script>
 
 <template>
@@ -60,7 +65,7 @@ const sidebarMenu = computed(() => [
       <div class="d-none d-sm-flex align-center mr-6" style="width: 300px;">
         <v-text-field
           v-model="search"
-          placeholder="Search orders..."
+          placeholder="Search items..."
           prepend-inner-icon="mdi-magnify"
           variant="solo-filled"
           bg-color="#121f15"
@@ -117,6 +122,7 @@ const sidebarMenu = computed(() => [
             height="56"
             class="text-black font-weight-black text-button rounded-lg order-btn-hover"
             elevation="0"
+            @click="currentView = 'Quick Menu'"
           >
             <v-icon start size="20">mdi-plus</v-icon> New Order
           </v-btn>
@@ -129,12 +135,18 @@ const sidebarMenu = computed(() => [
       <!-- Dynamic View Rendering -->
       <LiveOrder v-if="currentView === 'Live Orders'" />
       
-      <QuickMenu v-else-if="currentView === 'Quick Menu'" />
+      <QuickMenu 
+        v-else-if="currentView === 'Quick Menu'" 
+        :initial-table-id="selectedTableId"
+        @reset-table="selectedTableId = null"
+      />
 
       <Report v-else-if="currentView === 'Reports'" />
 
-      <!-- Placeholder Views -->
-      <FloorPlan v-else-if="currentView === 'Floor Plan'" />
+      <FloorPlan 
+        v-else-if="currentView === 'Floor Plan'" 
+        @start-order="startOrderWithTable"
+      />
 
     </v-main>
   </v-app>

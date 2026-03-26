@@ -1,189 +1,96 @@
 <script setup>
-import { onMounted, ref, computed } from "vue";
-import { useRouter } from "vue-router";
-import { defineStore, storeToRefs } from "pinia";
-import { useMenuStore } from "@/stores/menu.store";
-import CategoryStatsRow from "@/components/categories/CategoryStatsRow.vue";
-import CategoryTopCard from "@/components/categories/CategoryTopCard.vue";
-import CategoryList from "@/components/categories/CategoryList.vue";
-import CategoryDialog from "@/components/categories/CategoryDialog.vue";
-import CategoryDeleteDialog from "@/components/categories/CategoryDeleteDialog.vue";
+import { onMounted }          from 'vue'
+import { useRouter }          from 'vue-router'
+import { storeToRefs }        from 'pinia'
+import { useCategoryStore }   from '@/stores/category.store'
 
-// ── Store definition ──────────────────────────────────────────────────────────
-const useCategoriesViewStore = defineStore("categoriesView", () => {
-  const menuStore = useMenuStore();
+import CategoryStatsRow     from '@/components/categories/CategoryStatsRow.vue'
+import CategoryTopCard      from '@/components/categories/CategoryTopCard.vue'
+import CategoryList         from '@/components/categories/CategoryList.vue'
+import CategoryDialog       from '@/components/categories/CategoryDialog.vue'
+import CategoryDeleteDialog from '@/components/categories/CategoryDeleteDialog.vue'
 
-  const showCatDialog    = ref(false);
-  const editingCategory  = ref(null);
-  const catForm          = ref({ category_name: "", description: "", status: true });
-  const catSaving        = ref(false);
-  const showDeleteCatDlg = ref(false);
-  const deletingCatId    = ref(null);
-  const snackbar         = ref({ show: false, message: "", color: "" });
-
-  const categoryStats = computed(() => {
-    const total    = menuStore.categories.length;
-    const active   = menuStore.categories.filter((c) => c.status).length;
-    const inactive = total - active;
-    return { total, active, inactive };
-  });
-
-  const categoryCounts = computed(() => {
-    const counts = new Map();
-    menuStore.menuItems.forEach((item) => {
-      const key = item.category_id ?? "uncategorized";
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    });
-    return counts;
-  });
-
-  const topCategories = computed(() => {
-    const totalItems = menuStore.menuItems.length || 1;
-    return menuStore.categories
-      .map((c) => {
-        const count = categoryCounts.value.get(c.category_id) ?? 0;
-        return {
-          id:    c.category_id,
-          name:  c.category_name,
-          count,
-          pct:   Math.round((count / totalItems) * 100),
-        };
-      })
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 4);
-  });
-
-  async function init() {
-    await menuStore.fetchCategories();
-    await menuStore.fetchMenuItems();
-  }
-
-  function openAddCategory() {
-    editingCategory.value = null;
-    catForm.value         = { category_name: "", description: "", status: true };
-    showCatDialog.value   = true;
-  }
-
-  function openEditCategory(cat) {
-    editingCategory.value = cat;
-    catForm.value = {
-      category_name: cat.category_name,
-      description:   cat.description ?? "",
-      status:        cat.status      ?? true,
-    };
-    showCatDialog.value = true;
-  }
-
-  async function saveCategory() {
-    catSaving.value = true;
-    const result = editingCategory.value
-      ? await menuStore.updateCategory(editingCategory.value.category_id, catForm.value)
-      : await menuStore.addCategory(catForm.value);
-    catSaving.value = false;
-
-    if (result.success) {
-      showCatDialog.value = false;
-      snackbar.value = {
-        show:    true,
-        message: editingCategory.value ? "Category updated." : "Category added.",
-        color:   "success",
-      };
-      await menuStore.fetchMenuItems();
-    } else {
-      snackbar.value = { show: true, message: "Failed to save category.", color: "error" };
-    }
-  }
-
-  function confirmDeleteCategory(id) {
-    deletingCatId.value    = id;
-    showDeleteCatDlg.value = true;
-  }
-
-  async function handleDeleteCategory() {
-    const result = await menuStore.deleteCategory(deletingCatId.value);
-    showDeleteCatDlg.value = false;
-    if (menuStore.activeCategory === deletingCatId.value) menuStore.activeCategory = "all";
-    snackbar.value = result.success
-      ? { show: true, message: "Category deleted.",          color: "success" }
-      : { show: true, message: "Failed to delete category.", color: "error"   };
-  }
-
-  function viewItems(router, categoryId) {
-    menuStore.activeCategory = categoryId ?? "all";
-    router.push("/home/menu");
-  }
-
-  return {
-    showCatDialog, editingCategory, catForm, catSaving,
-    showDeleteCatDlg, deletingCatId, snackbar,
-    categoryStats, categoryCounts, topCategories,
-    init, openAddCategory, openEditCategory, saveCategory,
-    confirmDeleteCategory, handleDeleteCategory, viewItems,
-  };
-});
-
-// ── Component setup ───────────────────────────────────────────────────────────
-const router          = useRouter();
-const menuStore       = useMenuStore();
-const categoriesStore = useCategoriesViewStore();
+const router        = useRouter()
+const categoryStore = useCategoryStore()
 
 const {
-  showCatDialog, editingCategory, catForm, catSaving,
-  showDeleteCatDlg, snackbar, categoryStats, categoryCounts, topCategories,
-} = storeToRefs(categoriesStore);
+  categories, loading, saving, deleting, snackbar,
+  showDialog, showDeleteDialog, editingCategory,
+  form, nameError,
+  stats, categoryCounts, topCategories,
+} = storeToRefs(categoryStore)
 
 const {
-  init, openAddCategory, openEditCategory, saveCategory,
-  confirmDeleteCategory, handleDeleteCategory, viewItems,
-} = categoriesStore;
+  init, openAdd, openEdit, save,
+  confirmDelete, handleDelete,
+} = categoryStore
 
-onMounted(init);
+onMounted(init)
+
+// Clear name error when user starts typing (emitted from CategoryDialog)
+function clearNameError() {
+  nameError.value = ''
+}
+
+function viewItems(categoryId) {
+  router.push({ path: '/home/menu', query: { category: categoryId ?? 'all' } })
+}
 </script>
 
 <template>
   <v-container fluid class="pa-0">
-    <div class="d-flex align-center justify-space-between flex-wrap ga-3 mb-6">
-      <div />
+
+    <!-- ── Toolbar ──────────────────────────────────────────────────────────── -->
+    <div class="d-flex align-center justify-end mb-6">
       <v-btn
         color="var(--app-primary)" rounded="lg" height="40" elevation="0"
         prepend-icon="mdi-plus"
-        @click="openAddCategory"
+        @click="openAdd"
       >
         <span style="color:#063824; font-weight:800">Add Category</span>
       </v-btn>
     </div>
 
-    <CategoryStatsRow :stats="categoryStats" />
+    <!-- ── Stats ────────────────────────────────────────────────────────────── -->
+    <CategoryStatsRow :stats="stats" />
 
+    <!-- ── Main grid ────────────────────────────────────────────────────────── -->
     <v-row dense>
       <v-col cols="12" md="4">
         <CategoryTopCard :top-categories="topCategories" />
       </v-col>
       <v-col cols="12" md="8">
         <CategoryList
-          :categories="menuStore.categories"
+          :categories="categories"
           :category-counts="categoryCounts"
-          @view="(id) => viewItems(router, id)"
-          @edit="openEditCategory"
-          @delete="confirmDeleteCategory"
-          @view-all="() => viewItems(router, 'all')"
+          :loading="loading"
+          @view="viewItems"
+          @edit="openEdit"
+          @delete="confirmDelete"
+          @view-all="viewItems('all')"
         />
       </v-col>
     </v-row>
 
+    <!-- ── Add / Edit dialog ────────────────────────────────────────────────── -->
     <CategoryDialog
-      v-model="showCatDialog"
+      v-model="showDialog"
       :editing="editingCategory"
-      :form="catForm"
-      :saving="catSaving"
-      @save="saveCategory"
+      :form="form"
+      :saving="saving"
+      :name-error="nameError"
+      @save="save"
+      @clear-name-error="clearNameError"
     />
 
+    <!-- ── Delete confirm dialog ────────────────────────────────────────────── -->
     <CategoryDeleteDialog
-      v-model="showDeleteCatDlg"
-      @confirm="handleDeleteCategory"
+      v-model="showDeleteDialog"
+      :loading="deleting"
+      @confirm="handleDelete"
     />
 
+    <!-- ── Snackbar ──────────────────────────────────────────────────────────── -->
     <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
@@ -196,5 +103,6 @@ onMounted(init);
         <v-btn variant="text" icon="mdi-close" size="small" @click="snackbar.show = false" />
       </template>
     </v-snackbar>
+
   </v-container>
 </template>
