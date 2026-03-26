@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-import { defineStore } from "pinia";
-// import api from "@/plugins/axios";
-import * as authApi from "@/api/auth.api"
-=======
 import { defineStore } from 'pinia'
 import * as authApi    from '@/api/auth.api'
 import {
@@ -10,7 +5,6 @@ import {
   clearSession,
   getSessionUser,
 } from '../utils/auth'
->>>>>>> 8ed2408b52b97c510cf4fd173bbb935521af3f51
 
 export const useAuthStore = defineStore('auth', {
 
