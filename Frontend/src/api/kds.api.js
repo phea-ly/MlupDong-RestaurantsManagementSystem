@@ -16,7 +16,7 @@ export const kdsApi = {
     return kdsHttp.get('/kds/orders')
   },
   updateOrderStatus(id, status) {
-    return kdsHttp.patch(`/kds/orders/${id}/status`, { order_status: status })
+    return kdsHttp.patch(`/kds/orders/${id}/status`, { status })
   },
 }
 

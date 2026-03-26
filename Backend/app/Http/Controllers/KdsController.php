@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 use App\Events\KdsOrderEvent;
 use App\Models\Order;
 use App\Support\KdsPayload;
+use Throwable;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +20,6 @@ class KdsController extends Controller
             ->latest('order_id')
             ->get();
 
-        // ✅ Fix: call ->toArray() so JSON response gets plain arrays, not objects
         return response()->json(
             $orders->map(fn ($order) => KdsPayload::fromOrder($order)->toArray())
         );
@@ -27,22 +27,29 @@ class KdsController extends Controller
 
     public function updateStatus(Request $request, string $id)
     {
-        $validated = $request->validate([
-            // ✅ Fix: field is 'status' to match frontend PATCH body { status: '...' }
-            'status' => ['required', Rule::in(['new', 'received', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'])],
-        ]);
+        $status = $request->input('status', $request->input('order_status'));
+
+        validator(
+            ['status' => $status],
+            [
+                'status' => ['required', Rule::in(['new', 'received', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'])],
+            ]
+        )->validate();
 
         $order = Order::query()
             ->with(['table', 'orderItems.menuItem'])
             ->findOrFail($id);
 
-        $order->update(['order_status' => $validated['status']]);
+        $order->update(['order_status' => $status]);
         $order->refresh();
 
         $payload = KdsPayload::fromOrder($order);
 
-        // ✅ Fix: pass KdsPayload object (not array) — KdsOrderEvent expects KdsPayload
-        event(new KdsOrderEvent('order.status.updated', $payload));
+        try {
+            event(new KdsOrderEvent('order.status.updated', $payload));
+        } catch (Throwable $e) {
+            report($e);
+        }
 
         return response()->json($payload->toArray());
     }
