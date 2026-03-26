@@ -25,12 +25,11 @@ return new class extends Migration
             $table->unsignedBigInteger('table_id')->nullable();
             $table->unsignedBigInteger('discount_id')->nullable();
             $table->unsignedBigInteger('restaurant_id')->nullable();
-            $table->timestamps();
-
             $table->foreign('user_id')->references('user_id')->on('users');
             $table->foreign('table_id')->references('table_id')->on('tables');
             $table->foreign('discount_id')->references('discount_id')->on('discounts');
             $table->foreign('restaurant_id')->references('restaurant_id')->on('restaurants');
+            $table->timestamps();
         });
     }
 

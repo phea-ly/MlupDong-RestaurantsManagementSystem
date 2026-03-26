@@ -1,68 +1,34 @@
-const SESSION_KEY = 'auth_session'
-
-
-// ── Save / clear session ────────────────────────────────────────────
-export function saveSession(user) {
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(user))
+// Save / clear auth state in localStorage
+export function saveSession(data) {
+  if (data) {
+    localStorage.setItem('auth_session', JSON.stringify(data))
+  } else {
+    localStorage.removeItem('auth_session')
+  }
 }
 
 export function clearSession() {
-  sessionStorage.removeItem(SESSION_KEY)
+  localStorage.removeItem('auth_session')
 }
 
 export function getSessionUser() {
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY)
-    return raw ? JSON.parse(raw) : null
+    const stored = localStorage.getItem('auth_session')
+    return stored ? JSON.parse(stored) : null
   } catch {
     return null
   }
 }
 
-export function getToken() {
-  return getSessionUser()?.token ?? null
-}
-
-// ── Auth state ──────────────────────────────────────────────────────
-export function isAuthenticated() {
-  return !!getSessionUser()
-}
-
 export function getUserRole() {
-  return getSessionUser()?.role ?? null
+  return getSessionUser()?.user?.role ?? null
 }
 
-// ── Route helper ────────────────────────────────────────────────────
 export function getDashboardPathByRole() {
   const role = getUserRole()
-  if (role === 'admin') return '/home/admin-dashboard'
-  return '/home/admin-dashboard' 
-}
-
-// ── Auth actions ────────────────────────────────────────────────────
-export async function loginSession({ email, password }) {
-
-  if (email === 'admin@test.com' && password === 'password') {
-    saveSession({ name: 'Admin User', email, role: 'admin' })
-    return
+  switch (role) {
+    case 'admin':   return '/home/admin-dashboard'
+    case 'manager': return '/home/admin-dashboard'
+    default:        return '/home/admin-dashboard'
   }
-  if (email === 'staff@test.com' && password === 'password') {
-    saveSession({ name: 'Sophal K.', email, role: 'staff' })
-    return
-  }
-  throw new Error('Invalid email or password')
-}
-
-export async function registerSession({ name, email, password }) {
-
-  const role = email.includes('admin') ? 'admin' : 'admin'
-  saveSession({ name, email, role })
-}
-
-export async function logoutSession() {
-  clearSession()
-}
-
-export async function syncAuthSession() {
-  return isAuthenticated()
 }

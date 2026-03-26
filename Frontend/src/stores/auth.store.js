@@ -1,87 +1,161 @@
+<<<<<<< HEAD
 import { defineStore } from "pinia";
 // import api from "@/plugins/axios";
 import * as authApi from "@/api/auth.api"
+=======
+import { defineStore } from 'pinia'
+import * as authApi    from '@/api/auth.api'
+import {
+  saveSession,
+  clearSession,
+  getSessionUser,
+} from '../utils/auth'
+>>>>>>> 8ed2408b52b97c510cf4fd173bbb935521af3f51
 
-export const useAuthStore = defineStore("auth", {
-  state: () => ({
-    user:  JSON.parse(localStorage.getItem("user")) ?? null,
-    token: localStorage.getItem("token")            ?? null,
-  }),
+export const useAuthStore = defineStore('auth', {
+
+  state: () => {
+    const session = getSessionUser()
+    return {
+      user:    session?.user  ?? null,
+      loading: false,
+      error:   null,
+      errors:  {},
+      hasChecked: false,
+    }
+  },
 
   getters: {
-    isAuthenticated: (state) => !!state.token,
+    isAuthenticated: (state) => !!state.user,
+    fullName:        (state) => `${state.user?.first_name ?? ''} ${state.user?.last_name ?? ''}`.trim(),
+    userEmail:       (state) => state.user?.email ?? '',
+    avatar:          (state) => state.user?.avatar ?? null,
+    role:            (state) => state.user?.role?.name || state.user?.role?.role_name || state.user?.role || null,
   },
 
   actions: {
-    async login(email, password) {
-      const { data } = await authApi.loginApi({ email, password });
-      if (!data.token) throw new Error("No token received");
 
-      this.token = data.token;
-      this.user  = data.user ?? null;
+    _persistUser(user) {
+      this.user  = user
+      saveSession({ user })
+    },
 
-      localStorage.setItem("token", data.token);
-      if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+    _patchUser(partial = {}) {
+      this.user = { ...this.user, ...partial }
+      saveSession({ user: this.user })
+    },
+
+    clearError() {
+      this.error  = null
+      this.errors = {}
+    },
+
+    clearSession() {
+      this.user  = null
+      this.hasChecked = true
+      clearSession()
     },
 
     async logout() {
-      this.token = null;
-      this.user  = null;
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      api.post("/logout").catch(() => {});
+      this.clearSession()
+      authApi.logoutApi().catch(() => {})
     },
-    // Called in App.vue on mount so the profile is always up-to-date after refresh.
-    async fetchUser() {
+
+    async login(email, password) {
+      this.loading = true
+      this.error   = null
+      this.errors  = {}
       try {
-        const { data } = await api.get("/user")
-        this.user = data
-        localStorage.setItem("user", JSON.stringify(data))
-      } catch {
-        this.token = null
-        this.user  = null
-        localStorage.removeItem("token")
-        localStorage.removeItem("user")
+        const { data } = await authApi.loginApi({ email, password })
+        this._persistUser(data.user ?? null)
+        this.hasChecked = true
+        return data
+      } catch (err) {
+        this.error  = err.message
+        this.errors = err.errors ?? {}
+        throw err
+      } finally {
+        this.loading = false
       }
     },
 
-    // Instantly show local preview in AppBar while upload is in-flight
-    patchAvatar(avatarUrl) {
-      if (!this.user) return;
-      this.user = { ...this.user, avatar: avatarUrl };
+    async fetchUser() {
+      this.loading = true
+      try {
+        const { data } = await authApi.fetchApi()
+        this._persistUser(data.user ?? data)
+      } catch {
+        // 401 is handled by the axios interceptor (clears session + redirects)
+      } finally {
+        this.loading = false
+        this.hasChecked = true
+      }
+    },
+
+    async ensureAuthChecked() {
+      if (this.hasChecked) return
+      await this.fetchUser()
     },
 
     async updateProfile(payload) {
-      let response;
-
-      if (payload.avatar instanceof File) {
-        const form = new FormData();
-        if (payload.first_name) form.append("first_name", payload.first_name);
-        if (payload.last_name)  form.append("last_name",  payload.last_name);
-        form.append("avatar",  payload.avatar);
-        form.append("_method", "PUT");
-
-        response = await api.post("/user", form, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-      } else {
-        response = await api.put("/user", payload);
+      this.loading = true
+      this.error   = null
+      this.errors  = {}
+      try {
+        const { data } = await authApi.updateApi(payload)
+        this._patchUser(data.user ?? data)
+      } catch (err) {
+        this.error  = err.message ?? 'Failed to update profile.'
+        this.errors = err.errors  ?? {}
+        throw err
+      } finally {
+        this.loading = false
       }
+    },
 
-      const serverUser = response.data.user ?? {};
+    async updateAvatar(payload) {
+      this.loading = true
+      this.error   = null
+      try {
+        const { data } = await authApi.putApi('/user/avatar', payload)
+        this._patchUser(data.user ?? data)
+      } catch (err) {
+        this.error = err.message ?? 'Failed to update avatar.'
+        throw err
+      } finally {
+        this.loading = false
+      }
+    },
 
-      const updatedUser = {
-        ...this.user,
-        ...serverUser,
-        avatar: serverUser.avatar ?? this.user?.avatar ?? null,
-      };
-
-      this.user = updatedUser;
-      localStorage.setItem("user", JSON.stringify(updatedUser));
+    async updateEmail(payload) {
+      this.loading = true
+      this.error   = null
+      this.errors  = {}
+      try {
+        const { data } = await authApi.putApi('/user/email', payload)
+        this._patchUser(data.user ?? data)
+      } catch (err) {
+        this.error  = err.message ?? 'Failed to update email.'
+        this.errors = err.errors  ?? {}
+        throw err
+      } finally {
+        this.loading = false
+      }
     },
 
     async updatePassword(payload) {
-      await api.put("/user/password", payload);
+      this.loading = true
+      this.error   = null
+      this.errors  = {}
+      try {
+        await authApi.updatePasswordApi(payload)
+      } catch (err) {
+        this.error  = err.message ?? 'Failed to update password.'
+        this.errors = err.errors  ?? {}
+        throw err
+      } finally {
+        this.loading = false
+      }
     },
   },
-});
+})

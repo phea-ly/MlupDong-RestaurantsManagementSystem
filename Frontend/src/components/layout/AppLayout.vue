@@ -111,13 +111,11 @@ async function saveProfile() {
     </v-main>
 
     <!-- ── Edit Profile Dialog ── -->
-    <v-dialog v-model="editDialog" max-width="480" persistent rounded="xl">
+    <v-dialog v-model="editDialog"  persistent rounded="xl">
       <v-card rounded="xl" elevation="0">
 
         <v-card-title class="d-flex align-center justify-space-between pt-5 px-6">
           <div>
-            <div class="text-h6 font-weight-black">Account Settings</div>
-            <div class="text-caption text-medium-emphasis">Manage your profile and security</div>
           </div>
           <v-btn icon size="small" variant="text" @click="editDialog = false">
             <v-icon>mdi-close</v-icon>

@@ -51,7 +51,7 @@ function logout() {
 </script>
 
 <template>
-  <v-app-bar flat height="88" color="white" border="b" class="appbar">
+  <v-app-bar flat color="white" border="b" class="appbar">
     <v-app-bar-title>
       <div class="appbar-title">{{ title }}</div>
       <div class="appbar-subtitle">{{ subtitle }}</div>
@@ -79,7 +79,7 @@ function logout() {
           <template #activator="{ props: mp }">
             <v-avatar
               v-bind="mp"
-              size="36"
+              size="40"
               style="cursor:pointer; box-shadow:0 4px 14px rgba(20,184,166,0.35);"
             >
               <v-img
@@ -116,19 +116,6 @@ function logout() {
                 </v-chip>
               </template>
             </v-list-item>
-
-            <v-divider />
-
-            <v-list density="compact" nav class="py-1">
-              <v-list-item
-                prepend-icon="mdi-account-edit-outline"
-                title="Edit Profile"
-                rounded="lg"
-                @click="emit('open-edit', 'profile')"
-              />
-            </v-list>
-
-            <v-divider />
 
             <v-list density="compact" nav class="py-1">
               <v-list-item

@@ -20,10 +20,9 @@ return new class extends Migration
             $table->decimal('unit_price', 10, 2)->nullable();
             $table->decimal('subtotal', 10, 2)->nullable();
             $table->string('note', 255)->nullable();
-            $table->timestamps();
-
-            $table->foreign('order_id')->references('order_id')->on('orders');
+            $table->foreign('order_id')->references('order_id')->on('orders')->cascadeOnUpdate();
             $table->foreign('menu_item_id')->references('menu_item_id')->on('menu_items');
+            $table->timestamps(); // ← only once
         });
     }
 

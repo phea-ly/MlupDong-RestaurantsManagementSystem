@@ -1,6 +1,6 @@
 <script setup>
-const props = defineProps({
-  stats: { type: Object, required: true },
+defineProps({
+  stats: { type: Object, required: true }, // { total, active, inactive }
 })
 </script>
 
@@ -14,13 +14,12 @@ const props = defineProps({
           </v-avatar>
           <div>
             <div class="text-h5 font-weight-black">{{ stats.total }}</div>
-            <div class="text-caption font-weight-bold text-medium-emphasis text-uppercase" style="letter-spacing: 0.06em">
-              Total Categories
-            </div>
+            <div class="stat-label">Total Categories</div>
           </div>
         </v-card-text>
       </v-card>
     </v-col>
+
     <v-col cols="6" sm="4">
       <v-card rounded="xl" border flat>
         <v-card-text class="d-flex align-center ga-3 pa-4">
@@ -29,13 +28,12 @@ const props = defineProps({
           </v-avatar>
           <div>
             <div class="text-h5 font-weight-black">{{ stats.active }}</div>
-            <div class="text-caption font-weight-bold text-medium-emphasis text-uppercase" style="letter-spacing: 0.06em">
-              Active
-            </div>
+            <div class="stat-label">Active</div>
           </div>
         </v-card-text>
       </v-card>
     </v-col>
+
     <v-col cols="6" sm="4">
       <v-card rounded="xl" border flat>
         <v-card-text class="d-flex align-center ga-3 pa-4">
@@ -44,9 +42,7 @@ const props = defineProps({
           </v-avatar>
           <div>
             <div class="text-h5 font-weight-black">{{ stats.inactive }}</div>
-            <div class="text-caption font-weight-bold text-medium-emphasis text-uppercase" style="letter-spacing: 0.06em">
-              Inactive
-            </div>
+            <div class="stat-label">Inactive</div>
           </div>
         </v-card-text>
       </v-card>
@@ -54,3 +50,10 @@ const props = defineProps({
   </v-row>
 </template>
 
+<style scoped>
+.stat-label {
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+  color: rgba(0,0,0,.45);
+}
+</style>

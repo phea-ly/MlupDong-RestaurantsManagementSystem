@@ -1,6 +1,6 @@
 import api from './api'
 
-// ── Menu Items ───
+// ── Menu Items ─────────────────────────────────────────────────────────────
 export const menuItemApi = {
   getAll: () =>
     api.get('/menu-items'),
@@ -33,7 +33,7 @@ export const menuItemApi = {
     api.patch(`/menu/${id}/availability`, { status }),
 }
 
-// ── Categories ────
+// ── Categories ────────────────────────────────────────────────────────────
 export const categoryApi = {
   getAll: () =>
     api.get('/categories'),
@@ -50,3 +50,5 @@ export const categoryApi = {
   destroy: (id) =>
     api.delete(`/categories/${id}`),
 }
+
+export default { menuItemApi, categoryApi }

@@ -1,320 +1,75 @@
 <script setup>
-import { ref } from 'vue'
-import { defineStore, storeToRefs } from 'pinia'
-import ActivityHeader from '@/components/activity/ActivityHeader.vue'
-import ActivityFilters from '@/components/activity/ActivityFilters.vue'
-import ActivityLogTable from '@/components/activity/ActivityLogTable.vue'
-import ActivityTrends from '@/components/activity/ActivityTrends.vue'
+import { onMounted }        from 'vue'
+import { storeToRefs }      from 'pinia'
+import { useActivityStore } from '@/stores/activity.store'
 
-const useActivityStore = defineStore("activity", () => {
-  const summary = ref({
-    totalEntries: 356,
-    dbSize: "4.25 MB",
-  });
+import ActivityHeader       from '@/components/activity/ActivityHeader.vue'
+import ActivityFilters      from '@/components/activity/ActivityFilters.vue'
+import ActivityLogTable     from '@/components/activity/ActivityLogTable.vue'
+import ActivityTrends       from '@/components/activity/ActivityTrends.vue'
 
-  const logItems = ref([
-    {
-      id: 642,
-      relativeTime: "39 minutes ago",
-      timestamp: "12/06/2025, 13:40:44",
-      user: { name: "admin (alp_adm_ms4oh5k5)", role: "administrator" },
-      ip: "194.35.123.xxx",
-      ipInfo: {
-        location: "Dublin, Leinster, IE",
-        postalCode: "D02",
-        coordinates: "53.XXXX, -6.XXXX",
-        organization: "AS136787 PacketHub S.A.",
-        timezone: "Europe/Dublin",
-      },
-      event: "Media",
-      object: "Activity Log Pro - Wordpress Event Tracker (attachment)",
-      action: "updated",
-      description: 'Media file "Activity Log Pro - Wordpress Event Tracker" updated',
-      details: {
-        basic: {
-          logId: 2672,
-          createdAt: "19/06/2025, 10:48:03",
-          eventType: "User",
-          action: "login",
-          description: "User Logged In: darrentest",
-        },
-        user: {
-          id: 5,
-          username: "darrentest",
-          displayName: "darrentest",
-          role: "wpseo_editor",
-          profile: "darrentest",
-        },
-        network: {
-          ip: "192.168.1.1",
-          userAgent: "N/A",
-          referer: "N/A",
-          requestMethod: "N/A",
-          requestUri: "N/A",
-        },
-        target: {
-          type: "user",
-          id: 5,
-          name: "darrentest",
-          status: "Logged In",
-          previousStatus: "Logged Out",
-        },
-        rawFields: [
-          { key: "id", value: 2672 },
-          { key: "ip_address", value: "192.168.1.1" },
-          { key: "event_type", value: "user" },
-          { key: "action", value: "login" },
-          { key: "description", value: "User Logged In: darrentest" },
-          { key: "created_at", value: "2025-06-19 10:48:03" },
-          { key: "metadata", value: "-" },
-        ],
-      },
-    },
-    {
-      id: 640,
-      relativeTime: "39 minutes ago",
-      timestamp: "12/06/2025, 13:40:43",
-      user: { name: "admin (alp_adm_ms4oh5k5)", role: "administrator" },
-      ip: "194.35.123.xxx",
-      ipInfo: {
-        location: "Dublin, Leinster, IE",
-        postalCode: "D02",
-        coordinates: "53.XXXX, -6.XXXX",
-        organization: "AS136787 PacketHub S.A.",
-        timezone: "Europe/Dublin",
-      },
-      event: "Media",
-      object: "alp-logo-final-web (attachment)",
-      action: "updated",
-      description: 'Media file "alp-logo-final-web" updated',
-      details: {
-        basic: {
-          logId: 2669,
-          createdAt: "19/06/2025, 10:43:56",
-          eventType: "User",
-          action: "login_failed_nonexistent",
-          description: "Failed Login Attempt (non-existing user): admin",
-        },
-        user: {
-          id: 0,
-          username: "system",
-          displayName: "System",
-          role: "system",
-          profile: "system",
-        },
-        network: {
-          ip: "192.168.1.1",
-          userAgent: "N/A",
-          referer: "N/A",
-          requestMethod: "POST",
-          requestUri: "/wp-login.php",
-        },
-        target: {
-          type: "user",
-          id: "-",
-          name: "admin",
-          status: "Login Failed",
-          previousStatus: "-",
-        },
-        rawFields: [
-          { key: "id", value: 2669 },
-          { key: "ip_address", value: "192.168.1.1" },
-          { key: "event_type", value: "user" },
-          { key: "action", value: "login_failed_nonexistent" },
-          { key: "description", value: "Failed Login Attempt (non-existing user): admin" },
-          { key: "created_at", value: "2025-06-19 10:43:56" },
-          { key: "metadata", value: "-" },
-        ],
-      },
-    },
-    {
-      id: 639,
-      relativeTime: "39 minutes ago",
-      timestamp: "12/06/2025, 13:40:40",
-      user: { name: "admin (alp_adm_ms4oh5k5)", role: "administrator" },
-      ip: "194.35.123.xxx",
-      ipInfo: {
-        location: "Dublin, Leinster, IE",
-        postalCode: "D02",
-        coordinates: "53.XXXX, -6.XXXX",
-        organization: "AS136787 PacketHub S.A.",
-        timezone: "Europe/Dublin",
-      },
-      event: "Media",
-      object: "alp-logo-final-web (attachment)",
-      action: "added",
-      description: 'Media file "alp-logo-final-web" uploaded',
-      details: {
-        basic: {
-          logId: 2667,
-          createdAt: "19/06/2025, 10:35:39",
-          eventType: "Option",
-          action: "updated",
-          description: 'Option "sticky_posts" changed from "[array]" to "[array]"',
-        },
-        user: {
-          id: 12,
-          username: "darrenmc",
-          displayName: "Darren Mc",
-          role: "administrator",
-          profile: "darrenmc",
-        },
-        network: {
-          ip: "192.168.1.1",
-          userAgent: "Mozilla/5.0",
-          referer: "https://example.com/wp-admin",
-          requestMethod: "POST",
-          requestUri: "/wp-admin/options.php",
-        },
-        target: {
-          type: "option",
-          id: "sticky_posts",
-          name: "sticky_posts",
-          status: "updated",
-          previousStatus: "updated",
-        },
-        rawFields: [
-          { key: "id", value: 2667 },
-          { key: "ip_address", value: "192.168.1.1" },
-          { key: "event_type", value: "option" },
-          { key: "action", value: "updated" },
-          { key: "description", value: 'Option "sticky_posts" changed from "[array]" to "[array]"' },
-          { key: "created_at", value: "2025-06-19 10:35:39" },
-          { key: "metadata", value: "-" },
-        ],
-      },
-    },
-    {
-      id: 637,
-      relativeTime: "39 minutes ago",
-      timestamp: "12/06/2025, 13:40:35",
-      user: { name: "admin (alp_adm_ms4oh5k5)", role: "administrator" },
-      ip: "194.35.123.xxx",
-      ipInfo: {
-        location: "Dublin, Leinster, IE",
-        postalCode: "D02",
-        coordinates: "53.XXXX, -6.XXXX",
-        organization: "AS136787 PacketHub S.A.",
-        timezone: "Europe/Dublin",
-      },
-      event: "Media",
-      object: "Activity Log Pro - Wordpress Event Tracker (attachment)",
-      action: "deleted",
-      description: 'Media file "Activity Log Pro - Wordpress Event Tracker" deleted',
-      details: {
-        basic: {
-          logId: 2663,
-          createdAt: "19/06/2025, 10:34:30",
-          eventType: "Plugin",
-          action: "updated",
-          description: "Plugin Updated: Yoast SEO to version 25.3.1",
-        },
-        user: {
-          id: 3,
-          username: "darrenmc",
-          displayName: "Darren Mc",
-          role: "administrator",
-          profile: "darrenmc",
-        },
-        network: {
-          ip: "192.168.1.1",
-          userAgent: "Mozilla/5.0",
-          referer: "https://example.com/wp-admin",
-          requestMethod: "POST",
-          requestUri: "/wp-admin/update.php",
-        },
-        target: {
-          type: "plugin",
-          id: "yoast-seo",
-          name: "Yoast SEO",
-          status: "updated",
-          previousStatus: "active",
-        },
-        rawFields: [
-          { key: "id", value: 2663 },
-          { key: "ip_address", value: "192.168.1.1" },
-          { key: "event_type", value: "plugin" },
-          { key: "action", value: "updated" },
-          { key: "description", value: "Plugin Updated: Yoast SEO to version 25.3.1" },
-          { key: "created_at", value: "2025-06-19 10:34:30" },
-          { key: "metadata", value: "-" },
-        ],
-      },
-    },
-    {
-      id: 630,
-      relativeTime: "42 minutes ago",
-      timestamp: "12/06/2025, 13:37:56",
-      user: { name: "admin (alp_adm_ms4oh5k5)", role: "administrator" },
-      ip: "194.35.123.xxx",
-      ipInfo: {
-        location: "Dublin, Leinster, IE",
-        postalCode: "D02",
-        coordinates: "53.XXXX, -6.XXXX",
-        organization: "AS136787 PacketHub S.A.",
-        timezone: "Europe/Dublin",
-      },
-      event: "Media",
-      object: "Activity Log Pro - Wordpress Event Tracker (attachment)",
-      action: "updated",
-      description: 'Media file "Activity Log Pro - Wordpress Event Tracker" updated',
-      details: {
-        basic: {
-          logId: 2662,
-          createdAt: "19/06/2025, 10:34:24",
-          eventType: "WooCommerce",
-          action: "updated",
-          description: "Plugin Updated: WooCommerce to version 9.9.4",
-        },
-        user: {
-          id: 4,
-          username: "darrenmc",
-          displayName: "Darren Mc",
-          role: "administrator",
-          profile: "darrenmc",
-        },
-        network: {
-          ip: "192.168.1.1",
-          userAgent: "Mozilla/5.0",
-          referer: "https://example.com/wp-admin",
-          requestMethod: "POST",
-          requestUri: "/wp-admin/update.php",
-        },
-        target: {
-          type: "plugin",
-          id: "woocommerce",
-          name: "WooCommerce",
-          status: "updated",
-          previousStatus: "active",
-        },
-        rawFields: [
-          { key: "id", value: 2662 },
-          { key: "ip_address", value: "192.168.1.1" },
-          { key: "event_type", value: "plugin" },
-          { key: "action", value: "updated" },
-          { key: "description", value: "Plugin Updated: WooCommerce to version 9.9.4" },
-          { key: "created_at", value: "2025-06-19 10:34:24" },
-          { key: "metadata", value: "-" },
-        ],
-      },
-    },
-  ]);
+const store = useActivityStore()
 
-  return {
-    summary,
-    logItems,
-  };
-});
+const {
+  logs, summary, loading, snackbar, meta, filters,
+  EVENT_TYPES, ACTIONS,
+  trendData, topActions, recentDays,
+} = storeToRefs(store)
 
-const activityStore = useActivityStore()
-const { summary, logItems } = storeToRefs(activityStore)
+const {
+  init, fetchLogs,
+  deleteLog,
+  applyFilters, resetFilters,
+} = store
+
+onMounted(init)
 </script>
 
 <template>
   <v-container fluid class="pa-0">
-    <ActivityHeader />
-    <ActivityFilters :summary="summary" />
-    <ActivityLogTable :items="logItems" />
-    <ActivityTrends />
+
+    <ActivityHeader
+      :total="summary.total_entries"
+      :db-size-mb="summary.db_size_mb"
+      @refresh="init"
+    />
+
+    <ActivityFilters
+      :filters="filters"
+      :event-types="EVENT_TYPES"
+      :actions="ACTIONS"
+      :loading="loading"
+      :summary="summary"
+      @apply="applyFilters"
+      @reset="resetFilters"
+    />
+
+    <ActivityLogTable
+      :items="logs"
+      :loading="loading"
+      :meta="meta"
+      @page-change="({ page, perPage }) => fetchLogs(page, perPage)"
+      @delete="deleteLog"
+    />
+
+    <ActivityTrends
+      :trend-data="trendData"
+      :top-actions="topActions"
+      :recent-days="recentDays"
+    />
+
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      location="bottom right"
+      :timeout="3000"
+      rounded="lg"
+    >
+      {{ snackbar.message }}
+      <template #actions>
+        <v-btn variant="text" icon="mdi-close" size="small" @click="snackbar.show = false" />
+      </template>
+    </v-snackbar>
+
   </v-container>
 </template>

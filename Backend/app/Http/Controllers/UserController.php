@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Staff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -36,6 +37,8 @@ class UserController extends Controller
 
         $validated['password'] = Hash::make($validated['password']);
         $user = User::query()->create($validated);
+        $user->load(['role', 'staff']);
+        $this->syncStaffRecord($user);
 
         return response()->json($user->load(['role', 'restaurant', 'staff']), 201);
     }
@@ -83,6 +86,8 @@ class UserController extends Controller
         }
 
         $user->update($validated);
+        $user->load(['role', 'staff']);
+        $this->syncStaffRecord($user);
 
         return response()->json($user->load(['role', 'restaurant', 'staff']));
     }
@@ -90,8 +95,33 @@ class UserController extends Controller
     public function destroy(string $id)
     {
         $user = User::query()->findOrFail($id);
+        $authId = auth('api')->id();
+        if ($authId && (int) $authId === (int) $user->user_id) {
+            return response()->json(['message' => 'You cannot delete your own account.'], 403);
+        }
         $user->delete();
 
         return response()->noContent();
+    }
+
+    private function syncStaffRecord(User $user): void
+    {
+        $roleName = strtoupper((string) ($user->role?->role_name ?? $user->role ?? ''));
+        $adminRoles = ['ADMIN', 'ADMINISTRATOR'];
+
+        if (in_array($roleName, $adminRoles, true)) {
+            if ($user->staff) {
+                $user->staff()->delete();
+            }
+            return;
+        }
+
+        if (! $user->staff) {
+            Staff::query()->create([
+                'user_id'   => $user->user_id,
+                'position'  => $roleName !== '' ? $roleName : null,
+                'is_active' => true,
+            ]);
+        }
     }
 }
