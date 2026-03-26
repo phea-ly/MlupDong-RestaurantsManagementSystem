@@ -1,16 +1,23 @@
-let memorySession = null
-
-// Save / clear in-memory auth state (no storage)
+// Save / clear auth state in localStorage
 export function saveSession(data) {
-  memorySession = data ?? null
+  if (data) {
+    localStorage.setItem('auth_session', JSON.stringify(data))
+  } else {
+    localStorage.removeItem('auth_session')
+  }
 }
 
 export function clearSession() {
-  memorySession = null
+  localStorage.removeItem('auth_session')
 }
 
 export function getSessionUser() {
-  return memorySession
+  try {
+    const stored = localStorage.getItem('auth_session')
+    return stored ? JSON.parse(stored) : null
+  } catch {
+    return null
+  }
 }
 
 export function getUserRole() {

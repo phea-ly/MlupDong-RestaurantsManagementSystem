@@ -24,7 +24,7 @@ export const useAuthStore = defineStore('auth', {
     fullName:        (state) => `${state.user?.first_name ?? ''} ${state.user?.last_name ?? ''}`.trim(),
     userEmail:       (state) => state.user?.email ?? '',
     avatar:          (state) => state.user?.avatar ?? null,
-    role:            (state) => state.user?.role   ?? null,
+    role:            (state) => state.user?.role?.name || state.user?.role?.role_name || state.user?.role || null,
   },
 
   actions: {

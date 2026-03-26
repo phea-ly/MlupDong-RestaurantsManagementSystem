@@ -4,7 +4,7 @@
 import axios from 'axios'
 
 const publicHttp = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api",
   headers: { Accept: 'application/json' },
 })
 
@@ -30,7 +30,16 @@ export const kdsApi = {
   getActiveOrders: () =>
     publicHttp.get('/kds/orders'),
 
-  // PATCH /kds/orders/{id}/status — body: { status: 'received' | 'confirmed' | ... }
+  // PATCH /kds/orders/{id}/status
   updateStatus: (id, status) =>
     publicHttp.patch(`/kds/orders/${id}/status`, { status }),
+}
+
+// ── Waiter/Authenticated: order management ──────────────────────────────────
+import api from './api'
+export const order = {
+  getAll: () => api.get('/orders'),
+  create: (payload) => api.post('/orders', payload),
+  update: (id, payload) => api.patch(`/orders/${id}`, payload),
+  delete: (id) => api.delete(`/orders/${id}`),
 }

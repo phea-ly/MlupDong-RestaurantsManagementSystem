@@ -15,7 +15,7 @@ class OrderController extends Controller
 {
     public function index()
     {
-        $orders = Cache::tags(['orders'])->remember(
+        $orders = Cache::remember(
             'orders_all',
             300,
             fn() =>
@@ -31,35 +31,69 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'order_number'   => ['nullable', 'string', 'max:50', 'unique:orders,order_number'],
-            'order_type'     => ['required', Rule::in(['dine_in', 'takeaway', 'delivery'])],
-            'total_amount'   => ['nullable', 'numeric', 'min:0'],
-            'tax'            => ['nullable', 'numeric', 'min:0'],
-            'final_amount'   => ['nullable', 'numeric', 'min:0'],
-            'payment_status' => ['nullable', Rule::in(['pending', 'paid', 'cancelled'])],
-            'order_status'   => ['nullable', Rule::in(['new', 'received', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'])],
-            'user_id'        => ['nullable', 'exists:users,user_id'],
-            'table_id'       => ['nullable', 'exists:tables,table_id'],
-            'discount_id'    => ['nullable', 'exists:discounts,discount_id'],
-            'restaurant_id'  => ['nullable', 'exists:restaurants,restaurant_id'],
+            'order_type'           => ['required', Rule::in(['dine_in', 'takeaway', 'delivery'])],
+            'table_id'             => ['nullable', 'exists:tables,table_id'],
+            'user_id'              => ['nullable', 'exists:users,user_id'],
+            'restaurant_id'        => ['nullable', 'exists:restaurants,restaurant_id'],
+            'special_instructions' => ['nullable', 'string', 'max:500'],
+            'items'                => ['required', 'array', 'min:1'],
+            'items.*.menu_item_id' => ['required', 'exists:menu_items,menu_item_id'],
+            'items.*.quantity'     => ['required', 'integer', 'min:1'],
+            'items.*.note'         => ['nullable', 'string', 'max:255'],
         ]);
 
         try {
             $order = DB::transaction(function () use ($validated) {
-                if (empty($validated['order_number'])) {
-                    $validated['order_number'] = 'ORD-' . strtoupper(Str::random(8));
+                // Fetch menu items to calculate price
+                $ids       = collect($validated['items'])->pluck('menu_item_id');
+                $menuItems = \App\Models\MenuItem::whereIn('menu_item_id', $ids)->get()->keyBy('menu_item_id');
+
+                $subtotal = 0;
+                foreach ($validated['items'] as $itemData) {
+                    $menuItem = $menuItems[$itemData['menu_item_id']] ?? null;
+                    if (!$menuItem) throw new \Exception("Menu item #{$itemData['menu_item_id']} not found.");
+                    $subtotal += $menuItem->price * $itemData['quantity'];
                 }
 
-                return Order::create($validated);
+                $tax   = round($subtotal * 0.10, 2);
+                $total = round($subtotal + $tax, 2);
+
+                $order = Order::create([
+                    'order_number'         => 'ORD-' . strtoupper(Str::random(8)),
+                    'order_type'           => $validated['order_type'],
+                    'table_id'             => $validated['table_id'] ?? null,
+                    'user_id'              => $validated['user_id'] ?? null,
+                    'restaurant_id'        => $validated['restaurant_id'] ?? null,
+                    'order_status'         => 'new',
+                    'payment_status'       => 'pending',
+                    'total_amount'         => $subtotal,
+                    'tax'                  => $tax,
+                    'final_amount'         => $total,
+                    'special_instructions' => $validated['special_instructions'] ?? null,
+                ]);
+
+                foreach ($validated['items'] as $itemData) {
+                    $menuItem = $menuItems[$itemData['menu_item_id']];
+                    $order->orderItems()->create([
+                        'menu_item_id' => $menuItem->menu_item_id,
+                        'quantity'     => $itemData['quantity'],
+                        'unit_price'   => $menuItem->price,
+                        'subtotal'     => round($menuItem->price * $itemData['quantity'], 2),
+                        'note'         => $itemData['note'] ?? null,
+                    ]);
+                }
+
+                return $order;
             });
 
-            Cache::tags(['orders'])->flush();
+            Cache::forget('orders_all');
 
-            $payload = KdsPayload::fromOrder($order);
+            // Broadcast to KDS
+            $payload = KdsPayload::fromOrder($order->load(['table', 'orderItems.menuItem']));
             event(new KdsOrderEvent('order.created', $payload));
 
             return response()->json(
-                $order->load(['user', 'table', 'discount', 'restaurant', 'orderItems', 'payments', 'statusLogs']),
+                $order->load(['user', 'table', 'discount', 'restaurant', 'orderItems.menuItem', 'payments', 'statusLogs']),
                 201
             );
         } catch (\Exception $e) {
@@ -69,7 +103,7 @@ class OrderController extends Controller
 
     public function show(string $id)
     {
-        $order = Cache::tags(['orders'])->remember(
+        $order = Cache::remember(
             "order_{$id}",
             300,
             fn() =>
@@ -102,7 +136,9 @@ class OrderController extends Controller
 
         $order->update($validated);
 
-        Cache::tags(['orders'])->flush();
+        Cache::forget('orders_all');
+        Cache::forget("order_{$id}");
+        Cache::forget('kds_active_orders');
 
         $payload = KdsPayload::fromOrder($order);
         event(new KdsOrderEvent('order.status.updated', $payload));
@@ -120,7 +156,9 @@ class OrderController extends Controller
         $order->orderItems()->delete();
         $order->delete();
 
-        Cache::tags(['orders'])->flush();
+        Cache::forget('orders_all');
+        Cache::forget("order_{$id}");
+        Cache::forget('kds_active_orders');
 
         return response()->noContent();
     }

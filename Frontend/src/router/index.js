@@ -80,6 +80,12 @@ const routes = [
     component: () => import("@/views/customer/customerMenu.vue"),
   },
   {
+    path: "/waiter",
+    name: "waiter-dashboard",
+    meta: { requiresAuth: true },
+    component: () => import("@/views/waiter/waiterApp.vue"),
+  },
+  {
     path: "/order/:token",
     name: "customer-order",
     component: () => import("@/views/customer/customerOrder.vue"),

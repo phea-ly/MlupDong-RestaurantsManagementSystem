@@ -20,7 +20,14 @@ async function login() {
   if (!email.value || !password.value) return
   try {
     await authStore.login(email.value, password.value)
-    router.push('/home')
+    
+    // Role-based redirect
+    const role = authStore.role?.toUpperCase() || ''
+    if (['WAITRESS', 'SERVER', 'WAITER'].includes(role)) {
+      router.push('/waiter')
+    } else {
+      router.push('/home')
+    }
   } catch {
     // error already set in store - shown by v-alert
   }
