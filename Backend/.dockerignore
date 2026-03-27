@@ -1,4 +1,4 @@
-/vendor/
+ignore/vendor/
 /node_modules/
 .env
 .env.backup
@@ -7,10 +7,6 @@
 .phpunit.cache
 /.vscode/
 /.idea/
-/storage/logs/
-/storage/framework/cache/
-/storage/framework/sessions/
-/storage/framework/views/
 /*.log
 docker-compose.yml
 Dockerfile
