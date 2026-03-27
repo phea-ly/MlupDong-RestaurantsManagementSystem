@@ -1,15 +1,8 @@
 <script setup>
-<<<<<<< HEAD
-import { onMounted, onUnmounted } from "vue";
-import { storeToRefs } from "pinia";
-import { useKdsStore } from "@/stores/kds.store.js";
-import OrderCard from "./OrderCard.vue";
-=======
 import { computed, onMounted, onUnmounted } from 'vue'
 import { storeToRefs }  from 'pinia'
 import { useKdsStore }  from '@/stores/kds.store'
 import OrderCard        from '@/components/kds/OrderCard.vue'
->>>>>>> 8ed2408b52b97c510cf4fd173bbb935521af3f51
 
 const store = useKdsStore()
 
