@@ -35,9 +35,14 @@ jobs:
           build-args: |
             VITE_API_URL=${{ secrets.PROD_API_URL }}
             VITE_API_BASE_URL=${{ secrets.PROD_API_URL }}
+            VITE_REVERB_APP_KEY=${{ secrets.VITE_REVERB_APP_KEY }}
+            VITE_REVERB_HOST=${{ secrets.VITE_REVERB_HOST }}
+            VITE_REVERB_PORT=${{ secrets.VITE_REVERB_PORT }}
+            VITE_REVERB_SCHEME=${{ secrets.VITE_REVERB_SCHEME }}
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/mlupdong_frontend:latest
             ${{ secrets.DOCKER_USERNAME }}/mlupdong_frontend:${{ github.sha }}
+
 
       - name: Build & Push Webserver
         uses: docker/build-push-action@v5
