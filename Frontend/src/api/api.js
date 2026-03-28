@@ -2,7 +2,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL:         import.meta.env.VITE_API_URL ?? '/api',
+  baseURL: import.meta.env.VITE_API_URL ?? '/api',
   withCredentials: true,
   headers: {
     Accept: 'application/json',
@@ -19,7 +19,7 @@ api.interceptors.response.use(
     if (!response) {
       return Promise.reject({
         message: 'Network error - check your connection.',
-        errors:  {},
+        errors: {},
       })
     }
 
@@ -42,7 +42,7 @@ api.interceptors.response.use(
     if (status === 422) {
       return Promise.reject({
         message: data?.message ?? 'Validation failed.',
-        errors:  data?.errors  ?? {},
+        errors: data?.errors ?? {},
       })
     }
 
@@ -53,7 +53,7 @@ api.interceptors.response.use(
 
     return Promise.reject({
       message: data?.message ?? 'An error occurred.',
-      errors:  data?.errors  ?? {},
+      errors: data?.errors ?? {},
     })
   }
 )

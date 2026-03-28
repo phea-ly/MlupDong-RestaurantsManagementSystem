@@ -141,8 +141,6 @@ function startOrderWithTable(tableId) {
         @reset-table="selectedTableId = null"
       />
 
-      <Report v-else-if="currentView === 'Reports'" />
-
       <FloorPlan 
         v-else-if="currentView === 'Floor Plan'" 
         @start-order="startOrderWithTable"

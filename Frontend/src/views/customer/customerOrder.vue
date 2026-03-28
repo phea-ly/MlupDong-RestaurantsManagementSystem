@@ -245,53 +245,61 @@ watch(showSuccess, (val) => {
 
     <!-- Checkout panel -->
     <v-slide-y-reverse-transition>
-      <div v-if="cartStore.items.length > 0 && !showSuccess" class="checkout-panel rounded-t-3xl pt-7 pb-9 px-6">
+      <div v-if="cartStore.items.length > 0 && !showSuccess" class="checkout-panel pt-8 pb-10 px-6">
 
         <!-- Estimated wait -->
-        <v-card class="wait-time-card rounded-xl pa-4 mb-5 d-flex align-center ga-3" color="#f0f7f2" elevation="0">
-          <v-icon color="#215732" size="28">mdi-clock-outline</v-icon>
-          <div>
-            <div class="text-caption text-grey-darken-1 font-weight-bold">Estimated wait time</div>
-            <div class="text-h6 font-weight-black text-green-darken-4">
+        <div class="wait-time-box rounded-xl pa-4 mb-6 d-flex align-center">
+          <v-icon color="#194c25" size="28" class="mr-4">mdi-clock-outline</v-icon>
+          <div class="flex-grow-1">
+            <div class="text-caption font-weight-bold text-grey-darken-1 mb-1" style="font-size: 13px !important;">
+              Estimated wait time
+            </div>
+            <div class="text-h6 font-weight-black" style="color: #194c25; line-height: 1;">
               {{ estimatedWait ? `~${estimatedWait} min` : 'Calculating...' }}
             </div>
           </div>
-          <v-spacer />
-          <div class="text-caption text-grey text-right" style="max-width:90px;line-height:1.3">
-            {{ activeOrdersAhead }} orders ahead
+          <div class="text-right text-caption font-weight-medium" style="color: #8c9c93; line-height: 1.3;">
+            <div>{{ activeOrdersAhead }} orders</div>
+            <div>ahead</div>
           </div>
-        </v-card>
+        </div>
 
         <!-- Billing -->
-        <div class="billing-details mb-7">
-          <div class="d-flex justify-space-between mb-3 px-1">
-            <span class="text-body-2 text-grey-darken-1 font-weight-bold">Subtotal</span>
-            <span class="text-body-2 font-weight-black">${{ cartStore.cartSubtotal.toFixed(2) }}</span>
+        <div class="billing-details mb-6">
+          <div class="d-flex justify-space-between mb-4 px-1">
+            <span class="text-body-1 text-grey-darken-1 font-weight-bold" style="font-size: 15px !important;">Subtotal</span>
+            <span class="text-body-1 font-weight-black text-grey-darken-4" style="font-size: 16px !important;">${{ cartStore.cartSubtotal.toFixed(2) }}</span>
           </div>
-          <div class="d-flex justify-space-between mb-3 px-1">
-            <span class="text-body-2 text-grey-darken-1 font-weight-bold">Service Tax (10%)</span>
-            <span class="text-body-2 font-weight-black">${{ cartStore.cartTax.toFixed(2) }}</span>
+          <div class="d-flex justify-space-between mb-4 px-1">
+            <span class="text-body-1 text-grey-darken-1 font-weight-bold" style="font-size: 15px !important;">Service Tax (10%)</span>
+            <span class="text-body-1 font-weight-black text-grey-darken-4" style="font-size: 16px !important;">${{ cartStore.cartTax.toFixed(2) }}</span>
           </div>
-          <v-divider class="my-4" style="border-style:dashed;border-color:#cbd5e1" />
-          <div class="d-flex justify-space-between align-center px-1">
-            <span class="text-h6 font-weight-black text-grey-darken-4">Total Amount</span>
-            <span class="text-h5 font-weight-black text-green-darken-4">${{ cartStore.cartTotal.toFixed(2) }}</span>
+          <v-divider class="my-4" style="border-style: dashed; border-color: #e2e8f0; opacity: 1;"></v-divider>
+          <div class="d-flex justify-space-between align-center px-1 mb-2">
+            <span class="text-h6 font-weight-black text-grey-darken-4" style="font-size: 18px !important;">Total Amount</span>
+            <span class="text-h6 font-weight-black" style="color: #194c25;">${{ cartStore.cartTotal.toFixed(2) }}</span>
           </div>
         </div>
 
         <v-btn
-          color="#215732" rounded="xl" block size="x-large"
-          class="font-weight-black elevation-8 checkout-btn py-6"
+          color="#1a472a" 
+          rounded="xl" 
+          block 
+          height="60"
+          class="font-weight-black checkout-btn text-white mb-5"
+          elevation="4"
           :loading="isPlacingOrder"
           @click="placeOrder"
+          style="letter-spacing: 0.5px; font-size: 16px;"
         >
           <span class="mr-2">CONFIRM & PLACE ORDER</span>
-          <v-icon size="22" class="pulse-icon">mdi-silverware-variant</v-icon>
+          <v-icon size="20">mdi-silverware-variant</v-icon>
         </v-btn>
 
-        <div class="text-center mt-5">
-          <v-chip size="x-small" variant="flat" color="#f0f4f2" class="text-grey-darken-1 font-weight-bold px-4">
-            <v-icon start size="12">mdi-lock-outline</v-icon> SECURE ORDERING
+        <div class="text-center">
+          <v-chip size="small" variant="flat" color="#f3f4f6" class="secure-badge px-4">
+            <v-icon start size="14" color="#6b7280" class="mr-1">mdi-lock-outline</v-icon> 
+            SECURE ORDERING
           </v-chip>
         </div>
       </div>
@@ -368,9 +376,11 @@ watch(showSuccess, (val) => {
 .bg-slate-50 { background:#f8fafc !important; }
 .qty-pill { height:36px; }
 .icon-circle { width:36px; height:36px; background:#f0f7f2; border-radius:12px; display:flex; align-items:center; justify-content:center; }
-.checkout-panel { position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto; background:white; z-index:100; border-radius:28px 28px 0 0; box-shadow:0 -18px 40px rgba(0,0,0,.08) !important; }
-.wait-time-card { border:1px solid #c6e9d3 !important; }
-.checkout-btn { background:linear-gradient(135deg,#215732 0%,#153820 100%) !important; }
+.checkout-panel { position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto; background:white; z-index:100; border-radius:32px 32px 0 0; box-shadow:0 -10px 40px rgba(0,0,0,.08) !important; }
+.wait-time-box { background-color:#f2f9f4; border:1px solid #cce8d6; }
+.checkout-btn { background:#1a472a !important; transition: background 0.2s; }
+.checkout-btn:hover { background:#13361f !important; }
+.secure-badge { color:#6b7280 !important; font-weight:700 !important; font-size:11px !important; letter-spacing:0.5px; }
 .pulse-icon { animation:pulse 2s infinite linear; }
 @keyframes pulse { 0%{transform:scale(1);opacity:1} 50%{transform:scale(1.1);opacity:.8} 100%{transform:scale(1);opacity:1} }
 .glass-success { background:rgba(33,87,50,.92) !important; backdrop-filter:blur(14px) !important; border:1px solid rgba(255,255,255,.12) !important; }

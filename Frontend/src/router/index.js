@@ -113,6 +113,8 @@ router.beforeEach(async (to, from, next) => {
   const isAuthed = authStore.isAuthenticated;
 
   if (to.meta.requiresAuth && !isAuthed) {
+    // Save where the user wanted to go
+    localStorage.setItem('redirectPath', to.fullPath);
     next("/login");
   } else if (to.meta.guestOnly && isAuthed) {
     next("/home");
