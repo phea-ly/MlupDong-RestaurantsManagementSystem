@@ -1,8 +1,8 @@
 <script setup>
 import { computed, onMounted, onUnmounted } from 'vue'
-import { storeToRefs }  from 'pinia'
-import { useKdsStore }  from '@/stores/kds.store'
-import OrderCard        from '@/components/kds/OrderCard.vue'
+import { storeToRefs } from 'pinia'
+import { useKdsStore } from '@/stores/kds.store'
+import OrderCard from '@/components/kds/OrderCard.vue'
 
 const store = useKdsStore()
 
@@ -19,8 +19,8 @@ const {
 } = store
 
 const columns = computed(() => [
-  { status: 'new',       label: 'Incoming',  orders: incomingOrders.value  },
-  { status: 'received',  label: 'Received',  orders: receivedOrders.value  },
+  { status: 'new', label: 'Incoming', orders: incomingOrders.value },
+  { status: 'received', label: 'Received', orders: receivedOrders.value },
   { status: 'confirmed', label: 'Confirmed', orders: confirmedOrders.value },
   { status: 'preparing', label: 'Preparing', orders: preparingOrders.value },
 ])
@@ -59,10 +59,7 @@ onUnmounted(cleanup)
       </v-btn-toggle>
 
       <!-- Live indicator -->
-      <v-chip
-        size="small" class="ml-3 mr-2"
-        :color="connected ? 'green' : 'red'" variant="tonal"
-      >
+      <v-chip size="small" class="ml-3 mr-2" :color="connected ? 'green' : 'red'" variant="tonal">
         <v-icon size="14" :icon="connected ? 'mdi-access-point' : 'mdi-access-point-off'" class="mr-1" />
         {{ connected ? 'Live' : 'Reconnecting' }}
       </v-chip>
@@ -90,13 +87,12 @@ onUnmounted(cleanup)
         <template v-else-if="tab === 'active'">
           <div
             v-if="!incomingOrders.length && !receivedOrders.length && !confirmedOrders.length && !preparingOrders.length"
-            class="kds-center"
-          >
+            class="kds-center">
             <v-icon size="54" color="grey">mdi-check-circle-outline</v-icon>
             <div class="kds-hint">All clear — no active orders</div>
           </div>
 
-          <v-row v-else dense>
+          <v-row v-else density="comfortable">
             <v-col v-for="col in columns" :key="col.status" cols="12" md="3">
               <div class="kds-col__header">
                 <span class="kds-col__dot" :class="`dot-${col.status}`" />
@@ -104,15 +100,9 @@ onUnmounted(cleanup)
                 <v-chip size="x-small" class="kds-col__count">{{ col.orders.length }}</v-chip>
               </div>
               <div class="kds-col__list">
-                <OrderCard
-                  v-for="o in col.orders" :key="o.id"
-                  :order="o"
-                  :wait-minutes="getOrderWaitMinutes(o)"
-                  @receive-order="receiveOrder"
-                  @confirm-cooking="confirmCooking"
-                  @prepare-food="prepareFood"
-                  @mark-ready="markReady"
-                />
+                <OrderCard v-for="o in col.orders" :key="o.id" :order="o" :wait-minutes="getOrderWaitMinutes(o)"
+                  @receive-order="receiveOrder" @confirm-cooking="confirmCooking" @prepare-food="prepareFood"
+                  @mark-ready="markReady" />
               </div>
             </v-col>
           </v-row>
@@ -124,7 +114,7 @@ onUnmounted(cleanup)
             <v-icon size="48" color="grey">mdi-timer-sand</v-icon>
             <div class="kds-hint">Ready & completed orders show here</div>
           </div>
-          <v-row v-else dense>
+          <v-row v-else density="comfortable">
             <v-col cols="12" md="6">
               <div class="kds-col__header">
                 <span class="kds-col__dot dot-ready" />
@@ -152,10 +142,7 @@ onUnmounted(cleanup)
     </v-main>
 
     <!-- Snackbar -->
-    <v-snackbar
-      v-model="snackbar.show" :color="snackbar.color"
-      location="bottom right" rounded="lg" :timeout="4000"
-    >
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="bottom right" rounded="lg" :timeout="4000">
       {{ snackbar.message }}
       <template #actions>
         <v-btn variant="text" icon="mdi-close" size="small" @click="snackbar.show = false" />
@@ -166,39 +153,122 @@ onUnmounted(cleanup)
 </template>
 
 <style scoped>
-.kds-app  { background: #f6f7fb; }
-.kds-bar  { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 0 12px; }
+.kds-app {
+  background: #f6f7fb;
+}
 
-.kds-brand        { display: flex; align-items: center; gap: 10px; }
-.kds-brand__title { font-size: 16px; font-weight: 700; }
-.kds-clock        { font-size: 12px; color: #6b7280; font-family: monospace; margin-left: 4px; }
+.kds-bar {
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 12px;
+}
 
-.kds-wait    { font-size: 12px; font-weight: 700; }
-.kds-tabs    { border: 1px solid #e5e7eb; border-radius: 10px; padding: 2px; background: #f8fafc; }
-.kds-tab-btn { text-transform: none; font-size: 13px; font-weight: 600; color: #6b7280; }
+.kds-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-.kds-body { padding: 20px; }
+.kds-brand__title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.kds-clock {
+  font-size: 12px;
+  color: #6b7280;
+  font-family: monospace;
+  margin-left: 4px;
+}
+
+.kds-wait {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.kds-tabs {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 2px;
+  background: #f8fafc;
+}
+
+.kds-tab-btn {
+  text-transform: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.kds-body {
+  padding: 20px;
+}
 
 .kds-col__header {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 11px; font-weight: 700; color: #6b7280;
-  letter-spacing: .6px; text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  letter-spacing: .6px;
+  text-transform: uppercase;
   margin-bottom: 12px;
 }
-.kds-col__dot     { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.dot-new          { background: #3b82f6; }
-.dot-received     { background: #6366f1; }
-.dot-confirmed    { background: #f59e0b; }
-.dot-preparing    { background: #14b8a6; }
-.dot-ready        { background: #22c55e; }
-.dot-completed    { background: #94a3b8; }
-.kds-col__count   { background: #eef2ff; color: #475569; }
-.kds-col__list    { display: flex; flex-direction: column; gap: 12px; }
+
+.kds-col__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-new {
+  background: #3b82f6;
+}
+
+.dot-received {
+  background: #6366f1;
+}
+
+.dot-confirmed {
+  background: #f59e0b;
+}
+
+.dot-preparing {
+  background: #14b8a6;
+}
+
+.dot-ready {
+  background: #22c55e;
+}
+
+.dot-completed {
+  background: #94a3b8;
+}
+
+.kds-col__count {
+  background: #eef2ff;
+  color: #475569;
+}
+
+.kds-col__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
 .kds-center {
   min-height: calc(100vh - 140px);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
 }
-.kds-hint { font-size: 14px; color: #6b7280; }
+
+.kds-hint {
+  font-size: 14px;
+  color: #6b7280;
+}
 </style>

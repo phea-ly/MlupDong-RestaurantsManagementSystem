@@ -4,7 +4,7 @@ import { useMenuStore } from '@/stores/menu.store'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
-  editItem:   { type: Object,  default: null  },
+  editItem: { type: Object, default: null },
 })
 const emit = defineEmits(['update:modelValue', 'saved'])
 
@@ -12,26 +12,26 @@ const menuStore = useMenuStore()
 
 // ── Form ───────────────────────────────────────────────────────────────────
 const defaultForm = () => ({
-  item_name:   '',
-  price:       '',
+  item_name: '',
+  price: '',
   description: '',
   category_id: null,
-  status:      true,
+  status: true,
 })
 
-const form         = ref(defaultForm())
-const imageFile    = ref(null)
+const form = ref(defaultForm())
+const imageFile = ref(null)
 const imagePreview = ref(null)
-const imageSource  = ref('upload')   // 'upload' | 'url'
-const imageUrl     = ref('')
-const objectUrl    = ref(null)
-const saving       = ref(false)
-const errors       = ref({})
-const fileInput    = ref(null)
+const imageSource = ref('upload')   // 'upload' | 'url'
+const imageUrl = ref('')
+const objectUrl = ref(null)
+const saving = ref(false)
+const errors = ref({})
+const fileInput = ref(null)
 const imageUrlInput = ref(null)
 
 const isEdit = computed(() => !!props.editItem)
-const title  = computed(() => isEdit.value ? 'Edit Menu Item' : 'Add Menu Item')
+const title = computed(() => isEdit.value ? 'Edit Menu Item' : 'Add Menu Item')
 
 const categoryItems = computed(() =>
   menuStore.categories.map(c => ({ title: c.category_name, value: c.category_id }))
@@ -51,19 +51,19 @@ watch(
   () => [props.modelValue, props.editItem],
   ([open]) => {
     if (!open) return
-    errors.value      = {}
-    imageFile.value   = null
-    imageUrl.value    = ''
+    errors.value = {}
+    imageFile.value = null
+    imageUrl.value = ''
     imageSource.value = 'upload'
     if (objectUrl.value) { URL.revokeObjectURL(objectUrl.value); objectUrl.value = null }
 
     if (props.editItem) {
       form.value = {
-        item_name:   props.editItem.name,
-        price:       props.editItem.price,
+        item_name: props.editItem.name,
+        price: props.editItem.price,
         description: props.editItem.description ?? '',
         category_id: props.editItem.category_id ?? null,
-        status:      props.editItem.status       ?? true,
+        status: props.editItem.status ?? true,
       }
       // image stored as '/storage/...' path or full URL
       const resolved = resolveImageUrl(props.editItem.image ?? null)
@@ -71,10 +71,10 @@ watch(
 
       if (props.editItem.image?.startsWith('http')) {
         imageSource.value = 'url'
-        imageUrl.value    = props.editItem.image
+        imageUrl.value = props.editItem.image
       }
     } else {
-      form.value         = defaultForm()
+      form.value = defaultForm()
       imagePreview.value = null
     }
   },
@@ -99,23 +99,23 @@ watch(imageSource, (val) => {
 
 // ── Image handlers ─────────────────────────────────────────────────────────
 function triggerFileInput() { fileInput.value?.click() }
-function selectUpload()     { imageSource.value = 'upload' }
-function selectUrl()        { imageSource.value = 'url'; nextTick(() => imageUrlInput.value?.focus?.()) }
+function selectUpload() { imageSource.value = 'upload' }
+function selectUrl() { imageSource.value = 'url'; nextTick(() => imageUrlInput.value?.focus?.()) }
 
 function onFileChange(e) {
   const file = e.target.files?.[0]
   if (!file) return
   imageSource.value = 'upload'
-  imageFile.value   = file
+  imageFile.value = file
   if (objectUrl.value) URL.revokeObjectURL(objectUrl.value)
-  objectUrl.value    = URL.createObjectURL(file)
+  objectUrl.value = URL.createObjectURL(file)
   imagePreview.value = objectUrl.value
 }
 
 function removeImage() {
-  imageFile.value    = null
+  imageFile.value = null
   imagePreview.value = null
-  imageUrl.value     = ''
+  imageUrl.value = ''
   if (objectUrl.value) { URL.revokeObjectURL(objectUrl.value); objectUrl.value = null }
   if (fileInput.value) fileInput.value.value = ''
 }
@@ -155,18 +155,18 @@ async function handleSave() {
   if (imageSource.value === 'upload' && imageFile.value) {
     // Multipart — Laravel needs POST + _method spoofing for PUT
     payload = new FormData()
-    payload.append('item_name',   form.value.item_name.trim())
-    payload.append('price',       form.value.price)
+    payload.append('item_name', form.value.item_name.trim())
+    payload.append('price', form.value.price)
     payload.append('description', form.value.description ?? '')
-    payload.append('status',      form.value.status ? '1' : '0')
+    payload.append('status', form.value.status ? '1' : '0')
     if (form.value.category_id) payload.append('category_id', form.value.category_id)
     payload.append('image', imageFile.value)
   } else {
     payload = {
-      item_name:   form.value.item_name.trim(),
-      price:       Number(form.value.price),
+      item_name: form.value.item_name.trim(),
+      price: Number(form.value.price),
       description: form.value.description || null,
-      status:      form.value.status,
+      status: form.value.status,
       category_id: form.value.category_id ?? null,
     }
     if (imageSource.value === 'url' && imageUrl.value.trim())
@@ -199,13 +199,8 @@ function close() { emit('update:modelValue', false) }
 </script>
 
 <template>
-  <v-dialog
-    :model-value="modelValue"
-    max-width="520"
-    rounded="xl"
-    persistent
-    @update:model-value="emit('update:modelValue', $event)"
-  >
+  <v-dialog :model-value="modelValue" max-width="520" rounded="xl" persistent
+    @update:model-value="emit('update:modelValue', $event)">
     <v-card rounded="xl" elevation="0">
 
       <!-- Header -->
@@ -227,38 +222,25 @@ function close() { emit('update:modelValue', false) }
 
         <!-- Image source toggle -->
         <div class="d-flex align-center ga-2 mb-2">
-          <v-btn
-            size="small" rounded="lg" prepend-icon="mdi-upload"
-            :variant="imageSource === 'upload' ? 'flat' : 'outlined'"
-            color="var(--app-primary)"
-            @click="selectUpload"
-          >Upload (Local)</v-btn>
-          <v-btn
-            size="small" rounded="lg" prepend-icon="mdi-link-variant"
-            :variant="imageSource === 'url' ? 'flat' : 'outlined'"
-            color="var(--app-primary)"
-            @click="selectUrl"
-          >Paste Image URL</v-btn>
+          <v-btn size="small" rounded="lg" prepend-icon="mdi-upload"
+            :variant="imageSource === 'upload' ? 'flat' : 'outlined'" color="var(--app-primary)"
+            @click="selectUpload">Upload (Local)</v-btn>
+          <v-btn size="small" rounded="lg" prepend-icon="mdi-link-variant"
+            :variant="imageSource === 'url' ? 'flat' : 'outlined'" color="var(--app-primary)" @click="selectUrl">Paste
+            Image URL</v-btn>
         </div>
 
         <!-- Upload area -->
         <template v-if="imageSource === 'upload'">
-          <div
-            class="upload-drop-zone mb-1"
-            @click="triggerFileInput"
-          >
+          <div class="upload-drop-zone mb-1" @click="triggerFileInput">
             <v-img v-if="imagePreview" :src="imagePreview" height="58" cover />
             <div v-else class="d-flex flex-column align-center ga-1">
               <v-icon size="24" color="grey-lighten-1">mdi-image-plus-outline</v-icon>
               <span class="text-caption font-weight-bold text-medium-emphasis">Click to upload from local storage</span>
               <span class="text-caption text-disabled">PNG, JPG, WEBP — max 2 MB</span>
             </div>
-            <v-btn
-              v-if="imagePreview"
-              icon size="x-small" color="white"
-              class="img-remove-btn"
-              @click.stop="removeImage"
-            >
+            <v-btn v-if="imagePreview" icon size="x-small" color="white" class="img-remove-btn"
+              @click.stop="removeImage">
               <v-icon size="14">mdi-close</v-icon>
             </v-btn>
           </div>
@@ -268,60 +250,33 @@ function close() { emit('update:modelValue', false) }
 
         <!-- URL input -->
         <template v-else>
-          <v-text-field
-            ref="imageUrlInput"
-            v-model="imageUrl"
-            label="Image URL"
-            placeholder="https://example.com/image.jpg"
-            prepend-inner-icon="mdi-link-variant"
-            variant="outlined" rounded="lg" density="comfortable"
-            :error-messages="errors.image"
-            class="mb-2"
-          />
+          <v-text-field ref="imageUrlInput" v-model="imageUrl" label="Image URL"
+            placeholder="https://example.com/image.jpg" prepend-inner-icon="mdi-link-variant" variant="outlined"
+            rounded="lg" density="comfortable" :error-messages="errors.image" class="mb-2" />
           <v-card v-if="imagePreview" rounded="lg" border flat class="mb-3" style="overflow:hidden">
             <v-img :src="imagePreview" height="58" cover />
           </v-card>
         </template>
 
         <!-- Item name -->
-        <v-text-field
-          v-model="form.item_name"
-          label="Item Name *"
-          variant="outlined" rounded="lg" density="comfortable"
-          :error-messages="errors.item_name"
-          class="mb-3"
-        />
+        <v-text-field v-model="form.item_name" label="Item Name *" variant="outlined" rounded="lg" density="comfortable"
+          :error-messages="errors.item_name" class="mb-3" />
 
         <!-- Price + Category -->
-        <v-row dense class="mb-3">
+        <v-row density="comfortable" class="mb-3">
           <v-col cols="6">
-            <v-text-field
-              v-model="form.price"
-              label="Price (USD) *"
-              type="number" min="0" step="0.01" prefix="$"
-              variant="outlined" rounded="lg" density="comfortable"
-              :error-messages="errors.price"
-            />
+            <v-text-field v-model="form.price" label="Price (USD) *" type="number" min="0" step="0.01" prefix="$"
+              variant="outlined" rounded="lg" density="comfortable" :error-messages="errors.price" />
           </v-col>
           <v-col cols="6">
-            <v-select
-              v-model="form.category_id"
-              :items="categoryItems"
-              label="Category"
-              variant="outlined" rounded="lg" density="comfortable"
-              clearable
-            />
+            <v-select v-model="form.category_id" :items="categoryItems" label="Category" variant="outlined" rounded="lg"
+              density="comfortable" clearable />
           </v-col>
         </v-row>
 
         <!-- Description -->
-        <v-textarea
-          v-model="form.description"
-          label="Description"
-          variant="outlined" rounded="lg"
-          rows="2" no-resize
-          class="mb-3"
-        />
+        <v-textarea v-model="form.description" label="Description" variant="outlined" rounded="lg" rows="2" no-resize
+          class="mb-3" />
 
         <!-- Status -->
         <v-card rounded="lg" variant="tonal" color="grey-lighten-3">
@@ -352,7 +307,9 @@ function close() { emit('update:modelValue', false) }
 
 <style scoped>
 .upload-drop-zone {
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 58px;
   border: 2px dashed #dbe3e7;
   border-radius: 12px;
@@ -361,13 +318,16 @@ function close() { emit('update:modelValue', false) }
   position: relative;
   transition: border-color .2s, background .2s;
 }
+
 .upload-drop-zone:hover {
   border-color: var(--app-primary);
   background: rgba(15, 158, 95, 0.03);
 }
+
 .img-remove-btn {
   position: absolute !important;
-  top: 8px; right: 8px;
-  background: rgba(0,0,0,.5) !important;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, .5) !important;
 }
 </style>

@@ -5,7 +5,7 @@ defineProps({
 </script>
 
 <template>
-  <v-row dense class="mb-4">
+  <v-row density="comfortable" class="mb-4">
     <v-col cols="6" sm="4">
       <v-card rounded="xl" border flat>
         <v-card-text class="d-flex align-center ga-3 pa-4">
@@ -52,8 +52,10 @@ defineProps({
 
 <style scoped>
 .stat-label {
-  font-size: 10px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .06em;
-  color: rgba(0,0,0,.45);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: rgba(0, 0, 0, .45);
 }
 </style>

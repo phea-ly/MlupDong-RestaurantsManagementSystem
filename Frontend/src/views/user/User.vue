@@ -1,6 +1,6 @@
 <script setup>
-import { onMounted }    from 'vue'
-import { storeToRefs }  from 'pinia'
+import { onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/user.store'
 import { useAuthStore } from '@/stores/auth.store'
 import EditProfileDialog from '@/components/avatar/Editprofiledialog.vue'
@@ -29,13 +29,13 @@ const {
 onMounted(init)
 
 const TABLE_HEADERS = [
-  { title: 'User Identity',  key: 'name',       sortable: true  },
-  { title: 'Email Address',  key: 'email',       sortable: true  },
-  { title: 'Restaurant',     key: 'restaurant',  sortable: true  },
-  { title: 'Role & Rank',    key: 'role',        sortable: true  },
-  { title: 'Status',         key: 'active',      sortable: true  },
-  { title: 'Created At',     key: 'created',     sortable: false },
-  { title: 'Actions',        key: 'actions',     sortable: false, align: 'end' },
+  { title: 'User Identity', key: 'name', sortable: true },
+  { title: 'Email Address', key: 'email', sortable: true },
+  { title: 'Restaurant', key: 'restaurant', sortable: true },
+  { title: 'Role & Rank', key: 'role', sortable: true },
+  { title: 'Status', key: 'active', sortable: true },
+  { title: 'Created At', key: 'created', sortable: false },
+  { title: 'Actions', key: 'actions', sortable: false, align: 'end' },
 ]
 </script>
 
@@ -43,7 +43,7 @@ const TABLE_HEADERS = [
   <v-container fluid class="pa-0">
 
     <!-- ── Stats row ─────────────────────────────────────────────────────── -->
-    <v-row dense class="mb-5">
+    <v-row density="comfortable" class="mb-5">
       <v-col cols="12" sm="6" md="3">
         <v-card rounded="xl" border flat>
           <v-card-text class="pa-5">
@@ -62,10 +62,8 @@ const TABLE_HEADERS = [
           <v-card-text class="pa-5">
             <div class="d-flex justify-space-between align-start mb-3">
               <span class="stat-label">Status Distribution</span>
-              <v-progress-circular
-                :model-value="stats.total ? (stats.active / stats.total) * 100 : 0"
-                color="var(--app-primary)" size="18" width="2"
-              />
+              <v-progress-circular :model-value="stats.total ? (stats.active / stats.total) * 100 : 0"
+                color="var(--app-primary)" size="18" width="2" />
             </div>
             <div class="d-flex align-end ga-3">
               <div>
@@ -132,43 +130,26 @@ const TABLE_HEADERS = [
         <div class="d-flex align-center ga-3 flex-wrap">
           <div class="d-flex align-center ga-2 flex-wrap flex-grow-1">
             <span class="filter-label">Restaurant:</span>
-            <v-select
-              v-model="filterRestaurant"
-              :items="filterRestaurantOptions"
-              variant="outlined" rounded="lg" density="compact" hide-details
-              style="max-width:180px; min-width:150px"
-            />
+            <v-select v-model="filterRestaurant" :items="filterRestaurantOptions" variant="outlined" rounded="lg"
+              density="compact" hide-details style="max-width:180px; min-width:150px" />
             <span class="filter-label">Role:</span>
-            <v-select
-              v-model="filterRole"
-              :items="filterRoleOptions"
-              variant="outlined" rounded="lg" density="compact" hide-details
-              style="max-width:150px; min-width:130px"
-            />
+            <v-select v-model="filterRole" :items="filterRoleOptions" variant="outlined" rounded="lg" density="compact"
+              hide-details style="max-width:150px; min-width:130px" />
             <div class="text-caption text-medium-emphasis ml-auto" style="white-space:nowrap">
               Sorted by: <strong>Recently Created</strong>
             </div>
           </div>
-          <v-text-field
-            v-model="search"
-            placeholder="Search across all locations..."
-            prepend-inner-icon="mdi-magnify"
-            variant="outlined" rounded="lg" density="compact" hide-details
-            style="max-width:260px; min-width:200px"
-          />
-          <v-btn color="var(--app-primary)" rounded="lg" elevation="0" prepend-icon="mdi-account-multiple-plus" @click="openAdd">
+          <v-text-field v-model="search" placeholder="Search across all locations..." prepend-inner-icon="mdi-magnify"
+            variant="outlined" rounded="lg" density="compact" hide-details style="max-width:260px; min-width:200px" />
+          <v-btn color="var(--app-primary)" rounded="lg" elevation="0" prepend-icon="mdi-account-multiple-plus"
+            @click="openAdd">
             <span style="color:#063824; font-weight:800">Create Account</span>
           </v-btn>
         </div>
       </v-card-text>
 
-      <v-data-table
-        :headers="TABLE_HEADERS"
-        :items="filteredUsers"
-        :loading="loading"
-        items-per-page="10"
-        :header-props="{ class: 'text-caption font-weight-bold text-uppercase text-medium-emphasis' }"
-      >
+      <v-data-table :headers="TABLE_HEADERS" :items="filteredUsers" :loading="loading" items-per-page="10"
+        :header-props="{ class: 'text-caption font-weight-bold text-uppercase text-medium-emphasis' }">
         <template #loading>
           <v-skeleton-loader type="table-row@8" />
         </template>
@@ -195,19 +176,14 @@ const TABLE_HEADERS = [
         </template>
 
         <template #item.role="{ item }">
-          <span
-            class="role-chip"
-            :style="{ background: roleConfig[item.role]?.bg ?? '#f3f4f6', color: roleConfig[item.role]?.text ?? '#374151' }"
-          >{{ item.role }}</span>
+          <span class="role-chip"
+            :style="{ background: roleConfig[item.role]?.bg ?? '#f3f4f6', color: roleConfig[item.role]?.text ?? '#374151' }">{{
+              item.role }}</span>
         </template>
 
         <template #item.active="{ item }">
-          <v-switch
-            :model-value="item.active"
-            color="var(--app-primary)"
-            hide-details density="compact" inset
-            @change="toggleActive(item)"
-          />
+          <v-switch :model-value="item.active" color="var(--app-primary)" hide-details density="compact" inset
+            @change="toggleActive(item)" />
         </template>
 
         <template #item.created="{ item }">
@@ -224,11 +200,8 @@ const TABLE_HEADERS = [
               <v-icon size="16" color="grey">mdi-pencil-outline</v-icon>
               <v-tooltip activator="parent" location="top">Edit</v-tooltip>
             </v-btn>
-            <v-btn
-              icon size="small" variant="text"
-              :disabled="item.rawId === authStore.user?.id"
-              @click="confirmDelete(item.id)"
-            >
+            <v-btn icon size="small" variant="text" :disabled="item.rawId === authStore.user?.id"
+              @click="confirmDelete(item.id)">
               <v-icon size="16" color="grey">mdi-delete-outline</v-icon>
               <v-tooltip activator="parent" location="top">
                 {{ item.rawId === authStore.user?.id ? 'You cannot delete your own account' : 'Delete' }}
@@ -254,66 +227,41 @@ const TABLE_HEADERS = [
 
         <v-card-text class="px-6 pt-3">
           <!-- Name row -->
-          <v-row dense>
+          <v-row density="comfortable">
             <v-col cols="6">
-              <v-text-field
-                v-model="modal.form.firstName" label="First Name *"
-                variant="outlined" rounded="lg" density="comfortable"
-                :error-messages="formErrors.first_name"
-              />
+              <v-text-field v-model="modal.form.firstName" label="First Name *" variant="outlined" rounded="lg"
+                density="comfortable" :error-messages="formErrors.first_name" />
             </v-col>
             <v-col cols="6">
-              <v-text-field
-                v-model="modal.form.lastName" label="Last Name *"
-                variant="outlined" rounded="lg" density="comfortable"
-                :error-messages="formErrors.last_name"
-              />
+              <v-text-field v-model="modal.form.lastName" label="Last Name *" variant="outlined" rounded="lg"
+                density="comfortable" :error-messages="formErrors.last_name" />
             </v-col>
           </v-row>
 
           <!-- Email -->
-          <v-text-field
-            v-model="modal.form.email" label="Email Address *" type="email"
-            variant="outlined" rounded="lg" density="comfortable" class="mt-1"
-            :error-messages="formErrors.email"
-          />
+          <v-text-field v-model="modal.form.email" label="Email Address *" type="email" variant="outlined" rounded="lg"
+            density="comfortable" class="mt-1" :error-messages="formErrors.email" />
 
           <!-- Password — required on create -->
-          <v-text-field
-            v-model="modal.form.password" label="Password *" type="password"
-            variant="outlined" rounded="lg" density="comfortable" class="mt-1"
-            hint="Minimum 8 characters" persistent-hint
-            :error-messages="formErrors.password"
-          />
+          <v-text-field v-model="modal.form.password" label="Password *" type="password" variant="outlined" rounded="lg"
+            density="comfortable" class="mt-1" hint="Minimum 8 characters" persistent-hint
+            :error-messages="formErrors.password" />
 
           <!-- Phone -->
-          <v-text-field
-            v-model="modal.form.phone" label="Phone (optional)"
-            variant="outlined" rounded="lg" density="comfortable" class="mt-1"
-            :error-messages="formErrors.phone"
-          />
+          <v-text-field v-model="modal.form.phone" label="Phone (optional)" variant="outlined" rounded="lg"
+            density="comfortable" class="mt-1" :error-messages="formErrors.phone" />
 
           <!-- Role + Restaurant -->
-          <v-row dense class="mt-1">
+          <v-row density="comfortable" class="mt-1">
             <v-col cols="6">
-              <v-select
-                v-model="modal.form.role_id"
-                :items="roleOptions"
-                item-title="title" item-value="value"
-                label="Role *"
-                variant="outlined" rounded="lg" density="comfortable"
-                :error-messages="formErrors.role_id"
-              />
+              <v-select v-model="modal.form.role_id" :items="roleOptions" item-title="title" item-value="value"
+                label="Role *" variant="outlined" rounded="lg" density="comfortable"
+                :error-messages="formErrors.role_id" />
             </v-col>
             <v-col cols="6">
-              <v-select
-                v-model="modal.form.restaurant_id"
-                :items="restaurantOptions"
-                item-title="title" item-value="value"
-                label="Restaurant *"
-                variant="outlined" rounded="lg" density="comfortable"
-                :error-messages="formErrors.restaurant_id"
-              />
+              <v-select v-model="modal.form.restaurant_id" :items="restaurantOptions" item-title="title"
+                item-value="value" label="Restaurant *" variant="outlined" rounded="lg" density="comfortable"
+                :error-messages="formErrors.restaurant_id" />
             </v-col>
           </v-row>
         </v-card-text>
@@ -339,63 +287,38 @@ const TABLE_HEADERS = [
         </v-card-title>
 
         <v-card-text class="px-6 pt-3">
-          <v-row dense>
+          <v-row density="comfortable">
             <v-col cols="6">
-              <v-text-field
-                v-model="modal.form.firstName" label="First Name *"
-                variant="outlined" rounded="lg" density="comfortable"
-                :error-messages="formErrors.first_name"
-              />
+              <v-text-field v-model="modal.form.firstName" label="First Name *" variant="outlined" rounded="lg"
+                density="comfortable" :error-messages="formErrors.first_name" />
             </v-col>
             <v-col cols="6">
-              <v-text-field
-                v-model="modal.form.lastName" label="Last Name *"
-                variant="outlined" rounded="lg" density="comfortable"
-                :error-messages="formErrors.last_name"
-              />
+              <v-text-field v-model="modal.form.lastName" label="Last Name *" variant="outlined" rounded="lg"
+                density="comfortable" :error-messages="formErrors.last_name" />
             </v-col>
           </v-row>
 
-          <v-text-field
-            v-model="modal.form.email" label="Email Address *" type="email"
-            variant="outlined" rounded="lg" density="comfortable" class="mt-1"
-            :error-messages="formErrors.email"
-          />
+          <v-text-field v-model="modal.form.email" label="Email Address *" type="email" variant="outlined" rounded="lg"
+            density="comfortable" class="mt-1" :error-messages="formErrors.email" />
 
           <!-- Password optional on edit -->
-          <v-text-field
-            v-model="modal.form.password" label="New Password (leave blank to keep current)" type="password"
-            variant="outlined" rounded="lg" density="comfortable" class="mt-1"
-            hint="Minimum 8 characters" persistent-hint
-            :error-messages="formErrors.password"
-          />
+          <v-text-field v-model="modal.form.password" label="New Password (leave blank to keep current)" type="password"
+            variant="outlined" rounded="lg" density="comfortable" class="mt-1" hint="Minimum 8 characters"
+            persistent-hint :error-messages="formErrors.password" />
 
-          <v-text-field
-            v-model="modal.form.phone" label="Phone (optional)"
-            variant="outlined" rounded="lg" density="comfortable" class="mt-1"
-            :error-messages="formErrors.phone"
-          />
+          <v-text-field v-model="modal.form.phone" label="Phone (optional)" variant="outlined" rounded="lg"
+            density="comfortable" class="mt-1" :error-messages="formErrors.phone" />
 
-          <v-row dense class="mt-1">
+          <v-row density="comfortable" class="mt-1">
             <v-col cols="6">
-              <v-select
-                v-model="modal.form.role_id"
-                :items="roleOptions"
-                item-title="title" item-value="value"
-                label="Role *"
-                variant="outlined" rounded="lg" density="comfortable"
-                :error-messages="formErrors.role_id"
-              />
+              <v-select v-model="modal.form.role_id" :items="roleOptions" item-title="title" item-value="value"
+                label="Role *" variant="outlined" rounded="lg" density="comfortable"
+                :error-messages="formErrors.role_id" />
             </v-col>
             <v-col cols="6">
-              <v-select
-                v-model="modal.form.restaurant_id"
-                :items="restaurantOptions"
-                item-title="title" item-value="value"
-                label="Restaurant *"
-                variant="outlined" rounded="lg" density="comfortable"
-                :error-messages="formErrors.restaurant_id"
-              />
+              <v-select v-model="modal.form.restaurant_id" :items="restaurantOptions" item-title="title"
+                item-value="value" label="Restaurant *" variant="outlined" rounded="lg" density="comfortable"
+                :error-messages="formErrors.restaurant_id" />
             </v-col>
           </v-row>
         </v-card-text>
@@ -442,19 +365,37 @@ const TABLE_HEADERS = [
 </template>
 
 <style scoped>
-.stat-label, .filter-label {
-  font-size: 11px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .08em;
-  color: rgba(0,0,0,.45);
+.stat-label,
+.filter-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: rgba(0, 0, 0, .45);
 }
+
 .avatar-initials {
-  width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 800; color: #fff;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
 }
-.pending-initials { font-size: 10px; font-weight: 800; color: #fff; }
+
+.pending-initials {
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+}
+
 .role-chip {
-  font-size: 11px; font-weight: 800;
-  padding: 3px 10px; border-radius: 6px; letter-spacing: .04em;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 6px;
+  letter-spacing: .04em;
 }
 </style>

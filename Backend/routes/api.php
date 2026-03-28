@@ -75,10 +75,16 @@ Route::get('/', function () {
 
 Route::post('/login',    [AuthController::class, 'login']);
 
-Route::middleware('jwt')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
+// Route::middleware('auth:api')->group(function () {
+//     Route::post('/logout', [AuthController::class, 'logout']);
 
-    Route::get('/user',  [AuthController::class, 'getUser']);
-    Route::put('/user',  [AuthController::class, 'updateUser']);
-    Route::post('/user', [AuthController::class, 'updateUser']); 
+//     Route::get('/me',  [AuthController::class, 'getMe']);
+//     Route::put('/user',  [AuthController::class, 'updateUser']);
+//     Route::post('/user', [AuthController::class, 'updateUser']);
+// });
+// routes/api.php
+Route::middleware('auth:api')->group(function () {
+    Route::get('/me', [AuthController::class, 'getMe']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+    // ...
 });

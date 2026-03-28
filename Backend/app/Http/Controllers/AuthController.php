@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use Tymon\JWTAuth\Exceptions\TokenExpiredException;
+use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 
 class AuthController extends Controller
 {
@@ -26,9 +28,8 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        // User not found
+        // ── User not found ────────────────────────────────────────────────────────
         if (!$user) {
-            // Log without Auth::id() — user doesn't exist
             ActivityLog::create([
                 'user_id'     => null,
                 'event_type'  => 'user',
@@ -37,11 +38,12 @@ class AuthController extends Controller
                 'ip_address'  => $request->ip(),
                 'user_agent'  => $request->userAgent(),
             ]);
+
             return response()->json(['message' => 'Email not found.'], 401);
         }
 
+        // ── Wrong password ────────────────────────────────────────────────────────
         if (!$token = JWTAuth::attempt($request->only('email', 'password'))) {
-            // User exists but wrong password
             ActivityLog::create([
                 'user_id'     => $user->user_id,
                 'event_type'  => 'user',
@@ -50,22 +52,25 @@ class AuthController extends Controller
                 'ip_address'  => $request->ip(),
                 'user_agent'  => $request->userAgent(),
             ]);
+
             return response()->json(['message' => 'Incorrect password.'], 401);
         }
 
-        // Successful login
+        // ── Success ───────────────────────────────────────────────────────────────
         $this->logActivity('user', 'login', "User \"{$user->email}\" logged in.");
 
-        $cookieName = config('jwt.cookie.name', 'auth_token');
-        $cookieTtl  = (int) config('jwt.ttl', 60);
-        $cookiePath = config('jwt.cookie.path', '/');
-        $cookieDomain = config('jwt.cookie.domain');
-        $cookieSecure = (bool) config('jwt.cookie.secure', false);
-        $cookieSameSite = config('jwt.cookie.same_site', 'lax');
+        $cookieName     = config('jwt.cookie.name',      'auth_token');
+        $cookieTtl      = (int) config('jwt.ttl',         60);          // minutes
+        $cookiePath     = config('jwt.cookie.path',       '/');
+        $cookieDomain   = config('jwt.cookie.domain');
+        $cookieSecure   = (bool) config('jwt.cookie.secure',    false);
+        $cookieSameSite = config('jwt.cookie.same_site',  'lax');
 
         return response()->json([
+            'token'      => $token,                  // ← Bearer token for frontend
+            'token_type' => 'bearer',
+            'expires_in' => $cookieTtl * 60,         // seconds, easier for JS
             'user'       => $this->formatUser($user),
-            'expires_in' => $cookieTtl * 60,
         ])->cookie(
             $cookieName,
             $token,
@@ -73,7 +78,7 @@ class AuthController extends Controller
             $cookiePath,
             $cookieDomain,
             $cookieSecure,
-            true,
+            true,          // HttpOnly — protects against XSS
             false,
             $cookieSameSite
         );
@@ -112,26 +117,24 @@ class AuthController extends Controller
         );
     }
 
-    public function getUser()
+    public function getMe()
     {
         try {
-            if (config('app.debug')) {
-                $cookieName = config('jwt.cookie.name', 'auth_token');
-                $raw = request()->cookie($cookieName);
-                Log::info('Auth cookie debug', [
-                    'cookie_name' => $cookieName,
-                    'present'     => (bool) $raw,
-                    'length'      => $raw ? strlen($raw) : 0,
-                    'origin'      => request()->headers->get('origin'),
-                ]);
-            }
-            $user = auth('api')->user();
+            $user = JWTAuth::parseToken()->authenticate();
+
             if (!$user) {
                 return response()->json(['error' => 'User not found'], 404);
             }
-            return response()->json(['user' => $this->formatUser($user)]);
+
+            return response()->json([
+                'user' => $user,
+            ]);
+        } catch (TokenExpiredException $e) {
+            return response()->json(['error' => 'Token has expired'], 401);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['error' => 'Token is invalid'], 401);
         } catch (JWTException $e) {
-            return response()->json(['error' => 'Failed to fetch user profile'], 500);
+            return response()->json(['error' => 'Token not provided'], 401);
         }
     }
 

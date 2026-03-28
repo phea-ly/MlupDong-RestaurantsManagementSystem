@@ -2,9 +2,9 @@
 import { ref, computed } from 'vue'
 
 const props = defineProps({
-  trendData:   { type: Array,  default: () => [] }, // [{ label, count, icon }]
-  topActions:  { type: Array,  default: () => [] }, // [{ label, count, pct, color }]
-  recentDays:  { type: Object, default: () => ({}) }, // { 'YYYY-MM-DD': count }
+  trendData: { type: Array, default: () => [] }, // [{ label, count, icon }]
+  topActions: { type: Array, default: () => [] }, // [{ label, count, pct, color }]
+  recentDays: { type: Object, default: () => ({}) }, // { 'YYYY-MM-DD': count }
 })
 
 const range = ref('Last 7 Days')
@@ -16,7 +16,7 @@ const chartPoints = computed(() => {
   if (!entries.length) return { activity: '', labels: [] }
 
   const values = entries.map(([, v]) => Number(v))
-  const max    = Math.max(...values, 1)
+  const max = Math.max(...values, 1)
   const W = 640, H = 140, padX = 40
 
   const pts = values.map((v, i) => {
@@ -27,8 +27,8 @@ const chartPoints = computed(() => {
 
   return {
     activity: pts.join(' '),
-    fill:     pts.join(' ') + ` ${W - padX},${H} ${padX},${H}`,
-    labels:   entries.map(([d]) => {
+    fill: pts.join(' ') + ` ${W - padX},${H} ${padX},${H}`,
+    labels: entries.map(([d]) => {
       const dt = new Date(d)
       return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     }),
@@ -55,11 +55,11 @@ function heatColor(v) {
 }
 
 // ── Derived totals for the donut labels ───────────────────────────────────
-const totalEvents  = computed(() => props.trendData.reduce((s, i) => s + i.count, 0))
+const totalEvents = computed(() => props.trendData.reduce((s, i) => s + i.count, 0))
 const totalActions = computed(() => props.topActions.reduce((s, i) => s + i.count, 0))
-const topAction    = computed(() => props.topActions[0])
+const topAction = computed(() => props.topActions[0])
 
-const EVENT_COLORS  = ['#1d4ed8','var(--app-primary)','#a3e635','#f59e0b','#f97316','#ef4444','#a855f7','#06b6d4']
+const EVENT_COLORS = ['#1d4ed8', 'var(--app-primary)', '#a3e635', '#f59e0b', '#f97316', '#ef4444', '#a855f7', '#06b6d4']
 </script>
 
 <template>
@@ -69,12 +69,8 @@ const EVENT_COLORS  = ['#1d4ed8','var(--app-primary)','#a3e635','#f59e0b','#f973
         <div class="text-subtitle-1 font-weight-black">Activity Trends</div>
         <div class="text-caption text-medium-emphasis">Daily activity and distribution breakdown</div>
       </div>
-      <v-select
-        v-model="range"
-        :items="rangeOptions"
-        variant="outlined" density="compact" rounded="lg"
-        hide-details style="max-width:180px"
-      />
+      <v-select v-model="range" :items="rangeOptions" variant="outlined" density="compact" rounded="lg" hide-details
+        style="max-width:180px" />
     </v-card-title>
 
     <v-card-text>
@@ -88,30 +84,22 @@ const EVENT_COLORS  = ['#1d4ed8','var(--app-primary)','#a3e635','#f59e0b','#f973
           </linearGradient>
         </defs>
         <polygon v-if="chartPoints.fill" :points="chartPoints.fill" fill="url(#actFill)" />
-        <polyline
-          v-if="chartPoints.activity"
-          :points="chartPoints.activity"
-          fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round"
-        />
+        <polyline v-if="chartPoints.activity" :points="chartPoints.activity" fill="none" stroke="#3b82f6"
+          stroke-width="2.5" stroke-linejoin="round" />
         <!-- Fallback static line when no data -->
-        <polyline
-          v-else
-          points="40,130 140,128 240,110 340,80 440,60 540,72 640,85"
-          fill="none" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="6 4"
-        />
+        <polyline v-else points="40,130 140,128 240,110 340,80 440,60 540,72 640,85" fill="none" stroke="#e2e8f0"
+          stroke-width="2" stroke-dasharray="6 4" />
       </svg>
 
       <!-- X-axis labels -->
       <div class="d-flex justify-space-between px-2 mb-5">
         <span
-          v-for="label in (chartPoints.labels?.length ? chartPoints.labels : ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])"
-          :key="label"
-          class="text-caption text-medium-emphasis"
-        >{{ label }}</span>
+          v-for="label in (chartPoints.labels?.length ? chartPoints.labels : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])"
+          :key="label" class="text-caption text-medium-emphasis">{{ label }}</span>
       </div>
 
       <!-- Three cards row -->
-      <v-row dense>
+      <v-row density="comfortable">
 
         <!-- Events by type -->
         <v-col cols="12" md="4">
@@ -119,16 +107,12 @@ const EVENT_COLORS  = ['#1d4ed8','var(--app-primary)','#a3e635','#f59e0b','#f973
             <div class="text-subtitle-2 font-weight-black mb-3">Activity by Event Type</div>
             <div class="d-flex align-center ga-4">
               <v-progress-circular
-                :model-value="totalEvents ? Math.round((trendData[0]?.count ?? 0) / totalEvents * 100) : 0"
-                size="100" width="10" color="#1d4ed8"
-              >
+                :model-value="totalEvents ? Math.round((trendData[0]?.count ?? 0) / totalEvents * 100) : 0" size="100"
+                width="10" color="#1d4ed8">
                 <span class="text-caption font-weight-black">{{ totalEvents }}</span>
               </v-progress-circular>
               <div class="flex-grow-1">
-                <div
-                  v-for="(item, i) in trendData.slice(0, 6)" :key="item.label"
-                  class="d-flex align-center ga-2 mb-1"
-                >
+                <div v-for="(item, i) in trendData.slice(0, 6)" :key="item.label" class="d-flex align-center ga-2 mb-1">
                   <span class="dot" :style="{ background: EVENT_COLORS[i % EVENT_COLORS.length] }" />
                   <span class="text-caption flex-grow-1">{{ item.label }}</span>
                   <span class="text-caption font-weight-bold">{{ item.count }}</span>
@@ -147,17 +131,11 @@ const EVENT_COLORS  = ['#1d4ed8','var(--app-primary)','#a3e635','#f59e0b','#f973
           <v-card rounded="lg" border flat class="pa-4 h-100">
             <div class="text-subtitle-2 font-weight-black mb-3">Action Type Distribution</div>
             <div class="d-flex align-center ga-4">
-              <v-progress-circular
-                :model-value="topAction?.pct ?? 0"
-                size="100" width="10" color="#3b82f6"
-              >
+              <v-progress-circular :model-value="topAction?.pct ?? 0" size="100" width="10" color="#3b82f6">
                 <span class="text-caption font-weight-black">{{ topAction?.pct ?? 0 }}%</span>
               </v-progress-circular>
               <div class="flex-grow-1">
-                <div
-                  v-for="item in topActions" :key="item.label"
-                  class="mb-2"
-                >
+                <div v-for="item in topActions" :key="item.label" class="mb-2">
                   <div class="d-flex justify-space-between align-center mb-1">
                     <div class="d-flex align-center ga-1">
                       <span class="dot" :style="{ background: item.color === 'grey' ? '#9ca3af' : item.color }" />
@@ -165,11 +143,8 @@ const EVENT_COLORS  = ['#1d4ed8','var(--app-primary)','#a3e635','#f59e0b','#f973
                     </div>
                     <span class="text-caption font-weight-bold">{{ item.count }}</span>
                   </div>
-                  <v-progress-linear
-                    :model-value="item.pct"
-                    :color="item.color"
-                    height="4" rounded bg-color="grey-lighten-3"
-                  />
+                  <v-progress-linear :model-value="item.pct" :color="item.color" height="4" rounded
+                    bg-color="grey-lighten-3" />
                 </div>
                 <div v-if="!topActions.length" class="text-caption text-medium-emphasis">No data yet.</div>
               </div>
@@ -189,16 +164,15 @@ const EVENT_COLORS  = ['#1d4ed8','var(--app-primary)','#a3e635','#f59e0b','#f973
             <div class="heatmap">
               <div class="heatmap-header">
                 <span />
-                <span v-for="h in ['0','3','6','9','12','15','18','21']" :key="h" class="text-caption text-medium-emphasis">{{ h }}</span>
+                <span v-for="h in ['0', '3', '6', '9', '12', '15', '18', '21']" :key="h"
+                  class="text-caption text-medium-emphasis">{{ h
+                  }}</span>
               </div>
               <div v-for="row in heatmap" :key="row.day" class="heatmap-row">
                 <span class="text-caption text-medium-emphasis">{{ row.day }}</span>
                 <div class="heatmap-cells">
-                  <span
-                    v-for="(val, idx) in row.values" :key="idx"
-                    class="heatmap-cell"
-                    :style="{ background: heatColor(val) }"
-                  />
+                  <span v-for="(val, idx) in row.values" :key="idx" class="heatmap-cell"
+                    :style="{ background: heatColor(val) }" />
                 </div>
               </div>
             </div>
@@ -214,11 +188,42 @@ const EVENT_COLORS  = ['#1d4ed8','var(--app-primary)','#a3e635','#f59e0b','#f973
 </template>
 
 <style scoped>
-.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
 
-.heatmap         { display: flex; flex-direction: column; gap: 5px; }
-.heatmap-header  { display: grid; grid-template-columns: 32px repeat(8, 1fr); gap: 4px; }
-.heatmap-row     { display: grid; grid-template-columns: 32px 1fr; gap: 6px; align-items: center; }
-.heatmap-cells   { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
-.heatmap-cell    { height: 14px; border-radius: 3px; border: 1px solid #e5e7eb; }
+.heatmap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.heatmap-header {
+  display: grid;
+  grid-template-columns: 32px repeat(8, 1fr);
+  gap: 4px;
+}
+
+.heatmap-row {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 6px;
+  align-items: center;
+}
+
+.heatmap-cells {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+}
+
+.heatmap-cell {
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid #e5e7eb;
+}
 </style>

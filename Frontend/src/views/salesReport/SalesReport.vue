@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, watch } from 'vue'
-import { storeToRefs }      from 'pinia'
+import { storeToRefs } from 'pinia'
 import { useSalesReportStore } from '@/stores/salesReport.store'
 
 const store = useSalesReportStore()
@@ -35,36 +35,25 @@ watch(searchQuery, () => fetchOrders(1))
           <v-icon v-if="tab.value === 'custom'" size="14" class="ml-1">mdi-calendar-outline</v-icon>
         </v-tab>
       </v-tabs>
-      <v-btn
-        color="var(--app-primary-600)" rounded="lg"
-        prepend-icon="mdi-download-outline" variant="flat"
-      >Export Report</v-btn>
+      <v-btn color="var(--app-primary-600)" rounded="lg" prepend-icon="mdi-download-outline" variant="flat">Export
+        Report</v-btn>
     </div>
 
     <!-- ── Custom date range ──────────────────────────────────────────────────── -->
     <v-expand-transition>
       <v-card v-if="activeTab === 'custom'" rounded="xl" border flat class="mb-5 pa-4">
-        <v-row dense align="center">
+        <v-row density="comfortable" align="center">
           <v-col cols="12" sm="4">
-            <v-text-field
-              v-model="dateFrom"
-              label="Date From" type="date"
-              variant="outlined" rounded="lg" density="compact" hide-details
-            />
+            <v-text-field v-model="dateFrom" label="Date From" type="date" variant="outlined" rounded="lg"
+              density="compact" hide-details />
           </v-col>
           <v-col cols="12" sm="4">
-            <v-text-field
-              v-model="dateTo"
-              label="Date To" type="date"
-              variant="outlined" rounded="lg" density="compact" hide-details
-            />
+            <v-text-field v-model="dateTo" label="Date To" type="date" variant="outlined" rounded="lg" density="compact"
+              hide-details />
           </v-col>
           <v-col cols="12" sm="4">
-            <v-btn
-              color="var(--app-primary)" rounded="lg" elevation="0"
-              :disabled="!dateFrom || !dateTo"
-              @click="fetchAll"
-            >
+            <v-btn color="var(--app-primary)" rounded="lg" elevation="0" :disabled="!dateFrom || !dateTo"
+              @click="fetchAll">
               <span style="color:#063824; font-weight:800">Apply</span>
             </v-btn>
           </v-col>
@@ -74,10 +63,8 @@ watch(searchQuery, () => fetchOrders(1))
 
     <!-- ── Summary Cards ─────────────────────────────────────────────────────── -->
     <v-row class="mb-5">
-      <v-col
-        v-for="(stat, i) in (loadingSummary ? Array(4).fill(null) : summaryStats)"
-        :key="i" cols="12" sm="6" md="3"
-      >
+      <v-col v-for="(stat, i) in (loadingSummary ? Array(4).fill(null) : summaryStats)" :key="i" cols="12" sm="6"
+        md="3">
         <!-- Loading skeleton -->
         <v-card v-if="!stat" rounded="xl" elevation="0" border>
           <v-card-text>
@@ -131,25 +118,16 @@ watch(searchQuery, () => fetchOrders(1))
               <svg width="100%" height="160" viewBox="0 0 600 110" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%"   stop-color="var(--app-primary-600)" stop-opacity="0.18" />
-                    <stop offset="100%" stop-color="var(--app-primary-600)" stop-opacity="0"    />
+                    <stop offset="0%" stop-color="var(--app-primary-600)" stop-opacity="0.18" />
+                    <stop offset="100%" stop-color="var(--app-primary-600)" stop-opacity="0" />
                   </linearGradient>
                 </defs>
                 <polygon :points="chartPoints + ' 550,110 50,110'" fill="url(#areaGrad)" />
-                <polyline
-                  :points="chartPoints"
-                  fill="none"
-                  stroke="var(--app-primary-600)"
-                  stroke-width="2.5"
-                  stroke-linejoin="round"
-                  stroke-linecap="round"
-                />
+                <polyline :points="chartPoints" fill="none" stroke="var(--app-primary-600)" stroke-width="2.5"
+                  stroke-linejoin="round" stroke-linecap="round" />
               </svg>
               <div class="d-flex justify-space-between px-1 mt-1">
-                <span
-                  v-for="d in weekDayLabels" :key="d"
-                  class="text-caption text-medium-emphasis"
-                >{{ d }}</span>
+                <span v-for="d in weekDayLabels" :key="d" class="text-caption text-medium-emphasis">{{ d }}</span>
               </div>
             </template>
           </v-card-text>
@@ -173,17 +151,11 @@ watch(searchQuery, () => fetchOrders(1))
                   <span class="text-body-2 font-weight-medium">{{ cat.name }}</span>
                   <span class="text-body-2 font-weight-bold">{{ cat.pct }}%</span>
                 </div>
-                <v-progress-linear
-                  :model-value="cat.pct"
-                  :color="cat.color"
-                  rounded height="6"
-                  bg-color="grey-lighten-3"
-                />
+                <v-progress-linear :model-value="cat.pct" :color="cat.color" rounded height="6"
+                  bg-color="grey-lighten-3" />
               </div>
-              <v-alert
-                v-if="topCategories.length"
-                type="info" variant="tonal" rounded="lg" density="compact" class="mt-3"
-              >
+              <v-alert v-if="topCategories.length" type="info" variant="tonal" rounded="lg" density="compact"
+                class="mt-3">
                 <span class="text-caption">
                   {{ topCategories[0]?.name }} leads with {{ topCategories[0]?.pct }}% of sales.
                 </span>
@@ -199,23 +171,12 @@ watch(searchQuery, () => fetchOrders(1))
     <v-card rounded="xl" elevation="0" border>
       <v-card-title class="d-flex align-center justify-space-between pt-5 px-5 flex-wrap ga-3">
         <div class="text-subtitle-1 font-weight-black">Detailed Sales Log</div>
-        <v-text-field
-          v-model="searchQuery"
-          placeholder="Search orders..."
-          prepend-inner-icon="mdi-magnify"
-          variant="outlined" density="compact" rounded="lg" hide-details
-          style="max-width:220px"
-          clearable
-        />
+        <v-text-field v-model="searchQuery" placeholder="Search orders..." prepend-inner-icon="mdi-magnify"
+          variant="outlined" density="compact" rounded="lg" hide-details style="max-width:220px" clearable />
       </v-card-title>
 
-      <v-data-table
-        :headers="salesHeaders"
-        :items="salesLog"
-        :loading="loadingOrders"
-        hide-default-footer
-        density="comfortable"
-      >
+      <v-data-table :headers="salesHeaders" :items="salesLog" :loading="loadingOrders" hide-default-footer
+        density="comfortable">
         <template #loading>
           <v-skeleton-loader type="table-row@5" />
         </template>
@@ -225,10 +186,9 @@ watch(searchQuery, () => fetchOrders(1))
         </template>
 
         <template #item.items="{ item }">
-          <span
-            class="text-body-2 text-medium-emphasis"
-            style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"
-          >{{ item.items }}</span>
+          <span class="text-body-2 text-medium-emphasis"
+            style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">{{ item.items
+            }}</span>
         </template>
 
         <template #item.payment="{ item }">
@@ -253,25 +213,13 @@ watch(searchQuery, () => fetchOrders(1))
       <!-- Pagination -->
       <v-divider v-if="meta.last_page > 1" />
       <div v-if="meta.last_page > 1" class="d-flex justify-center pa-3">
-        <v-pagination
-          :model-value="meta.current_page"
-          :length="meta.last_page"
-          :total-visible="7"
-          rounded="lg"
-          density="comfortable"
-          @update:model-value="fetchOrders"
-        />
+        <v-pagination :model-value="meta.current_page" :length="meta.last_page" :total-visible="7" rounded="lg"
+          density="comfortable" @update:model-value="fetchOrders" />
       </div>
     </v-card>
 
     <!-- ── Snackbar ───────────────────────────────────────────────────────────── -->
-    <v-snackbar
-      v-model="snackbar.show"
-      :color="snackbar.color"
-      location="bottom right"
-      :timeout="3000"
-      rounded="lg"
-    >
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="bottom right" :timeout="3000" rounded="lg">
       {{ snackbar.message }}
       <template #actions>
         <v-btn variant="text" icon="mdi-close" size="small" @click="snackbar.show = false" />

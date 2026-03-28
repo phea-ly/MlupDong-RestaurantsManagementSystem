@@ -1,6 +1,6 @@
 <script setup>
 defineProps({
-  categories:     { type: Array,  default: () => [] },
+  categories: { type: Array, default: () => [] },
   categoryCounts: { type: Object, required: true },  // Map<category_id, count>
 })
 
@@ -21,7 +21,7 @@ defineEmits(['view', 'edit', 'delete', 'view-all'])
         No categories found.
       </div>
 
-      <v-row v-else dense>
+      <v-row v-else density="comfortable">
         <v-col v-for="cat in categories" :key="cat.category_id" cols="12" sm="6">
           <v-card rounded="lg" border flat class="pa-3">
             <div class="d-flex align-center justify-space-between">
@@ -63,5 +63,7 @@ defineEmits(['view', 'edit', 'delete', 'view-all'])
 </template>
 
 <style scoped>
-.min-width-0 { min-width: 0; }
+.min-width-0 {
+  min-width: 0;
+}
 </style>

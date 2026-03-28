@@ -5,39 +5,39 @@ const props = defineProps({
   item: { type: Object, required: true },
 })
 
-const showJson  = ref(false)
-const copied    = ref(false)
+const showJson = ref(false)
+const copied = ref(false)
 
 // Build a structured detail shape from the flat store item
 const detail = computed(() => ({
   basic: {
-    logId:       props.item.id,
-    createdAt:   props.item.timestamp,
-    eventType:   props.item.event_type,
-    action:      props.item.action,
+    logId: props.item.id,
+    createdAt: props.item.timestamp,
+    eventType: props.item.event_type,
+    action: props.item.action,
     description: props.item.description,
   },
   user: {
-    id:          props.item.user?.id          ?? '—',
-    username:    props.item.user?.email       ?? 'system',
-    displayName: props.item.user?.name        ?? 'System',
-    role:        props.item.user?.role        ?? '—',
+    id: props.item.user?.id ?? '—',
+    username: props.item.user?.email ?? 'system',
+    displayName: props.item.user?.name ?? 'System',
+    role: props.item.user?.role ?? '—',
   },
   network: {
-    ip:         props.item.ip_address ?? '—',
-    userAgent:  props.item.user_agent ?? '—',
+    ip: props.item.ip_address ?? '—',
+    userAgent: props.item.user_agent ?? '—',
   },
   metadata: props.item.metadata ?? {},
 }))
 
 const rawFields = computed(() => [
-  { key: 'id',          value: detail.value.basic.logId },
-  { key: 'event_type',  value: detail.value.basic.eventType },
-  { key: 'action',      value: detail.value.basic.action },
+  { key: 'id', value: detail.value.basic.logId },
+  { key: 'event_type', value: detail.value.basic.eventType },
+  { key: 'action', value: detail.value.basic.action },
   { key: 'description', value: detail.value.basic.description },
-  { key: 'ip_address',  value: detail.value.network.ip },
-  { key: 'user_agent',  value: detail.value.network.userAgent },
-  { key: 'created_at',  value: detail.value.basic.createdAt },
+  { key: 'ip_address', value: detail.value.network.ip },
+  { key: 'user_agent', value: detail.value.network.userAgent },
+  { key: 'created_at', value: detail.value.basic.createdAt },
   ...Object.entries(detail.value.metadata).map(([key, value]) => ({ key, value })),
 ])
 
@@ -56,16 +56,11 @@ async function copyToClipboard() {
     <div class="d-flex align-center justify-space-between flex-wrap ga-2 mb-4">
       <div class="text-subtitle-2 font-weight-black">Complete Log Entry Details</div>
       <div class="d-flex align-center ga-2">
-        <v-btn
-          size="small" color="primary" variant="tonal"
-          :prepend-icon="showJson ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
-          @click="showJson = !showJson"
-        >{{ showJson ? 'Hide JSON' : 'Show JSON' }}</v-btn>
-        <v-btn
-          size="small" variant="outlined"
-          :prepend-icon="copied ? 'mdi-check' : 'mdi-content-copy'"
-          @click="copyToClipboard"
-        >{{ copied ? 'Copied!' : 'Copy to Clipboard' }}</v-btn>
+        <v-btn size="small" color="primary" variant="tonal"
+          :prepend-icon="showJson ? 'mdi-eye-off-outline' : 'mdi-eye-outline'" @click="showJson = !showJson">{{ showJson
+            ? 'Hide JSON' : 'Show JSON' }}</v-btn>
+        <v-btn size="small" variant="outlined" :prepend-icon="copied ? 'mdi-check' : 'mdi-content-copy'"
+          @click="copyToClipboard">{{ copied ? 'Copied!' : 'Copy to Clipboard' }}</v-btn>
       </div>
     </div>
 
@@ -77,7 +72,7 @@ async function copyToClipboard() {
     </v-card>
 
     <!-- 4-column detail cards -->
-    <v-row dense class="mb-4">
+    <v-row density="comfortable" class="mb-4">
 
       <!-- Basic -->
       <v-col cols="12" md="3">
@@ -161,10 +156,7 @@ async function copyToClipboard() {
             <span class="detail-label">Metadata</span>
           </div>
           <div v-if="Object.keys(detail.metadata).length">
-            <div
-              v-for="(val, key) in detail.metadata" :key="key"
-              class="detail-row"
-            >
+            <div v-for="(val, key) in detail.metadata" :key="key" class="detail-row">
               <span class="detail-key">{{ String(key).toUpperCase() }}</span>
               <span class="detail-val">{{ val ?? '—' }}</span>
             </div>
@@ -201,10 +193,40 @@ async function copyToClipboard() {
 </template>
 
 <style scoped>
-.detail-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
-.detail-row   { margin-bottom: 10px; }
-.detail-key   { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: rgba(0,0,0,.45); margin-bottom: 2px; }
-.detail-val   { font-size: 13px; }
-.font-mono    { font-family: 'Courier New', monospace; font-size: 11px; }
-.json-pre     { white-space: pre-wrap; word-break: break-all; font-family: 'Courier New', monospace; font-size: 11px; }
+.detail-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.detail-row {
+  margin-bottom: 10px;
+}
+
+.detail-key {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: rgba(0, 0, 0, .45);
+  margin-bottom: 2px;
+}
+
+.detail-val {
+  font-size: 13px;
+}
+
+.font-mono {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+}
+
+.json-pre {
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+}
 </style>

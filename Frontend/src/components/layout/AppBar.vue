@@ -5,42 +5,46 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
-  title:       { type: String, required: true },
-  subtitle:    { type: String, required: true },
-  actionLabel: { type: String, default: ''    },
+  title: { type: String, required: true },
+  subtitle: { type: String, required: true },
+  actionLabel: { type: String, default: '' },
 })
-const emit = defineEmits(['action', 'open-edit'])
+const emit = defineEmits(['action'])
 
-const auth   = useAuthStore()
+const auth = useAuthStore()
 const router = useRouter()
 
 const { user } = storeToRefs(auth)
 
-const imgError  = ref(false)
+const imgError = ref(false)
+
 const avatarUrl = computed(() => {
   if (imgError.value) return null
-  const url = user.value?.avatar ?? null
+  // ← check avatar_url first, then fall back to avatar
+  const url = user.value?.avatar_url ?? user.value?.avatar ?? null
   if (!url) return null
   if (url.startsWith('/storage/')) {
-    const base = import.meta.env.VITE_API_URL?? 'http://localhost:8000/api'
+    const base = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'  // ← removed /api
     return `${base}${url}`
   }
   return url
 })
 
+// ← "Mlup Dong"
 const profileName = computed(() => {
   const f = user.value?.first_name ?? ''
-  const l = user.value?.last_name  ?? ''
-  return (f + ' ' + l).trim() || 'Admin User'
+  const l = user.value?.last_name ?? ''
+  return (f + ' ' + l).trim() || 'Unknown User'
 })
 
+// ← "Admin" from role.role_name
 const profileRole = computed(() =>
-  auth.user?.role_id ? 'Administrator' : 'Manager'
+  user.value?.role?.role_name ?? 'User'
 )
 
 const profileInitials = computed(() => {
-  const f = user.value?.first_name?.[0] ?? 'A'
-  const l = user.value?.last_name?.[0]  ?? 'U'
+  const f = user.value?.first_name?.[0] ?? '?'
+  const l = user.value?.last_name?.[0] ?? ''
   return (f + l).toUpperCase()
 })
 
@@ -49,7 +53,6 @@ function logout() {
   router.replace('/login')
 }
 </script>
-
 <template>
   <v-app-bar flat color="white" border="b" class="appbar">
     <v-app-bar-title>
@@ -60,12 +63,8 @@ function logout() {
     <template #append>
       <div class="d-flex align-center ga-2 pr-3">
 
-        <v-btn
-          v-if="actionLabel"
-          color="var(--app-primary-600)" variant="flat" rounded="lg" size="small"
-          :prepend-icon="'mdi-plus'"
-          @click="emit('action')"
-        >
+        <v-btn v-if="actionLabel" color="var(--app-primary-600)" variant="flat" rounded="lg" size="small"
+          :prepend-icon="'mdi-plus'" @click="emit('action')">
           {{ actionLabel }}
         </v-btn>
 
@@ -77,21 +76,11 @@ function logout() {
         <!-- Profile menu -->
         <v-menu location="bottom end" :close-on-content-click="false" transition="slide-y-transition">
           <template #activator="{ props: mp }">
-            <v-avatar
-              v-bind="mp"
-              size="40"
-              style="cursor:pointer; box-shadow:0 4px 14px rgba(20,184,166,0.35);"
-            >
-              <v-img
-                v-if="avatarUrl"
-                :src="avatarUrl"
-                cover
-                @error="imgError = true"
-              />
-              <span
-                v-else
-                style="background:linear-gradient(135deg,var(--app-primary),var(--app-primary-600)); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#063824;"
-              >{{ profileInitials }}</span>
+            <v-avatar v-bind="mp" size="40" style="cursor:pointer; box-shadow:0 4px 14px rgba(20,184,166,0.35);">
+              <v-img v-if="avatarUrl" :src="avatarUrl" cover @error="imgError = true" />
+              <span v-else
+                style="background:linear-gradient(135deg,var(--app-primary),var(--app-primary-600)); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#063824;">{{
+                  profileInitials }}</span>
             </v-avatar>
           </template>
 
@@ -101,30 +90,18 @@ function logout() {
               <template #prepend>
                 <v-avatar size="44" style="overflow:hidden;">
                   <v-img v-if="avatarUrl" :src="avatarUrl" cover @error="imgError = true" />
-                  <span
-                    v-else
-                    style="background:linear-gradient(135deg,#5eead4,var(--app-primary)); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; color:#064e4f;"
-                >{{ profileInitials }}</span>
-              </v-avatar>
+                  <span v-else
+                    style="background:linear-gradient(135deg,#5eead4,var(--app-primary)); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:800; color:#064e4f;">{{
+                      profileInitials }}</span>
+                </v-avatar>
               </template>
               <v-list-item-title class="font-weight-bold">{{ profileName }}</v-list-item-title>
               <v-list-item-subtitle>{{ profileRole }}</v-list-item-subtitle>
-              <template #append>
-                <v-chip color="success" size="x-small" variant="tonal">
-                  <v-icon start size="8">mdi-circle</v-icon>
-                  Online
-                </v-chip>
-              </template>
+
             </v-list-item>
 
             <v-list density="compact" nav class="py-1">
-              <v-list-item
-                prepend-icon="mdi-logout"
-                title="Sign Out"
-                rounded="lg"
-                base-color="error"
-                @click="logout"
-              />
+              <v-list-item prepend-icon="mdi-logout" title="Sign Out" rounded="lg" base-color="error" @click="logout" />
             </v-list>
 
           </v-card>
@@ -164,4 +141,3 @@ function logout() {
   color: var(--app-primary-600);
 }
 </style>
-

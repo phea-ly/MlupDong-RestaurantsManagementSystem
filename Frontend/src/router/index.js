@@ -14,62 +14,52 @@ const routes = [
   },
   {
     path: "/home",
-    meta: { requiresAuth: true },
     component: () => import("@/views/Layout.vue"),
     children: [
       { path: "", redirect: "/home/admin-dashboard" },
       {
         path: "admin-dashboard",
         name: "home-dashboard",
-        meta: { requiresAuth: true },
         component: () => import("@/views/dashboard/AdminDashboard.vue"),
       },
       {
         path: "menu",
         name: "home-menu",
-        meta: { requiresAuth: true },
         component: () => import("@/views/menu/Menu.vue"),
       },
       {
         path: "categories",
         name: "home-categories",
-        meta: { requiresAuth: true },
         component: () => import("@/views/categories/Categories.vue"),
       },
       {
         path: "staff",
         name: "home-staff",
-        meta: { requiresAuth: true },
         component: () => import("@/views/staff/Staff.vue"),
       },
       {
         path: "table",
         name: "home-table",
-        meta: { requiresAuth: true },
         component: () => import("@/views/table/Table.vue"),
       },
       {
         path: "user",
         name: "home-user",
-        meta: { requiresAuth: true },
         component: () => import("@/views/user/User.vue"),
       },
       {
         path: "sales-report",
         name: "home-sales-report",
-        meta: { requiresAuth: true },
         component: () => import("@/views/salesReport/SalesReport.vue"),
       },
       {
         path: "activity",
         name: "home-activity",
-        meta: { requiresAuth: true },
         component: () => import("@/views/activity/Activity.vue"),
       },
       {
         path: "settings",
         name: "home-settings",
-        meta: { requiresAuth: true },
         component: () => import("@/views/setting/Settings.vue"),
       },
     ],
@@ -82,7 +72,6 @@ const routes = [
   {
     path: "/waiter",
     name: "waiter-dashboard",
-    meta: { requiresAuth: true },
     component: () => import("@/views/waiter/waiterApp.vue"),
   },
   {
@@ -107,18 +96,25 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach(async (to, from, next) => {
-  const authStore = useAuthStore();
-  await authStore.ensureAuthChecked();
-  const isAuthed = authStore.isAuthenticated;
+router.beforeEach(async (to, from) => {
+  const authStore = useAuthStore()
+
+  const token = localStorage.getItem('token')
+  if (token && !authStore.user) {
+    await authStore.fetchMe()
+  }
+
+  const isAuthed = authStore.isAuthenticated
 
   if (to.meta.requiresAuth && !isAuthed) {
-    next("/login");
-  } else if (to.meta.guestOnly && isAuthed) {
-    next("/home");
-  } else {
-    next();
+    return '/login'
   }
-});
 
-export default router;
+  if (to.meta.guestOnly && isAuthed) {
+    return '/home'
+  }
+
+  return true  // ← allow navigation
+})
+
+export default router

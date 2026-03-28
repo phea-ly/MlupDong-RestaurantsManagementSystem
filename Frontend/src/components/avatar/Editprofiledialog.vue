@@ -3,17 +3,17 @@ import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
-  user:       { type: Object,  default: null  },
+  user: { type: Object, default: null },
 })
 const emit = defineEmits(['update:modelValue', 'saved'])
 
-const form          = ref({ firstName: '', lastName: '', email: '' })
-const avatarFile    = ref(null)   
-const avatarPreview = ref(null)   
-const imgError      = ref(false)
-const fileInput     = ref(null)
-const errors        = ref({})
-const isDragging    = ref(false)
+const form = ref({ firstName: '', lastName: '', email: '' })
+const avatarFile = ref(null)
+const avatarPreview = ref(null)
+const imgError = ref(false)
+const fileInput = ref(null)
+const errors = ref({})
+const isDragging = ref(false)
 
 // ── Normalise user prop ────────────────────────────────────────────
 const normUser = computed(() => {
@@ -21,14 +21,14 @@ const normUser = computed(() => {
   if (!u) return null
   if (u.rawId !== undefined) return u
   const firstName = u.first_name ?? ''
-  const lastName  = u.last_name  ?? ''
+  const lastName = u.last_name ?? ''
   return {
-    rawId:       u.id,
-    name:        `${firstName} ${lastName}`.trim(),
-    email:       u.email ?? '',
-    avatar:      resolveAvatarUrl(u.avatar),
+    rawId: u.id,
+    name: `${firstName} ${lastName}`.trim(),
+    email: u.email ?? '',
+    avatar: resolveAvatarUrl(u.avatar),
     avatarColor: 'var(--app-primary)',
-    initials:    ((firstName[0] ?? '') + (lastName[0] ?? '')).toUpperCase() || 'AU',
+    initials: ((firstName[0] ?? '') + (lastName[0] ?? '')).toUpperCase() || 'AU',
   }
 })
 
@@ -45,25 +45,25 @@ watch(
   () => [props.modelValue, props.user],
   ([open]) => {
     if (!open) return
-    errors.value     = {}
+    errors.value = {}
     avatarFile.value = null
-    imgError.value   = false
+    imgError.value = false
     const u = normUser.value
     if (u) {
       const parts = u.name?.split(' ') ?? []
-      form.value          = { firstName: parts[0] ?? '', lastName: parts.slice(1).join(' '), email: u.email }
+      form.value = { firstName: parts[0] ?? '', lastName: parts.slice(1).join(' '), email: u.email }
       avatarPreview.value = u.avatar ?? null
     } else {
-      form.value          = { firstName: '', lastName: '', email: '' }
+      form.value = { firstName: '', lastName: '', email: '' }
       avatarPreview.value = null
     }
   },
   { immediate: true }
 )
 
-const initials    = computed(() => {
+const initials = computed(() => {
   const f = form.value.firstName?.[0] ?? ''
-  const l = form.value.lastName?.[0]  ?? ''
+  const l = form.value.lastName?.[0] ?? ''
   return (f + l).toUpperCase() || normUser.value?.initials || '??'
 })
 const avatarColor = computed(() => normUser.value?.avatarColor ?? 'var(--app-primary)')
@@ -87,24 +87,24 @@ function processFile(file) {
     errors.value = { ...errors.value, avatar: 'Image must be under 2 MB.' }
     return
   }
-  errors.value     = { ...errors.value, avatar: null }
+  errors.value = { ...errors.value, avatar: null }
   avatarFile.value = file                       // keep File for parent
-  const reader     = new FileReader()
-  reader.onload    = ev => { avatarPreview.value = ev.target.result; imgError.value = false }
+  const reader = new FileReader()
+  reader.onload = ev => { avatarPreview.value = ev.target.result; imgError.value = false }
   reader.readAsDataURL(file)
 }
 
 function removeAvatar() {
-  avatarFile.value    = null
+  avatarFile.value = null
   avatarPreview.value = null
-  imgError.value      = false
+  imgError.value = false
   if (fileInput.value) fileInput.value.value = ''
 }
 
 function validate() {
   const e = {}
   if (!form.value.firstName.trim()) e.firstName = 'First name is required.'
-  if (!form.value.email.trim())     e.email     = 'Email is required.'
+  if (!form.value.email.trim()) e.email = 'Email is required.'
   errors.value = e
   return !Object.keys(e).length
 }
@@ -113,22 +113,18 @@ function validate() {
 function handleSave() {
   if (!validate()) return
   emit('saved', {
-    firstName:  form.value.firstName.trim(),
-    lastName:   form.value.lastName.trim(),
-    email:      form.value.email.trim(),
-    avatarFile: avatarFile.value ?? null,   
+    firstName: form.value.firstName.trim(),
+    lastName: form.value.lastName.trim(),
+    email: form.value.email.trim(),
+    avatarFile: avatarFile.value ?? null,
   })
   close()
 }
 </script>
 
 <template>
-  <v-dialog
-    :model-value="modelValue"
-    max-width="480"
-    persistent
-    @update:model-value="emit('update:modelValue', $event)"
-  >
+  <v-dialog :model-value="modelValue" max-width="480" persistent
+    @update:model-value="emit('update:modelValue', $event)">
     <v-card rounded="xl" elevation="0">
 
       <!-- Header -->
@@ -151,26 +147,13 @@ function handleSave() {
 
         <!-- Avatar upload zone -->
         <div class="d-flex flex-column align-center mb-5">
-          <div
-            class="avatar-drop"
-            :class="{ dragging: isDragging }"
-            @click="triggerFileInput"
-            @dragover.prevent="isDragging = true"
-            @dragleave="isDragging = false"
-            @drop.prevent="onDrop"
-          >
+          <div class="avatar-drop" :class="{ dragging: isDragging }" @click="triggerFileInput"
+            @dragover.prevent="isDragging = true" @dragleave="isDragging = false" @drop.prevent="onDrop">
             <v-avatar size="96" rounded="xl" style="overflow:hidden;width:100%;height:100%;">
-              <v-img
-                v-if="avatarPreview && !imgError"
-                :src="avatarPreview"
-                cover
-                @error="imgError = true"
-              />
-              <span
-                v-else
+              <v-img v-if="avatarPreview && !imgError" :src="avatarPreview" cover @error="imgError = true" />
+              <span v-else
                 style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:#fff;"
-                :style="{ background: avatarColor }"
-              >{{ initials }}</span>
+                :style="{ background: avatarColor }">{{ initials }}</span>
             </v-avatar>
             <div class="avatar-overlay">
               <v-icon color="white" size="22">mdi-camera-plus-outline</v-icon>
@@ -182,42 +165,27 @@ function handleSave() {
             <div class="text-caption text-medium-emphasis">Click or drag &amp; drop to upload</div>
           </div>
           <div v-if="errors.avatar" class="text-caption text-error mt-1">{{ errors.avatar }}</div>
-          <v-btn
-            v-if="avatarPreview"
-            size="x-small" variant="outlined" color="error" rounded="lg" class="mt-2"
-            prepend-icon="mdi-delete-outline"
-            @click.stop="removeAvatar"
-          >
+          <v-btn v-if="avatarPreview" size="x-small" variant="outlined" color="error" rounded="lg" class="mt-2"
+            prepend-icon="mdi-delete-outline" @click.stop="removeAvatar">
             Remove photo
           </v-btn>
           <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="onFileChange" />
         </div>
 
         <!-- Fields -->
-        <v-row dense>
+        <v-row density="comfortable">
           <v-col cols="6">
-            <v-text-field
-              v-model="form.firstName" label="First Name *"
-              variant="outlined" rounded="lg" density="comfortable"
-              :error-messages="errors.firstName"
-            />
+            <v-text-field v-model="form.firstName" label="First Name *" variant="outlined" rounded="lg"
+              density="comfortable" :error-messages="errors.firstName" />
           </v-col>
           <v-col cols="6">
-            <v-text-field
-              v-model="form.lastName" label="Last Name"
-              variant="outlined" rounded="lg" density="comfortable"
-              :error-messages="errors.lastName"
-            />
+            <v-text-field v-model="form.lastName" label="Last Name" variant="outlined" rounded="lg"
+              density="comfortable" :error-messages="errors.lastName" />
           </v-col>
         </v-row>
 
-        <v-text-field
-          v-model="form.email" label="Email Address *" type="email"
-          variant="outlined" rounded="lg" density="comfortable"
-          prepend-inner-icon="mdi-email-outline"
-          :error-messages="errors.email"
-          class="mt-2"
-        />
+        <v-text-field v-model="form.email" label="Email Address *" type="email" variant="outlined" rounded="lg"
+          density="comfortable" prepend-inner-icon="mdi-email-outline" :error-messages="errors.email" class="mt-2" />
 
       </v-card-text>
 
@@ -235,16 +203,36 @@ function handleSave() {
 
 <style scoped>
 .avatar-drop {
-  position: relative; width: 96px; height: 96px;
-  border-radius: 16px; cursor: pointer; overflow: hidden;
-  border: 2px dashed #dbe3e7; transition: border-color 0.2s;
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 16px;
+  cursor: pointer;
+  overflow: hidden;
+  border: 2px dashed #dbe3e7;
+  transition: border-color 0.2s;
 }
-.avatar-drop:hover, .avatar-drop.dragging { border-color: var(--app-primary); }
+
+.avatar-drop:hover,
+.avatar-drop.dragging {
+  border-color: var(--app-primary);
+}
+
 .avatar-overlay {
-  position: absolute; inset: 0; background: rgba(0,0,0,0.45);
-  display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 3px; opacity: 0; transition: opacity 0.2s;
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.2s;
 }
+
 .avatar-drop:hover .avatar-overlay,
-.avatar-drop.dragging .avatar-overlay { opacity: 1; }
+.avatar-drop.dragging .avatar-overlay {
+  opacity: 1;
+}
 </style>

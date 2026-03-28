@@ -18,6 +18,7 @@ class User extends Authenticatable implements JWTSubject
 
     protected $table      = 'users';
     protected $primaryKey = 'user_id';
+    protected $with = ['role'];
 
     protected $fillable = [
         'first_name',
@@ -26,7 +27,7 @@ class User extends Authenticatable implements JWTSubject
         'role',
         'password',
         'phone',
-        'avatar',  
+        'avatar',
         'status',
         'role_id',
         'restaurant_id',
@@ -50,7 +51,7 @@ class User extends Authenticatable implements JWTSubject
     protected function avatarUrl(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->avatar
+            get: fn() => $this->avatar
                 ? asset('storage/' . $this->avatar)
                 : null,
         );
@@ -59,7 +60,7 @@ class User extends Authenticatable implements JWTSubject
     protected function name(): Attribute
     {
         return Attribute::make(
-            get: fn () => trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? '')),
+            get: fn() => trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? '')),
         );
     }
 
