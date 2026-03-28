@@ -53,30 +53,25 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/mlupdong_webserver:latest
             ${{ secrets.DOCKER_USERNAME }}/mlupdong_webserver:${{ github.sha }}
 
-  # deploy:
-  #   needs: build-and-push
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       
-  #     - name: Deploy to EC2
-  #       uses: appleboy/ssh-action@v1
-  #       env:
-  #         DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
-  #         DOCKER_PASS: ${{ secrets.DOCKER_PASSWORD }}
-  #       with:
-  #         host: ${{ secrets.AWS_HOST }}
-  #         username: ${{ secrets.AWS_USER }}
-  #         key: ${{ secrets.AWS_SSH_KEY }}
-  #         envs: DOCKER_USER,DOCKER_PASS
-  #         command_timeout: 30m
-  #         script: |
-  #           cd /home/ubuntu/mlup_dong
-  #           echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-  #           docker system prune -af --filter "until=24h"
-  #           docker compose pull
-  #           docker compose up -d --remove-orphans
-  #           docker exec mlupdong_backend php artisan migrate --force
-  #           docker exec mlupdong_backend php artisan cache:clear
-  #           docker exec mlupdong_backend php artisan config:cache
-  #           echo "✅ Deployment complete!"
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1
+        env:
+          DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASS: ${{ secrets.DOCKER_PASSWORD }}
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USER }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/mlup_dong
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker exec mlupdong_backend php artisan cache:clear
+            docker exec mlupdong_backend php artisan config:cache
+            echo "✅ Deployment complete!"
