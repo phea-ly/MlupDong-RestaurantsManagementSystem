@@ -71,7 +71,6 @@ const TABLE_HEADERS = [
       :header-props="{ class: 'text-caption font-weight-bold text-uppercase text-medium-emphasis' }"
       :items-per-page-options="[10, 25, 50]"
       item-value="id"
-      show-select
       v-model:selected="selectedIds"
       v-model:expanded="expandedIds"
       @update:page="$emit('page-change', { page: $event, perPage: meta.per_page })"

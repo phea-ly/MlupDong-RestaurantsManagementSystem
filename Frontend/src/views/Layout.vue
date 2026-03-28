@@ -8,6 +8,7 @@ const metaByPath = {
   "/home/table": { title: "Tables", subtitle: "Manage tables & QR codes" },
   "/home/sales-report": { title: "Sales Report", subtitle: "View sales analytics" },
   "/home/user": { title: "Users", subtitle: "Manage accounts" },
+  "/home/roles": { title: "Roles", subtitle: "Manage user roles" },
   "/home/activity": { title: "Activity Log", subtitle: "View system activity" },
   "/home/settings": { title: "Settings", subtitle: "System configuration" },
 };

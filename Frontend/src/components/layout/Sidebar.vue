@@ -1,11 +1,12 @@
 <script setup>
 const menu = [
   { to: '/home/admin-dashboard', label: 'Dashboard',   icon: 'mdi-view-dashboard-outline' },
-  { to: '/home/menu',            label: 'Menus',        icon: 'mdi-silverware-fork-knife'  },
   { to: '/home/categories',      label: 'Categories',   icon: 'mdi-tag-multiple-outline'   },
+  { to: '/home/menu',            label: 'Menus',        icon: 'mdi-silverware-fork-knife'  },
+  { to: '/home/roles',           label: 'Roles',       icon: 'mdi-account-edit' },
+  { to: '/home/user',            label: 'Users',        icon: 'mdi-account-group-outline'  },
   { to: '/home/staff',           label: 'Staffs',       icon: 'mdi-account-circle-outline' },
   { to: '/home/table',           label: 'Tables',       icon: 'mdi-table-chair'            },
-  { to: '/home/user',            label: 'Users',        icon: 'mdi-account-group-outline'  },
 ]
 
 const reportsMenu = [
@@ -40,7 +41,7 @@ const reportsMenu = [
         :prepend-icon="item.icon"
         :title="item.label"
         rounded="lg"
-        color="#1a6b4a"
+        color=secondary
         base-color="#6b7280"
         class="nav-item mb-0.5"
       />
@@ -69,9 +70,9 @@ const reportsMenu = [
 
 <style scoped>
 /* Drawer */
-.sidebar-drawer {
+/* .sidebar-drawer {
   border-radius: 12px;
-}
+} */
 /* Brand */
 .brand-wrap {
   display: flex;

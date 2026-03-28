@@ -176,13 +176,6 @@ onMounted(init);
       <div />
       <div class="d-flex align-center ga-2">
         <v-btn
-          variant="outlined" rounded="lg" height="40"
-          prepend-icon="mdi-tag-multiple-outline"
-          @click="goToCategories(router)"
-        >
-          Manage Categories
-        </v-btn>
-        <v-btn
           color="var(--app-primary)" rounded="lg" height="40" elevation="0"
           prepend-icon="mdi-plus"
           @click="handleAddNew"

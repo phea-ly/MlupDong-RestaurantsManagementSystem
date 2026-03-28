@@ -31,6 +31,12 @@ const routes = [
         component: () => import("@/views/menu/Menu.vue"),
       },
       {
+        path: "roles",
+        name: "home-roles",
+        meta: { requiresAuth: true },
+        component: () => import("@/views/roles/roles.vue"),
+      },
+      {
         path: "categories",
         name: "home-categories",
         meta: { requiresAuth: true },

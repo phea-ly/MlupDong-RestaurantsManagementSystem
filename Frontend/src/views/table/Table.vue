@@ -1,6 +1,6 @@
 <script setup>
-import { onMounted }     from 'vue'
-import { storeToRefs }   from 'pinia'
+import { onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useTableStore } from '@/stores/table.store'
 
 const store = useTableStore()
@@ -27,51 +27,41 @@ onMounted(init)
 </script>
 
 <template>
-  <v-container fluid class="pa-6 pa-md-10" style="background-color:#fafbfc; min-height:100vh;">
+  <v-container fluid class="pa-0">
 
     <!-- ── Header ──────────────────────────────────────────────────────────── -->
-    <v-row class="mb-6" align="center">
-      <v-col cols="12" md="7" />
-      <v-col cols="12" md="5" class="d-flex justify-md-end align-center" style="gap:12px">
-        <v-btn
-          color="#16c65b" elevation="0" rounded="lg" height="48"
-          class="text-none font-weight-bold px-6 text-white"
-          prepend-icon="mdi-plus"
-          @click="openAdd"
-        >
-          Register New Table
-        </v-btn>
-        <v-btn
-          variant="outlined" color="#cbd5e1" elevation="0" rounded="lg" height="48"
-          class="text-none font-weight-bold px-6 bg-white text-grey-darken-3"
-          prepend-icon="mdi-refresh"
-          :loading="generatingAll"
-          @click="generateAll"
-        >
-          Bulk Generate QRs
-        </v-btn>
-      </v-col>
-    </v-row>
+    <div class="d-flex align-center justify-space-between mb-5">
+      <div>
+      </div>
+      <v-btn
+        color="var(--app-primary)"
+        rounded="lg"
+        prepend-icon="mdi-plus"
+        @click="openAdd"
+      >
+        <span style="color:#063824; font-weight:800">Register New Table</span>
+      </v-btn>
+    </div>
 
     <!-- ── Stats row ───────────────────────────────────────────────────────── -->
-    <v-row class="mb-10">
+    <v-row class="mb-5">
       <v-col v-for="stat in dashboardStats" :key="stat.label" cols="6" sm="6" md="3">
-        <v-card class="stat-mini-card pa-4" elevation="0">
-          <div class="d-flex align-center">
-            <v-avatar :color="stat.bg" class="mr-3" size="44">
+        <v-card rounded="xl" elevation="0" border class="stat-card">
+          <v-card-text class="d-flex align-center ga-4">
+            <v-avatar :color="stat.bg" size="48" rounded="lg">
               <v-icon :color="stat.color" size="22">{{ stat.icon }}</v-icon>
             </v-avatar>
             <div>
-              <div class="text-caption font-weight-bold text-grey-darken-1 mb-n1" style="letter-spacing:.5px">{{ stat.label }}</div>
+              <div class="stat-label">{{ stat.label }}</div>
               <div class="text-h5 font-weight-black" :style="{ color: stat.color }">{{ stat.value }}</div>
             </div>
-          </div>
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
     <!-- ── Section filter ──────────────────────────────────────────────────── -->
-    <v-sheet color="transparent" class="d-flex align-center mb-8 flex-wrap" style="gap:16px">
+    <v-sheet color="transparent" class="d-flex align-center mb-5 flex-wrap" style="gap:16px">
       <v-chip-group v-model="selectedSection" selected-class="active-filter-chip" mandatory>
         <v-chip
           v-for="s in sections" :key="s" :value="s"
@@ -95,8 +85,12 @@ onMounted(init)
         cols="12" sm="6" md="4" lg="3"
         class="stagger-col" :style="`animation-delay:${index * 60}ms`"
       >
-        <v-card class="screenshot-card pa-6 d-flex flex-column" elevation="0">
-
+        <v-card
+          rounded="xl"
+          elevation="0"
+          border
+          class="screenshot-card pa-6 d-flex flex-column"
+        >
           <!-- Title + Status -->
           <div class="d-flex justify-space-between align-start mb-4">
             <div>
@@ -107,7 +101,8 @@ onMounted(init)
               size="small"
               :class="table.qr_code ? 'chip-ready' : 'chip-pending'"
               class="font-weight-black px-3 py-4 text-uppercase text-caption status-badge"
-              rounded="pill" elevation="0"
+              rounded="pill"
+              elevation="0"
             >{{ table.qr_code ? 'READY' : 'PENDING' }}</v-chip>
           </div>
 
@@ -153,10 +148,9 @@ onMounted(init)
 
           <!-- Actions -->
           <div class="d-flex align-center justify-space-between mb-5">
-
-            <!-- Deployed / Generate button -->
             <v-btn
-              v-if="table.qr_code" elevation="0"
+              v-if="table.qr_code"
+              elevation="0"
               class="text-none flex-grow-1 mr-3 text-left h-auto py-3 asset-btn deployed-state"
               @click="printQr(table)"
             >
@@ -168,7 +162,8 @@ onMounted(init)
             </v-btn>
 
             <v-btn
-              v-else elevation="0"
+              v-else
+              elevation="0"
               class="text-none flex-grow-1 mr-3 text-left h-auto py-3 generate-btn"
               :loading="generatingId === table.table_id"
               @click="generateQr(table.table_id)"
@@ -221,7 +216,6 @@ onMounted(init)
               <v-icon size="14" class="mr-1">mdi-refresh</v-icon> UPDATE
             </div>
           </div>
-
         </v-card>
       </v-col>
     </v-row>
@@ -229,88 +223,116 @@ onMounted(init)
     <!-- ── Empty state ─────────────────────────────────────────────────────── -->
     <v-row v-else justify="center" class="mt-12 py-12">
       <v-col cols="12" md="6" class="text-center">
-        <v-sheet class="pa-10 bg-white rounded-xl d-flex flex-column align-center" border="2px dashed #e2e8f0">
+        <v-card rounded="xl" elevation="0" border class="pa-10 d-flex flex-column align-center">
           <v-icon size="80" color="#cbd5e1" class="mb-4">mdi-table-search</v-icon>
           <div class="text-h5 font-weight-black text-grey-darken-3 mb-2">No Units Found</div>
           <div class="text-body-1 text-grey-darken-1 mb-6">No tables match your current filter.</div>
-          <v-btn color="primary" rounded="lg" elevation="0" class="text-none px-6 font-weight-bold"
-            @click="search = ''; selectedSection = 'All Sections'">
+          <v-btn
+            color="primary" rounded="lg" elevation="0"
+            class="text-none px-6 font-weight-bold"
+            @click="search = ''; selectedSection = 'All Sections'"
+          >
             Clear Filters
           </v-btn>
-        </v-sheet>
+        </v-card>
       </v-col>
     </v-row>
 
     <!-- ── Register Table dialog ────────────────────────────────────────────── -->
-    <v-dialog v-model="showAddDialog" max-width="500">
-      <v-card rounded="xl" class="premium-dialog" elevation="24">
-        <v-card-title class="d-flex align-center px-6 pt-6 pb-2">
-          <v-avatar color="#e6f9f0" class="mr-3">
-            <v-icon color="#16c65b">mdi-qrcode-scan</v-icon>
+    <v-dialog v-model="showAddDialog" max-width="480">
+      <v-card rounded="xl" elevation="0">
+        <v-card-title class="d-flex align-center ga-3 pt-6 px-6">
+          <v-avatar color="success" variant="tonal" size="40" rounded="lg">
+            <v-icon size="20">mdi-qrcode-scan</v-icon>
           </v-avatar>
-          <span class="text-h5 font-weight-black" style="letter-spacing:-.5px">Register New Table</span>
-          <v-spacer />
-          <v-btn icon="mdi-close" variant="tonal" color="grey-darken-1" size="small" @click="showAddDialog = false" />
+          <span class="text-h6 font-weight-black">Register New Table</span>
         </v-card-title>
-        <v-card-text class="px-6 pt-4">
-          <v-row>
-            <v-col cols="12">
-              <span class="field-label">Unit Identifier (Number)</span>
-              <v-text-field v-model="newTable.table_number" type="number" variant="outlined" color="#16c65b" rounded="lg" class="mt-1 modern-input" prepend-inner-icon="mdi-pound" />
+        <v-card-text class="px-6 pt-3">
+          <v-text-field
+            v-model="newTable.table_number"
+            label="Unit Identifier (Number)"
+            type="number"
+            variant="outlined" rounded="lg" density="comfortable"
+            prepend-inner-icon="mdi-pound"
+            class="mb-2"
+          />
+          <v-row dense>
+            <v-col cols="6">
+              <v-text-field
+                v-model="newTable.capacity"
+                label="Capacity"
+                type="number"
+                variant="outlined" rounded="lg" density="comfortable"
+                prepend-inner-icon="mdi-account-group"
+              />
             </v-col>
-            <v-col cols="12" sm="6">
-              <span class="field-label">Capacity</span>
-              <v-text-field v-model="newTable.capacity" type="number" variant="outlined" color="#16c65b" rounded="lg" class="mt-1 modern-input" prepend-inner-icon="mdi-account-group" />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <span class="field-label">Dining Zone</span>
-              <v-select v-model="newTable.location" :items="['Indoor','Patio','Bar']" variant="outlined" color="#16c65b" rounded="lg" class="mt-1 modern-input" prepend-inner-icon="mdi-map-marker" />
+            <v-col cols="6">
+              <v-select
+                v-model="newTable.location"
+                :items="['Indoor', 'Patio', 'Bar']"
+                label="Dining Zone"
+                variant="outlined" rounded="lg" density="comfortable"
+                prepend-inner-icon="mdi-map-marker"
+              />
             </v-col>
           </v-row>
         </v-card-text>
         <v-card-actions class="px-6 pb-6 pt-0">
           <v-spacer />
-          <v-btn variant="text" class="text-none font-weight-bold px-4" color="grey-darken-2" height="48" rounded="lg" @click="showAddDialog = false">Cancel</v-btn>
-          <v-btn color="#16c65b" class="text-none font-weight-bold px-8 text-white" height="48" rounded="lg" elevation="0" :loading="saving" @click="addTable">
-            Register Table
+          <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="showAddDialog = false">Cancel</v-btn>
+          <v-btn
+            color="var(--app-primary)" rounded="lg"
+            :loading="saving" @click="addTable"
+          >
+            <span style="color:#063824; font-weight:800">Register Table</span>
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
     <!-- ── Edit dialog ──────────────────────────────────────────────────────── -->
-    <v-dialog v-model="showEditDialog" max-width="500">
-      <v-card v-if="editTableData" rounded="xl" class="premium-dialog" elevation="24">
-        <v-card-title class="d-flex align-center px-6 pt-6 pb-2">
-          <v-avatar color="#eff6ff" class="mr-3">
-            <v-icon color="#3b82f6">mdi-pencil</v-icon>
+    <v-dialog v-model="showEditDialog" max-width="480">
+      <v-card v-if="editTableData" rounded="xl" elevation="0">
+        <v-card-title class="d-flex align-center ga-3 pt-6 px-6">
+          <v-avatar color="primary" variant="tonal" size="40" rounded="lg">
+            <v-icon size="20">mdi-pencil-outline</v-icon>
           </v-avatar>
-          <span class="text-h5 font-weight-black" style="letter-spacing:-.5px">Edit Unit #{{ editTableData.table_number }}</span>
-          <v-spacer />
-          <v-btn icon="mdi-close" variant="tonal" color="grey-darken-1" size="small" @click="showEditDialog = false" />
+          <span class="text-h6 font-weight-black">Edit Unit #{{ editTableData.table_number }}</span>
         </v-card-title>
-        <v-card-text class="px-6 pt-4">
-          <v-row>
-            <v-col cols="12">
-              <span class="field-label">Unit Identifier (Number)</span>
-              <v-text-field v-model="editTableData.table_number" type="number" variant="outlined" color="#3b82f6" rounded="lg" class="mt-1 modern-input" prepend-inner-icon="mdi-pound" />
+        <v-card-text class="px-6 pt-3">
+          <v-text-field
+            v-model="editTableData.table_number"
+            label="Unit Identifier (Number)"
+            type="number"
+            variant="outlined" rounded="lg" density="comfortable"
+            prepend-inner-icon="mdi-pound"
+            class="mb-2"
+          />
+          <v-row dense>
+            <v-col cols="6">
+              <v-text-field
+                v-model="editTableData.capacity"
+                label="Capacity"
+                type="number"
+                variant="outlined" rounded="lg" density="comfortable"
+                prepend-inner-icon="mdi-account-group"
+              />
             </v-col>
-            <v-col cols="12" sm="6">
-              <span class="field-label">Capacity</span>
-              <v-text-field v-model="editTableData.capacity" type="number" variant="outlined" color="#3b82f6" rounded="lg" class="mt-1 modern-input" prepend-inner-icon="mdi-account-group" />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <span class="field-label">Dining Zone</span>
-              <v-select v-model="editTableData.location" :items="['Indoor','Patio','Bar']" variant="outlined" color="#3b82f6" rounded="lg" class="mt-1 modern-input" prepend-inner-icon="mdi-map-marker" />
+            <v-col cols="6">
+              <v-select
+                v-model="editTableData.location"
+                :items="['Indoor', 'Patio', 'Bar']"
+                label="Dining Zone"
+                variant="outlined" rounded="lg" density="comfortable"
+                prepend-inner-icon="mdi-map-marker"
+              />
             </v-col>
           </v-row>
         </v-card-text>
         <v-card-actions class="px-6 pb-6 pt-0">
           <v-spacer />
-          <v-btn variant="text" class="text-none font-weight-bold px-4" color="grey-darken-2" height="48" rounded="lg" @click="showEditDialog = false">Cancel</v-btn>
-          <v-btn color="#3b82f6" class="text-none font-weight-bold px-8 text-white" height="48" rounded="lg" elevation="0" :loading="saving" @click="saveEdit">
-            Save Details
-          </v-btn>
+          <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="showEditDialog = false">Cancel</v-btn>
+          <v-btn color="primary" variant="flat" rounded="lg" :loading="saving" @click="saveEdit">Save Details</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -338,7 +360,10 @@ onMounted(init)
     </v-dialog>
 
     <!-- ── Snackbar ─────────────────────────────────────────────────────────── -->
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="bottom right" rounded="lg" :timeout="3000">
+    <v-snackbar
+      v-model="snackbar.show" :color="snackbar.color"
+      location="bottom right" rounded="lg" :timeout="3000"
+    >
       {{ snackbar.message }}
       <template #actions>
         <v-btn variant="text" icon="mdi-close" size="small" @click="snackbar.show = false" />
@@ -365,136 +390,243 @@ onMounted(init)
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-
-:deep(*) { font-family: 'Plus Jakarta Sans', sans-serif; }
-
-.field-label {
-  font-size: 13px; font-weight: 700; color: #475569; padding-left: 2px;
-}
-
 /* ── Stat cards ── */
-.stat-mini-card {
-  background: white; border-radius: 20px !important;
-  border: 1px solid #f1f5f9 !important;
-  transition: all .3s cubic-bezier(.4,0,.2,1);
+.stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: rgba(0, 0, 0, .5);
 }
-.stat-mini-card:hover {
-  border-color: #dcfce7 !important;
-  box-shadow: 0 10px 25px -5px rgba(22,198,91,.1) !important;
+
+.stat-card {
+  transition: all .3s cubic-bezier(.4, 0, .2, 1);
+}
+
+.stat-card:hover {
+  box-shadow: 0 10px 25px -5px rgba(22, 198, 91, .1) !important;
   transform: translateY(-2px);
 }
 
 /* ── Table cards ── */
 .screenshot-card {
   background: #ffffff !important;
-  border-radius: 32px !important;
-  border: 1px solid #f1f5f9 !important;
-  box-shadow: 0 4px 20px rgba(0,0,0,.02) !important;
-  transition: all .6s cubic-bezier(.16,1,.3,1);
-  position: relative; overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, .02) !important;
+  transition: all .6s cubic-bezier(.16, 1, .3, 1);
+  position: relative;
+  overflow: hidden;
 }
+
 .screenshot-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 30px 60px -15px rgba(15,23,42,.1) !important;
-  border-color: #16c65b33 !important;
+  transform: translateY(-8px);
+  box-shadow: 0 24px 48px -12px rgba(15, 23, 42, .1) !important;
 }
+
 .screenshot-card::before {
-  content: ''; position: absolute; inset: 0; border-radius: 32px;
-  background: radial-gradient(circle at top right, rgba(22,198,91,.03), transparent 70%);
-  opacity: 0; transition: opacity .6s ease; pointer-events: none;
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  background: radial-gradient(circle at top right, rgba(22, 198, 91, .03), transparent 70%);
+  opacity: 0;
+  transition: opacity .6s ease;
+  pointer-events: none;
 }
-.screenshot-card:hover::before { opacity: 1; }
 
-.unit-id-label { font-size: 10px; letter-spacing: .1em; color: #94a3b8; font-weight: 700; }
-.status-badge  { font-size: 10px !important; letter-spacing: .05em; }
+.screenshot-card:hover::before {
+  opacity: 1;
+}
 
-.chip-ready   { background: linear-gradient(135deg,#f0fdf4,#dcfce7) !important; color: #166534 !important; border: 1px solid rgba(22,163,74,.1) !important; }
-.chip-pending { background: linear-gradient(135deg,#fffbeb,#fef3c7) !important; color: #92400e !important; border: 1px solid rgba(217,119,6,.1) !important; }
+.unit-id-label {
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: #94a3b8;
+  font-weight: 700;
+}
 
-.info-row .info-divider { border-color: #f1f5f9 !important; }
+.status-badge {
+  font-size: 10px !important;
+  letter-spacing: .05em;
+}
+
+.chip-ready {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7) !important;
+  color: #166534 !important;
+  border: 1px solid rgba(22, 163, 74, .1) !important;
+}
+
+.chip-pending {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7) !important;
+  color: #92400e !important;
+  border: 1px solid rgba(217, 119, 6, .1) !important;
+}
+
+.info-row .info-divider {
+  border-color: #f1f5f9 !important;
+}
 
 /* ── QR area ── */
 .qr-container {
-  background: #f8fafc !important; border-radius: 32px !important;
-  padding: 16px !important; border: 1px solid #f1f5f9 !important;
+  background: #f8fafc !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+  border: 1px solid #f1f5f9 !important;
 }
+
 .qr-inner-frame {
-  width: 100%; height: 100%; background: white; border-radius: 24px;
-  display: flex; align-items: center; justify-content: center;
-  padding: 12px; box-shadow: inset 0 2px 8px rgba(0,0,0,.03);
+  width: 100%;
+  height: 100%;
+  background: white;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, .03);
 }
-.qr-image { border-radius: 12px; transition: transform .3s ease; }
-.screenshot-card:hover .qr-image { transform: scale(1.05); }
+
+.qr-image {
+  border-radius: 8px;
+  transition: transform .3s ease;
+}
+
+.screenshot-card:hover .qr-image {
+  transform: scale(1.05);
+}
+
 .qr-placeholder-icon-wrap {
-  background: #f1f5f9; padding: 24px; border-radius: 100%;
+  background: #f1f5f9;
+  padding: 24px;
+  border-radius: 100%;
   border: 2px dashed #cbd5e1;
 }
-.empty-qr-state { width: 100%; align-items: center; }
+
+.empty-qr-state {
+  width: 100%;
+  align-items: center;
+}
 
 /* ── Action buttons ── */
 .asset-btn {
-  background: #f0fdf4 !important; border: 1px solid #dcfce7 !important;
-  border-radius: 16px !important; transition: all .3s ease;
+  background: #f0fdf4 !important;
+  border: 1px solid #dcfce7 !important;
+  border-radius: 12px !important;
+  transition: all .3s ease;
 }
-.asset-btn:hover { background: #dcfce7 !important; transform: translateX(4px); }
+
+.asset-btn:hover {
+  background: #dcfce7 !important;
+  transform: translateX(4px);
+}
 
 .generate-btn {
-  background: #eff6ff !important; border: 1px solid #dbeafe !important;
-  border-radius: 16px !important; transition: all .3s ease;
+  background: #eff6ff !important;
+  border: 1px solid #dbeafe !important;
+  border-radius: 12px !important;
+  transition: all .3s ease;
 }
-.generate-btn:hover { background: #dbeafe !important; transform: translateX(4px); }
+
+.generate-btn:hover {
+  background: #dbeafe !important;
+  transform: translateX(4px);
+}
 
 .mini-action-btn {
-  background: #f8fafc !important; border: 1px solid #e2e8f0 !important;
-  border-radius: 16px !important; transition: all .2s ease;
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  transition: all .2s ease;
 }
-.mini-action-btn:hover { background: #f1f5f9 !important; border-color: #cbd5e1 !important; }
 
-.uppercase-mini { font-size: 9px; line-height: 1; letter-spacing: .05em; opacity: .7; }
-.uppercase-main { font-size: 11px; line-height: 1.2; letter-spacing: .02em; }
+.mini-action-btn:hover {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+
+.uppercase-mini {
+  font-size: 9px;
+  line-height: 1;
+  letter-spacing: .05em;
+  opacity: .7;
+}
+
+.uppercase-main {
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: .02em;
+}
 
 /* ── Card footer ── */
 .footer-status-row {
-  border-top: 1px dashed #f1f5f9; padding-top: 20px;
-  border-radius: 0 0 32px 32px;
+  border-top: 1px dashed #f1f5f9;
+  padding-top: 16px;
 }
-.sync-status { color: #10b981; font-size: 11px; letter-spacing: .5px; }
+
+.sync-status {
+  color: #10b981;
+  font-size: 11px;
+  letter-spacing: .5px;
+}
+
 .update-text {
-  color: #94a3b8; font-size: 11px; letter-spacing: .5px;
-  cursor: pointer; transition: color .2s ease;
+  color: #94a3b8;
+  font-size: 11px;
+  letter-spacing: .5px;
+  cursor: pointer;
+  transition: color .2s ease;
 }
-.update-text:hover { color: #0f172a !important; }
+
+.update-text:hover {
+  color: #0f172a !important;
+}
 
 /* ── Pulse animations ── */
-.pulse-dot { animation: status-pulse 2s infinite; }
+.pulse-dot {
+  animation: status-pulse 2s infinite;
+}
+
 @keyframes status-pulse {
-  0%,100% { opacity: 1; }
-  50%      { opacity: .4; }
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .4; }
 }
+
 .deployed-state .v-icon {
-  animation: check-pop .6s cubic-bezier(.175,.885,.32,1.275) infinite alternate;
+  animation: check-pop .6s cubic-bezier(.175, .885, .32, 1.275) infinite alternate;
 }
+
 @keyframes check-pop {
   from { transform: scale(1); }
-  to   { transform: scale(1.1); filter: drop-shadow(0 0 4px rgba(16,185,129,.4)); }
+  to   { transform: scale(1.1); filter: drop-shadow(0 0 4px rgba(16, 185, 129, .4)); }
 }
 
 /* ── Filters ── */
-.filter-chip { background: transparent !important; color: #64748b !important; }
-.filter-chip:hover { background: rgba(241,245,249,.8) !important; color: #0f172a !important; }
-.active-filter-chip { background: #1e293b !important; color: #fff !important; box-shadow: 0 4px 12px rgba(30,41,59,.25) !important; }
+.filter-chip {
+  background: transparent !important;
+  color: #64748b !important;
+}
+
+.filter-chip:hover {
+  background: rgba(241, 245, 249, .8) !important;
+  color: #0f172a !important;
+}
+
+.active-filter-chip {
+  background: #1e293b !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(30, 41, 59, .25) !important;
+}
 
 /* ── Stagger animation ── */
-.stagger-col { animation: slideUpFade .6s cubic-bezier(.16,1,.3,1) backwards; }
+.stagger-col {
+  animation: slideUpFade .6s cubic-bezier(.16, 1, .3, 1) backwards;
+}
+
 @keyframes slideUpFade {
   from { opacity: 0; transform: translateY(30px) scale(.98); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* ── Misc ── */
-.premium-dialog { border: 1px solid rgba(226,232,240,.8) !important; }
-.modern-input :deep(.v-field) { background: #f8fafc !important; border-radius: 12px !important; }
+/* ── Context menu ── */
 .menu-item-hover { transition: all .2s ease; }
 .menu-item-hover:hover { background: #f1f5f9; }
 .menu-item-hover-danger { transition: all .2s ease; }
@@ -507,19 +639,63 @@ onMounted(init)
   :deep(.v-application) .v-row,
   :deep(.v-application) .v-dialog,
   .v-btn, header, nav, footer { display: none !important; }
+
   body, html { background: white !important; }
 
   .print-only-section {
-    display: flex !important; position: fixed; inset: 0;
-    align-items: center; justify-content: center;
-    background: white !important; z-index: 99999;
+    display: flex !important;
+    position: fixed;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    background: white !important;
+    z-index: 99999;
   }
-  .print-container { text-align: center; width: 100%; font-family: 'Plus Jakarta Sans', sans-serif; }
-  .print-header { font-size: 24px; font-weight: 800; color: #16c65b; margin-bottom: 2cm; letter-spacing: 2px; text-transform: uppercase; }
-  .print-qr-card { display: inline-block; border: 2px solid #e2e8f0; border-radius: 40px; padding: 2cm 1.5cm; background: #fff; }
-  .print-table-number { font-size: 64px; font-weight: 900; color: #0f172a; line-height: 1; margin-bottom: 1cm; letter-spacing: -2px; }
-  .print-qr-wrapper { display: inline-flex; padding: .5cm; background: white; border: 2px solid #e2e8f0; border-radius: 32px; margin-bottom: 1cm; }
+
+  .print-container { text-align: center; width: 100%; }
+
+  .print-header {
+    font-size: 24px;
+    font-weight: 800;
+    color: #16c65b;
+    margin-bottom: 2cm;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .print-qr-card {
+    display: inline-block;
+    border: 2px solid #e2e8f0;
+    border-radius: 40px;
+    padding: 2cm 1.5cm;
+    background: #fff;
+  }
+
+  .print-table-number {
+    font-size: 64px;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1;
+    margin-bottom: 1cm;
+    letter-spacing: -2px;
+  }
+
+  .print-qr-wrapper {
+    display: inline-flex;
+    padding: .5cm;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 32px;
+    margin-bottom: 1cm;
+  }
+
   .print-qr-img { width: 12cm; height: 12cm; object-fit: contain; }
-  .print-instruction { font-size: 24px; color: #64748b; font-weight: 600; margin: 0; }
+
+  .print-instruction {
+    font-size: 24px;
+    color: #64748b;
+    font-weight: 600;
+    margin: 0;
+  }
 }
 </style>
