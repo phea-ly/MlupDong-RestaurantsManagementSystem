@@ -32,8 +32,8 @@ jobs:
         with:
           context: ./Frontend
           push: true
+          no-cache: true
           build-args: |
-            VITE_API_URL=${{ secrets.PROD_API_URL }}
             VITE_API_BASE_URL=${{ secrets.PROD_API_URL }}
             VITE_REVERB_APP_KEY=${{ secrets.VITE_REVERB_APP_KEY }}
             VITE_REVERB_HOST=${{ secrets.VITE_REVERB_HOST }}
@@ -53,25 +53,25 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/mlupdong_webserver:latest
             ${{ secrets.DOCKER_USERNAME }}/mlupdong_webserver:${{ github.sha }}
 
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  # deploy:
+  #   needs: build-and-push
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
       
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1
-        env:
-          DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASS: ${{ secrets.DOCKER_PASSWORD }}
-        with:
-          host: ${{ secrets.AWS_HOST }}
-          username: ${{ secrets.AWS_USER }}
-          key: ${{ secrets.AWS_SSH_KEY }}
-          script: |
-            cd /home/ubuntu/mlup_dong
-            docker compose pull
-            docker compose up -d --remove-orphans
-            docker exec mlupdong_backend php artisan cache:clear
-            docker exec mlupdong_backend php artisan config:cache
-            echo "✅ Deployment complete!"
+  #     - name: Deploy to EC2
+  #       uses: appleboy/ssh-action@v1
+  #       env:
+  #         DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
+  #         DOCKER_PASS: ${{ secrets.DOCKER_PASSWORD }}
+  #       with:
+  #         host: ${{ secrets.AWS_HOST }}
+  #         username: ${{ secrets.AWS_USER }}
+  #         key: ${{ secrets.AWS_SSH_KEY }}
+  #         script: |
+  #           cd /home/ubuntu/mlup_dong
+  #           docker compose pull
+  #           docker compose up -d --remove-orphans
+  #           docker exec mlupdong_backend php artisan cache:clear
+  #           docker exec mlupdong_backend php artisan config:cache
+  #           echo "✅ Deployment complete!"
