@@ -1,4 +1,4 @@
-// Save / clear auth state in localStorage
+
 export function saveSession(data) {
   if (data) {
     localStorage.setItem('auth_session', JSON.stringify(data))

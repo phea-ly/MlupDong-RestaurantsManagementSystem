@@ -2,9 +2,9 @@
 import { ref, computed } from 'vue';
 
 // Import child components
-import LiveOrder from './liveOrder.vue';
-import QuickMenu from './quickMenu.vue';
-import FloorPlan from './floorPlan.vue';
+import LiveOrder from '../../components/waiter/liveOrder.vue';
+import QuickMenu from '../../components/waiter/quickMenu.vue';
+import FloorPlan from '../../components/waiter/floorPlan.vue';
 
 const currentView = ref('Live Orders');
 const search = ref('');
