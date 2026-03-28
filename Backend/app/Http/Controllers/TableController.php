@@ -30,8 +30,8 @@ class TableController extends Controller
 
             $token = $table->qr_code_url ?? Str::random(32);
 
-            $frontendUrl = env('FRONTEND_URL', 'http://localhost:5173');
-            $data        = "{$frontendUrl}/menu/{$token}";
+            $baseUrl = 'http://34.236.143.58:82/';
+            $data        = "{$baseUrl}/menu/{$token}";
 
             $options = new QROptions([
                 'outputType'   => 'svg',
@@ -71,7 +71,6 @@ class TableController extends Controller
                 'message' => 'QR code generated successfully',
                 'table'   => $table->load('restaurant'),
             ]);
-
         } catch (\Exception $e) {
             Log::error('QR Generation Error: ' . $e->getMessage());
             return response()->json([
@@ -112,8 +111,10 @@ class TableController extends Controller
     {
         $validated = $request->validate([
             'table_number'  => [
-                'required', 'integer', 'min:1',
-                Rule::unique('tables')->where(fn ($q) => $q->where('restaurant_id', $request->restaurant_id)),
+                'required',
+                'integer',
+                'min:1',
+                Rule::unique('tables')->where(fn($q) => $q->where('restaurant_id', $request->restaurant_id)),
             ],
             'capacity'      => ['required', 'integer', 'min:1'],
             'status'        => ['nullable', Rule::in(['available', 'unavailable'])],
@@ -143,10 +144,13 @@ class TableController extends Controller
 
         $validated = $request->validate([
             'table_number'  => [
-                'sometimes', 'required', 'integer', 'min:1',
+                'sometimes',
+                'required',
+                'integer',
+                'min:1',
                 Rule::unique('tables')
                     ->ignore($id, 'table_id')
-                    ->where(fn ($q) => $q->where('restaurant_id', $request->restaurant_id ?? $table->restaurant_id)),
+                    ->where(fn($q) => $q->where('restaurant_id', $request->restaurant_id ?? $table->restaurant_id)),
             ],
             'capacity'      => ['sometimes', 'required', 'integer', 'min:1'],
             'status'        => ['nullable', Rule::in(['available', 'unavailable'])],

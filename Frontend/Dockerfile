@@ -3,7 +3,6 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 # API Arguments
-ARG VITE_API_URL=/api
 ARG VITE_API_BASE_URL=/api
 
 # Reverb Arguments (Add these)
@@ -13,7 +12,6 @@ ARG VITE_REVERB_PORT
 ARG VITE_REVERB_SCHEME
 
 # Set them as Environment Variables for the build process
-ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_REVERB_APP_KEY=$VITE_REVERB_APP_KEY
 ENV VITE_REVERB_HOST=$VITE_REVERB_HOST
