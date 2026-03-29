@@ -24,128 +24,73 @@ function startOrderWithTable(tableId) {
 </script>
 
 <template>
-  <v-app theme="dark">
-    <!-- APP BAR -->
-    <v-app-bar color="#050a06" height="70" flat style="border-bottom: 1px solid #16241a;">
-      <div class="d-none d-md-flex align-center ml-2 pl-6" style="border-left: 1px solid #16241a; height: 100%;">
-        <div style="line-height:1.1;">
-          <div class="text-caption text-neon-green font-weight-bold">Mlup Dong</div>
-          <div class="text-caption text-grey-darken-1 font-weight-bold text-uppercase ls-1">SERVICE STATION</div>
+  
+  <!-- NAVIGATION DRAWER: Persistent Sidebar -->
+  <v-app class="app-background">
+      <v-navigation-drawer permanent color="#ffffff" width="280" class="sidebar-drawer" border="0" elevation="0">
+      
+      <!-- Brand Area -->
+      <div class="brand-wrap px-4 pt-6 pb-2">
+        <v-avatar size="48" class="brand-avatar">
+          <v-icon color="#1a6b4a" size="28">mdi-leaf</v-icon>
+        </v-avatar>
+        <div class="brand-text">
+          <div class="brand-title">MLUP DONG</div>
+          <div class="brand-subtitle">Service Station</div>
         </div>
       </div>
-      
-      <v-spacer></v-spacer>
-      
-      <div class="d-none d-md-flex align-center h-100 mr-8">
-        <v-btn 
-          variant="text" 
-          height="100%" 
-          min-width="120"
-          :class="['font-weight-bold text-body-1', currentView === 'Floor Plan' ? 'text-neon-green custom-tab-active' : 'text-grey']"
-          @click="currentView = 'Floor Plan'"
-        >Floor Plan</v-btn>
-        
-        <v-btn 
-          variant="text" 
-          height="100%" 
-          min-width="120"
-          :class="['font-weight-bold text-body-1', currentView === 'Live Orders' ? 'text-neon-green custom-tab-active' : 'text-grey']"
-          @click="currentView = 'Live Orders'"
-        >Live Orders</v-btn>
 
-        <v-btn 
-          variant="text" 
-          height="100%" 
-          min-width="120"
-          :class="['font-weight-bold text-body-1', currentView === 'Quick Menu' ? 'text-neon-green custom-tab-active' : 'text-grey']"
-          @click="currentView = 'Quick Menu'"
-        >Quick Menu</v-btn>
+      <!-- Waiter Mode Indicator -->
+      <div class="px-4 mt-3">
+         <div class="d-flex align-center pa-4 rounded-xl" style="background-color: #f8fafc; border: 1px solid #f1f5f9;">
+           <v-avatar size="36" color="#eaf5f0" class="mr-4">
+              <v-icon size="22" color="#0d8465">mdi-account-tie</v-icon>
+           </v-avatar>
+           <div>
+              <div style="font-size: 14px; font-weight: 800; color: #0f172a; letter-spacing: 0.01em; margin-bottom: 2px;">Waiter Mode</div>
+              <div style="font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">Station 04</div>
+           </div>
+         </div>
       </div>
-      
-      <div class="d-none d-sm-flex align-center mr-6" style="width: 300px;">
-        <v-text-field
-          v-model="search"
-          placeholder="Search items..."
-          prepend-inner-icon="mdi-magnify"
-          variant="solo-filled"
-          bg-color="#121f15"
-          color="white"
-          rounded="pill"
-          density="compact"
-          hide-details
-          class="custom-search"
-        ></v-text-field>
-      </div>
-      
-      <v-btn icon="mdi-bell" color="#00ff00" variant="text" size="small" class="mr-2"></v-btn>
-      <v-btn icon="mdi-cog" color="#00ff00" variant="text" size="small" class="mr-4"></v-btn>
-      <v-btn icon color="#00ff00" variant="text" size="small" class="mr-6 rounded-lg bg-dark-green border-neon-slim">
-        <v-icon size="20">mdi-account-outline</v-icon>
-      </v-btn>
-    </v-app-bar>
 
-    <!-- NAVIGATION DRAWER -->
-    <v-navigation-drawer permanent color="#111413" width="260" style="border-right: 1px solid #1c241e;">
-      <v-list class="pt-6">
-        <v-list-item class="mb-4 px-6 d-flex align-center">
-          <template v-slot:prepend>
-            <v-avatar color="#f9cb9c" size="48" class="mr-4">
-               <v-icon size="30" color="#b45f06">mdi-face-woman-profile</v-icon>
-            </v-avatar>
-          </template>
-          <v-list-item-title class="font-weight-black text-white text-body-1">Waiter Mode</v-list-item-title>
-          <v-list-item-subtitle class="font-weight-bold text-grey-darken-1 text-uppercase ls-1">Station 04</v-list-item-subtitle>
-        </v-list-item>
+      <!-- Navigation Section -->
+      <div class="section-label px-6 mt-8 mb-4">Main Menu</div>
 
+      <v-list nav class="px-3 pb-0" bg-color="transparent">
         <v-list-item
           v-for="(item, i) in sidebarMenu"
           :key="i"
           @click="currentView = item.id"
-          class="sidebar-item mx-4 mb-2 rounded-lg"
-          :class="{'bg-active-sidebar border-left-neon': currentView === item.id}"
-          height="54"
-        >
-          <template v-slot:prepend>
-             <v-icon size="22" :color="currentView === item.id ? '#00ff00' : '#718076'" class="mr-2">{{item.icon}}</v-icon>
-          </template>
-          <v-list-item-title class="font-weight-bold text-body-2" :class="currentView === item.id ? 'text-neon-green' : 'text-grey-lighten-1'">
-            {{item.text}}
-          </v-list-item-title>
-        </v-list-item>
+          :prepend-icon="item.icon"
+          :title="item.text"
+          :active="currentView === item.id"
+          rounded="xl"
+          base-color="#64748b"
+          class="nav-item mx-1"
+        />
       </v-list>
       
-      <template v-slot:append>
-        <div class="pa-6">
-          <v-btn 
-            block 
-            color="#00ff00"
-            height="56"
-            class="text-black font-weight-black text-button rounded-lg order-btn-hover"
-            elevation="0"
-            @click="currentView = 'Quick Menu'"
-          >
-            <v-icon start size="20">mdi-plus</v-icon> New Order
-          </v-btn>
-        </div>
-      </template>
+      <v-spacer class="mt-8"></v-spacer>
+      
     </v-navigation-drawer>
 
     <!-- MAIN CONTENT SHELL -->
-    <v-main style="background-color: #0b110c;">
+    <v-main class="app-background">
       <!-- Dynamic View Rendering -->
-      <LiveOrder v-if="currentView === 'Live Orders'" />
-      
-      <QuickMenu 
-        v-else-if="currentView === 'Quick Menu'" 
-        :initial-table-id="selectedTableId"
-        @reset-table="selectedTableId = null"
-      />
+      <transition name="fade-view" mode="out-in">
+        <LiveOrder v-if="currentView === 'Live Orders'" />
+        
+        <QuickMenu 
+          v-else-if="currentView === 'Quick Menu'" 
+          :initial-table-id="selectedTableId"
+          @reset-table="selectedTableId = null"
+        />
 
-      <FloorPlan 
-        v-else-if="currentView === 'Floor Plan'" 
-        @start-order="startOrderWithTable"
-      />
-
+        <FloorPlan 
+          v-else-if="currentView === 'Floor Plan'" 
+          @start-order="startOrderWithTable"
+        />
+      </transition>
     </v-main>
   </v-app>
 </template>
@@ -157,27 +102,96 @@ function startOrderWithTable(tableId) {
   font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
 
-/* Global Navigation Styles */
-.text-neon-green { color: #00ff00 !important; }
-.bg-dark-green { background-color: #133317 !important; }
-.bg-active-sidebar { background-color: #162a1c !important; }
-.border-left-neon { border-left: 3px solid #00ff00 !important; }
-.border-neon-slim { border: 1px solid #164f1e !important; }
+/* Core App */
+.app-background { background-color: #ffffff !important; }
 
-.ls-1 { letter-spacing: 1px !important; }
-
-/* Custom Overrides for inputs and appbar tabs */
-.custom-tab-active { border-bottom: 2px solid #00ff00 !important; }
-.custom-search :deep(.v-field__outline) { display: none; }
-.custom-search :deep(.v-field) {
-  border: 1px solid #1c2f1f;
-  border-radius: 50px;
+/* Drawer */
+.sidebar-drawer {
+  border-right: 1px solid #f3f4f6 !important;
 }
 
-/* Base Interactions */
-.order-btn-hover { transition: all 0.2s; }
-.order-btn-hover:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 0 15px rgba(0,255,0,0.4) !important;
+/* Brand */
+.brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.brand-avatar {
+  flex-shrink: 0;
+  background-color: #eaf5f0 !important;
+}
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.brand-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #0f172a;
+}
+.brand-subtitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: #0d8465;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+
+/* Section label */
+.section-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #94a3b8;
+}
+
+/* Nav item overrides */
+:deep(.v-list-item-title) {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: inherit;
+}
+
+/* Prepend icon sizing */
+:deep(.v-list-item__prepend .v-icon) {
+  font-size: 20px !important;
+  opacity: 0.9;
+}
+
+/* Active state — perfectly matches screenshot rich pastel green */
+:deep(.v-list-item--active) {
+  background-color: #dcfce7 !important;
+  color: #065f46 !important;
+}
+:deep(.v-list-item--active .v-list-item-title) {
+  font-weight: 700 !important;
+  color: #065f46 !important;
+}
+
+/* Hover state */
+:deep(.v-list-item:not(.v-list-item--active):hover) {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Tighten internal padding */
+:deep(.v-list-item) {
+  min-height: 48px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+  margin-bottom: 4px !important;
+}
+
+/* View Transition Animations */
+.fade-view-enter-active, .fade-view-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.fade-view-enter-from, .fade-view-leave-to {
+  opacity: 0;
+  transform: translateY(5px);
 }
 </style>
