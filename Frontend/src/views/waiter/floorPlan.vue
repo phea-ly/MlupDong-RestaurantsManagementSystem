@@ -50,42 +50,32 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="pa-8 d-flex flex-column h-100 overflow-y-auto" style="background-color: #edf2f1;">
+  <div class="d-flex flex-column h-100">
     
-    <!-- Header -->
-    <v-row class="mb-4 align-center" justify="space-between" no-gutters>
-      <v-col cols="12" md="auto" class="mb-4 mb-md-0">
-        <h1 class="text-h4 font-weight-black text-black mb-2" style="letter-spacing: -1px;">Interactive Floor Plan</h1>
-        <p class="text-subtitle-1 text-grey-darken-1 font-weight-medium">
-          {{ tableStore.tables.length }} Total Units <span class="mx-2">&bull;</span> {{ tableStore.tables.filter(t => checkOccupied(t.table_id)).length }} Occupied
-        </p>
-      </v-col>
-      
-      <v-col cols="12" md="auto">
-        <!-- Legend -->
-        <v-sheet color="white" class="d-flex align-center pa-3 px-5 rounded-pill border-light mr-md-6" elevation="0">
-          <span class="legend-dot bg-primary mr-3"></span> <span class="text-caption text-grey-darken-3 mr-6 font-weight-bold ls-1">AVAILABLE</span>
-          <span class="legend-dot bg-grey-darken-1 mr-3"></span> <span class="text-caption text-grey-darken-3 font-weight-bold ls-1">IN SERVICE</span>
-        </v-sheet>
-      </v-col>
-    </v-row>
-
-    <!-- Filter Tabs -->
-    <div class="d-flex mb-8 align-center gap-4 filter-scroll" style="overflow-x: auto;">
-      <v-chip-group v-model="selectedCategory" mandatory color="primary" selected-class="bg-primary text-white elevation-2">
-        <v-chip
+    <!-- Filter Tabs & Legend Row -->
+    <div class="d-flex flex-wrap align-center justify-space-between mb-8 gap-4">
+      <div class="d-flex align-center gap-4 filter-scroll" style="overflow-x: auto;">
+        <v-chip-group v-model="selectedCategory" mandatory color="primary" selected-class="bg-primary text-white elevation-2">
+          <v-chip
           v-for="(zone, i) in zones" :key="i"
           :value="zone"
-          class="font-weight-bold text-body-1 px-6 mr-3"
+          class="font-weight-bold text-body-1 px-8 mr-3 filter-chip-refined"
           variant="flat"
-          :color="selectedCategory === zone ? '#0f9d58': 'white'"
+          :color="selectedCategory === zone ? '#0f9d58' : '#f1f5f9'"
+          :text-color="selectedCategory === zone ? 'white' : '#64748b'"
           size="large"
-          style="height: 48px; border-radius: 24px; border: 1px solid rgba(0,0,0,0.05);"
-          :class="selectedCategory !== zone ? 'text-grey-darken-2' : ''"
+          @click="selectedCategory = zone"
         >
           {{ zone }}
         </v-chip>
-      </v-chip-group>
+        </v-chip-group>
+      </div>
+
+      <!-- Compact Legend -->
+      <v-sheet color="white" class="d-flex align-center pa-2 px-5 rounded-pill border-light" elevation="0">
+        <span class="legend-dot bg-primary mr-2"></span> <span class="text-caption text-grey-darken-3 mr-4 font-weight-bold ls-1">VACANT</span>
+        <span class="legend-dot bg-grey-darken-1 mr-2"></span> <span class="text-caption text-grey-darken-3 font-weight-bold ls-1">BUSY</span>
+      </v-sheet>
     </div>
 
     <!-- Map Grid -->
@@ -154,7 +144,6 @@ onMounted(() => {
           </v-card>
        </v-col>
     </v-row>
-
   </div>
 </template>
 
@@ -223,6 +212,24 @@ onMounted(() => {
 
 .z-index-2 { z-index: 2; position: relative; }
 .z-index-3 { z-index: 3; position: relative; }
+
+.filter-chip-refined {
+  height: 48px !important;
+  border-radius: 14px !important;
+  transition: all 0.2s ease !important;
+  border: 1px solid transparent !important;
+  letter-spacing: 0.01em !important;
+}
+
+.filter-chip-refined:not(.v-chip--selected):hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.v-chip--selected.filter-chip-refined {
+  box-shadow: 0 4px 12px rgba(15, 157, 88, 0.2) !important;
+  color: white !important;
+}
 
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.5s ease;
