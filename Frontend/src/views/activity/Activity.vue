@@ -3,7 +3,6 @@ import { onMounted }        from 'vue'
 import { storeToRefs }      from 'pinia'
 import { useActivityStore } from '@/stores/activity.store'
 
-import ActivityHeader       from '@/components/activity/ActivityHeader.vue'
 import ActivityFilters      from '@/components/activity/ActivityFilters.vue'
 import ActivityLogTable     from '@/components/activity/ActivityLogTable.vue'
 import ActivityTrends       from '@/components/activity/ActivityTrends.vue'

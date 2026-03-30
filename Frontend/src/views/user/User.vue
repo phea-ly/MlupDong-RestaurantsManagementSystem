@@ -286,7 +286,7 @@ const TABLE_HEADERS = [
 
           <!-- Role + Restaurant -->
           <v-row dense class="mt-1">
-            <v-col cols="6">
+            <v-col>
               <v-select
                 v-model="modal.form.role_id"
                 :items="roleOptions"
@@ -294,16 +294,6 @@ const TABLE_HEADERS = [
                 label="Role *"
                 variant="outlined" rounded="lg" density="comfortable"
                 :error-messages="formErrors.role_id"
-              />
-            </v-col>
-            <v-col cols="6">
-              <v-select
-                v-model="modal.form.restaurant_id"
-                :items="restaurantOptions"
-                item-title="title" item-value="value"
-                label="Restaurant *"
-                variant="outlined" rounded="lg" density="comfortable"
-                :error-messages="formErrors.restaurant_id"
               />
             </v-col>
           </v-row>

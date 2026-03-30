@@ -47,7 +47,7 @@ function viewItems(categoryId) {
         prepend-icon="mdi-plus"
         @click="openAdd"
       >
-        <span style="color:#063824; font-weight:800">Add Category</span>
+        <span style="color:white; font-weight:800">Add Category</span>
       </v-btn>
     </div>
 

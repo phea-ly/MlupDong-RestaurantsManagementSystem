@@ -224,7 +224,7 @@ let peakHoursChart = null
 // ── 3. Helpers ───────────────────────────────────────────────────────────────
 function getPrimary() {
   return getComputedStyle(document.documentElement)
-    .getPropertyValue('--app-primary-600').trim() || '#6366f1'
+    .getPropertyValue("#407709").trim() || '#407709'
 }
 
 // ── 4. Chart builders ────────────────────────────────────────────────────────
@@ -292,7 +292,7 @@ function buildPeakHoursChart() {
         label: 'Orders',
         data: peakHours.value.map(b => b.count),
         backgroundColor: `${primary}BF`,
-        borderColor: primary,
+        borderColor: '#407709',
         borderWidth: 1.5,
         borderRadius: 4,
         borderSkipped: false,

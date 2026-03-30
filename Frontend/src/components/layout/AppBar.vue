@@ -90,7 +90,7 @@ function logout() {
               />
               <span
                 v-else
-                style="background:linear-gradient(135deg,var(--app-primary),var(--app-primary-600)); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#063824;"
+                style="background:linear-gradient(135deg,#407709); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:white;"
               >{{ profileInitials }}</span>
             </v-avatar>
           </template>
