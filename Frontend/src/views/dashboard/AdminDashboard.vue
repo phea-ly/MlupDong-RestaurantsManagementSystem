@@ -128,12 +128,6 @@
             <div v-else style="position:relative; height:360px;">
               <canvas ref="peakHoursCanvas" />
             </div>
-            <!-- <v-alert type="success" variant="tonal" rounded="lg" density="compact" class="mt-4">
-              <span class="text-caption">
-                Dinner service (6 PM – 8 PM) accounts for a large share of daily revenue.
-                Consider increasing floor staff during this window.
-              </span>
-            </v-alert> -->
           </v-card-text>
         </v-card>
       </v-col>

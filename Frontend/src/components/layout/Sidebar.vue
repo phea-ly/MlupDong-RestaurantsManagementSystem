@@ -59,7 +59,7 @@ const reportsMenu = [
         :prepend-icon="item.icon"
         :title="item.label"
         rounded="lg"
-        color=secondary
+        color="#1a6b4a"
         base-color="#6b7280"
         class="nav-item mb-0.5"
       />
@@ -69,7 +69,11 @@ const reportsMenu = [
 </template>
 
 <style scoped>
-
+/* Drawer */
+/* .sidebar-drawer {
+  border-radius: 12px;
+} */
+/* Brand */
 .brand-wrap {
   display: flex;
   align-items: center;
