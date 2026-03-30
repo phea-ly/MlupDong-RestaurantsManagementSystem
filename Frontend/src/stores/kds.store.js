@@ -36,13 +36,24 @@ export const useKdsStore = defineStore('kds', () => {
   const currentTime = ref(new Date().toLocaleTimeString())
   let clockTimer    = null
 
+  const recentOrders = computed(() => {
+    currentTime.value // Reactive dependency
+    const dayAgo = Date.now() - (24 * 60 * 60 * 1000)
+    return orders.value.filter(o => {
+      const ts = new Date(o.updated_at || o.created_at).getTime()
+      return ts > dayAgo
+    })
+  })
+
   // ── Computed ───────────────────────────────────────────────────────────────
-  const incomingOrders  = computed(() => orders.value.filter(o => o.order_status === 'new'))
-  const receivedOrders  = computed(() => orders.value.filter(o => o.order_status === 'received'))
-  const confirmedOrders = computed(() => orders.value.filter(o => o.order_status === 'confirmed'))
-  const preparingOrders = computed(() => orders.value.filter(o => o.order_status === 'preparing'))
-  const readyOrders     = computed(() => orders.value.filter(o => o.order_status === 'ready'))
-  const completedOrders = computed(() => orders.value.filter(o => o.order_status === 'completed'))
+  const incomingOrders  = computed(() => recentOrders.value.filter(o => o.order_status === 'new'))
+  const receivedOrders  = computed(() => recentOrders.value.filter(o => o.order_status === 'received'))
+  const confirmedOrders = computed(() => recentOrders.value.filter(o => o.order_status === 'confirmed'))
+  const preparingOrders = computed(() => recentOrders.value.filter(o => o.order_status === 'preparing'))
+  const readyOrders     = computed(() => recentOrders.value.filter(o => o.order_status === 'ready'))
+  const completedOrders = computed(() => recentOrders.value.filter(o => o.order_status === 'completed'))
+
+  const pendingOrders   = computed(() => recentOrders.value.filter(o => ['new', 'received', 'confirmed'].includes(o.order_status)))
 
   const activeCount = computed(() =>
     incomingOrders.value.length +
@@ -99,7 +110,7 @@ export const useKdsStore = defineStore('kds', () => {
   function getOrderWaitMinutes(order) {
     const active = ['new', 'received', 'confirmed', 'preparing']
     if (!active.includes(order.order_status)) return null
-    const ahead = orders.value.filter(
+    const ahead = recentOrders.value.filter(
       o => active.includes(o.order_status) && o.id < order.id
     ).length
     return Math.max(5, ahead * 5)
@@ -137,6 +148,7 @@ export const useKdsStore = defineStore('kds', () => {
   const confirmCooking = (id) => updateStatus(id, 'confirmed', 'Confirmed')
   const prepareFood    = (id) => updateStatus(id, 'preparing', 'Preparing')
   const markReady      = (id) => updateStatus(id, 'ready',     'Ready ✓')
+  const completeOrder  = (id) => updateStatus(id, 'completed', 'Completed')
 
   // ── Echo WebSocket ─────────────────────────────────────────────────────────
   let channel = null
@@ -199,13 +211,13 @@ export const useKdsStore = defineStore('kds', () => {
     orders, loading, connected, error, tab, snackbar, currentTime,
     // computed
     incomingOrders, receivedOrders, confirmedOrders, preparingOrders,
-    readyOrders, completedOrders, activeCount, estimatedWaitMinutes,
+    pendingOrders, readyOrders, completedOrders, activeCount, estimatedWaitMinutes,
     // helpers
     getElapsedSeconds, formatElapsed, getTimerClass,
     getOrderWaitMinutes, getStatusLabel, getStatusColor,
     // actions
     fetchOrders,
-    receiveOrder, confirmCooking, prepareFood, markReady,
+    receiveOrder, confirmCooking, prepareFood, markReady, completeOrder,
     // lifecycle
     init, cleanup,
   }

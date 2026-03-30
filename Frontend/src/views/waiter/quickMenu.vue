@@ -47,7 +47,7 @@ const posMenuItems = computed(() => {
       ...i,
       image: getImageUrl(i.image),
       tag: i.is_popular ? 'POPULAR' : '',
-      tagColor: '#00ff00',
+      tagColor: '#14b8a6',
       tagText: '#000'
     }));
 }); 
@@ -231,7 +231,7 @@ async function submitOrder() {
         <div class="pa-6 pb-2">
            <div class="d-flex justify-space-between align-center mb-6">
               <div class="d-flex align-center">
-                <v-icon color="#00ff00" class="mr-3" size="28">mdi-shopping-outline</v-icon>
+                <v-icon color="#22c55e" class="mr-3" size="28">mdi-shopping-outline</v-icon>
                 <div class="text-h4 font-weight-black text-black" style="letter-spacing: -1px;">Order</div>
               </div>
               <v-chip color="#edf2f1" class="text-black font-weight-black text-caption rounded-lg">
@@ -309,7 +309,7 @@ async function submitOrder() {
                         density="compact"
                         hide-details
                         class="compact-note-input-light"
-                        color="#00ff00"
+                        color="#14b8a6"
                         prepend-inner-icon="mdi-pencil-outline"
                       ></v-text-field>
                     </div>
@@ -338,7 +338,7 @@ async function submitOrder() {
             </div>
 
             <v-btn 
-              block height="64" color="#00ff00" elevation="2"
+              block height="64" color="#22c55e" elevation="2"
               class="order-btn-modern text-black font-weight-black text-button rounded-xl text-h6"
               style="letter-spacing: 0.5px;"
               :loading="submitting"
@@ -358,8 +358,8 @@ async function submitOrder() {
 
 <style scoped>
 /* Utility Colors */
-.text-neon-green { color: #00ff00 !important; }
-.bg-neon-green { background-color: #00ff00 !important; color: #000 !important; }
+.text-neon-green { color: #22c55e !important; }
+.bg-neon-green { background-color: #22c55e !important; color: #000 !important; }
 
 /* Item Card Aesthetics */
 .item-card-modern {
@@ -386,7 +386,7 @@ async function submitOrder() {
 }
 
 .item-card-modern:hover .add-btn-modern {
-  background-color: #00ff00 !important;
+  background-color: #22c55e !important;
   color: black !important;
   transform: scale(1.1);
 }
@@ -415,7 +415,7 @@ async function submitOrder() {
 }
 .cart-table-select-light :deep(.v-field__outline) { display: none; }
 .cart-table-select-light :deep(.v-select__selection-text) {
-  color: #00ff00 !important;
+  color: #22c55e !important;
 }
 
 /* Note Input Overlay */
@@ -452,6 +452,6 @@ async function submitOrder() {
 
 /* Interactive colors */
 .hover-neon { transition: color 0.2s; }
-.hover-neon:hover { color: #00ff00 !important; }
+.hover-neon:hover { color: #22c55e !important; }
 </style>
 

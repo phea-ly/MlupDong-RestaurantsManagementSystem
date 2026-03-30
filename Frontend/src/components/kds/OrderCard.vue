@@ -7,7 +7,7 @@ const props = defineProps({
   waitMinutes: { type: Number, default: null  },
 })
 
-defineEmits(['receive-order', 'confirm-cooking', 'prepare-food', 'mark-ready'])
+defineEmits(['receive-order', 'confirm-cooking', 'prepare-food', 'mark-ready', 'complete-order'])
 
 const kdsStore = useKdsStore()
 
@@ -15,133 +15,212 @@ const elapsed          = computed(() => kdsStore.getElapsedSeconds(props.order))
 const elapsedFormatted = computed(() => kdsStore.formatElapsed(elapsed.value))
 const timerClass       = computed(() => kdsStore.getTimerClass(elapsed.value))
 const statusLabel      = computed(() => kdsStore.getStatusLabel(props.order.order_status))
-const statusColor      = computed(() => kdsStore.getStatusColor(props.order.order_status))
+
+// Per-status visual config ──────────────────────────────────────────────────
+const STATUS_CONFIG = {
+  new:       { accent: '#3b82f6', label: 'New',       btnColor: 'teal',   btnText: 'Accept & Prepare', btnIcon: 'mdi-fire' },
+  received:  { accent: '#6366f1', label: 'Received',  btnColor: 'teal',   btnText: 'Start Preparing', btnIcon: 'mdi-fire' },
+  confirmed: { accent: '#f59e0b', label: 'Confirmed', btnColor: 'teal',   btnText: 'Start Preparing', btnIcon: 'mdi-fire' },
+  preparing: { accent: '#14b8a6', label: 'Preparing', btnColor: 'green',  btnText: 'Mark Ready',    btnIcon: 'mdi-check-circle-outline' },
+  ready:     { accent: '#22c55e', label: 'Ready',     btnColor: 'grey-darken-3', btnText: 'Complete Order', btnIcon: 'mdi-check-all' },
+  completed: { accent: '#94a3b8', label: 'Done',      btnColor: null,     btnText: null,             btnIcon: null },
+}
+
+const cfg = computed(() => STATUS_CONFIG[props.order.order_status] ?? STATUS_CONFIG.completed)
+
+const emitAction = (emit, status, id) => {
+  if (['new', 'received', 'confirmed'].includes(status)) {
+    emit('prepare-food', id)
+  } else if (status === 'preparing') {
+    emit('mark-ready', id)
+  } else if (status === 'ready') {
+    emit('complete-order', id)
+  }
+}
 </script>
 
 <template>
-  <v-card :class="['kds-card', `card-${order.order_status}`, { 'card-flash': order._flash }]">
+  <v-card
+    :class="['order-card', `order-card--${order.order_status}`, { 'order-card--flash': order._flash }]"
+    rounded="xl"
+    elevation="0"
+  >
+    <!-- ── Accent line ────────────────────────────────────────────────── -->
+    <div class="order-card__accent" :style="{ background: cfg.accent }" />
 
-    <!-- Header: table + timer -->
-    <div class="kds-card__header">
-      <div>
-        <div class="kds-card__table">{{ order.table_name }}</div>
-        <div class="kds-card__num">{{ order.order_number }}</div>
+    <!-- ── Header ────────────────────────────────────────────────────── -->
+    <div class="order-card__header">
+      <div class="order-card__table-wrap">
+        <div class="order-card__table">{{ order.table_name || '—' }}</div>
+        <div class="order-card__num"># {{ order.order_number }}</div>
       </div>
-      <div class="kds-card__right">
-        <v-chip size="x-small" variant="tonal" :color="statusColor">{{ statusLabel }}</v-chip>
-        <div class="kds-card__timer" :class="timerClass">
-          <v-icon size="14">mdi-timer-outline</v-icon>
+
+      <div class="order-card__meta">
+        <!-- Status badge -->
+        <v-chip
+          size="x-small" variant="tonal"
+          :style="{ background: cfg.accent + '22', color: cfg.accent }"
+          class="order-card__status-chip"
+        >
+          {{ statusLabel }}
+        </v-chip>
+
+        <!-- Timer -->
+        <div class="order-card__timer" :class="timerClass">
+          <v-icon size="13">mdi-timer-outline</v-icon>
           {{ elapsedFormatted }}
         </div>
-        <div v-if="waitMinutes" class="kds-card__wait">
-          <v-icon size="12">mdi-clock-outline</v-icon>
-          ~{{ waitMinutes }}m left
+
+        <!-- Wait minutes chip -->
+        <div v-if="waitMinutes" class="order-card__wait">
+          <v-icon size="12">mdi-clock-fast</v-icon>
+          ~{{ waitMinutes }}m
         </div>
       </div>
     </div>
 
     <v-divider />
 
-    <!-- Items list -->
-    <div class="kds-card__items">
-      <div v-for="item in order.items" :key="item.order_item_id ?? item.id" class="kds-item">
-        <div class="kds-item__qty">{{ item.quantity }}×</div>
-        <div class="kds-item__body">
-          <div class="kds-item__name">{{ item.name }}</div>
-          <div v-if="item.note" class="kds-item__note">
-            <v-icon size="12">mdi-alert-circle-outline</v-icon>
+    <!-- ── Items list ─────────────────────────────────────────────────── -->
+    <div class="order-card__items">
+      <div
+        v-for="item in order.items" :key="item.order_item_id ?? item.id"
+        class="order-card__item"
+      >
+        <div class="order-card__qty">{{ item.quantity }}×</div>
+        <div class="order-card__item-body">
+          <div class="order-card__item-name">{{ item.name }}</div>
+          <div v-if="item.note" class="order-card__item-note">
+            <v-icon size="11">mdi-note-text-outline</v-icon>
             {{ item.note }}
           </div>
         </div>
       </div>
+
       <!-- Special instructions -->
-      <div v-if="order.special_instructions || order.notes" class="kds-item mt-2">
-        <div class="kds-item__qty" style="color:#f59e0b">📝</div>
-        <div class="kds-item__note" style="font-style:italic; color:#92400e">
-          {{ order.special_instructions || order.notes }}
-        </div>
+      <div v-if="order.special_instructions || order.notes" class="order-card__instruction">
+        <v-icon size="13" color="amber-darken-2">mdi-note-edit-outline</v-icon>
+        <span>{{ order.special_instructions || order.notes }}</span>
       </div>
     </div>
 
-    <!-- Action button -->
-    <div class="kds-card__actions">
+    <!-- ── Action button ──────────────────────────────────────────────── -->
+    <div v-if="cfg.btnText" class="order-card__footer">
       <v-btn
-        v-if="order.order_status === 'new'"
-        color="blue" variant="flat" block size="small"
-        @click="$emit('receive-order', order.id)"
-      >Receive Order</v-btn>
+        :color="cfg.btnColor"
+        variant="flat"
+        block
+        size="small"
+        rounded="lg"
+        class="order-card__btn"
+        @click="emitAction($emit, order.order_status, order.id)"
+      >
+        <v-icon start size="15">{{ cfg.btnIcon }}</v-icon>
+        {{ cfg.btnText }}
+      </v-btn>
+    </div>
 
-      <v-btn
-        v-else-if="order.order_status === 'received'"
-        color="indigo" variant="flat" block size="small"
-        @click="$emit('confirm-cooking', order.id)"
-      >Confirm Cooking</v-btn>
-
-      <v-btn
-        v-else-if="order.order_status === 'confirmed'"
-        color="orange" variant="flat" block size="small"
-        @click="$emit('prepare-food', order.id)"
-      >Prepare Food</v-btn>
-
-      <v-btn
-        v-else-if="order.order_status === 'preparing'"
-        color="teal" variant="flat" block size="small"
-        @click="$emit('mark-ready', order.id)"
-      >Mark as Ready</v-btn>
+    <!-- Completed state — subtle done strip -->
+    <div v-else-if="order.order_status === 'completed'" class="order-card__done order-card__done--done">
+      <v-icon size="15" color="grey">mdi-check-all</v-icon>
+      <span>Completed</span>
     </div>
   </v-card>
 </template>
 
 <style scoped>
-.kds-card {
-  border: 1px solid #e5e7eb; border-radius: 14px;
-  background: #fff; box-shadow: 0 6px 18px rgba(15,23,42,.04);
-  overflow: hidden; transition: transform .15s ease, box-shadow .15s ease;
+/* ── Card shell ──────────────────────────────────────────────────────────── */
+.order-card {
+  position: relative;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  overflow: hidden;
+  transition: transform .15s ease, box-shadow .15s ease;
 }
-.kds-card:hover {
+.order-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(15,23,42,.08);
+  box-shadow: 0 8px 24px rgba(15,23,42,.10) !important;
 }
 
-.card-new       { border-color: rgba(59,130,246,.5);  }
-.card-received  { border-color: rgba(99,102,241,.5);  }
-.card-confirmed { border-color: rgba(245,158,11,.6);  }
-.card-preparing { border-color: rgba(16,185,129,.6);  }
-.card-ready     { border-color: rgba(34,197,94,.6);   }
+/* Accent top bar */
+.order-card__accent {
+  height: 4px;
+  width: 100%;
+}
 
-.card-flash { animation: flashIn 1.2s ease; }
+/* ── Flash animation ─────────────────────────────────────────────────────── */
+.order-card--flash { animation: flashIn 1.5s ease; }
 @keyframes flashIn {
-  0%   { background: rgba(16,185,129,.15); }
-  100% { background: #fff; }
+  0%   { box-shadow: 0 0 0 3px rgba(20,184,166,.5); }
+  100% { box-shadow: none; }
 }
 
-.kds-card__header  { display: flex; justify-content: space-between; padding: 12px 14px 8px; }
-.kds-card__table   { font-size: 15px; font-weight: 700; color: #111827; }
-.kds-card__num     { font-size: 11px; color: #6b7280; font-family: monospace; }
-.kds-card__right   { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.order-card__header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 11px 14px 9px;
+  gap: 8px;
+}
+.order-card__table   { font-size: 15px; font-weight: 800; color: #0f172a; line-height: 1.1; }
+.order-card__num     { font-size: 10px; color: #94a3b8; font-family: monospace; margin-top: 2px; }
+.order-card__meta    { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.order-card__status-chip { font-size: 10px; font-weight: 700; letter-spacing: .3px; }
 
-.kds-card__timer {
+.order-card__timer {
   display: flex; align-items: center; gap: 4px;
-  font-size: 12px; font-weight: 600; font-family: monospace;
+  font-size: 11px; font-weight: 700; font-family: monospace;
 }
-.timer-ok       { color: #6b7280; }
+.timer-ok       { color: #94a3b8; }
 .timer-warn     { color: #f59e0b; }
-.timer-critical { color: #ef4444; }
+.timer-critical { color: #ef4444; animation: timerBlink 1s step-end infinite; }
+@keyframes timerBlink { 50% { opacity: .4; } }
 
-.kds-card__wait {
+.order-card__wait {
   display: flex; align-items: center; gap: 3px;
-  font-size: 11px; font-weight: 600; color: #10b981;
+  font-size: 10px; font-weight: 700; color: #10b981;
 }
 
-.kds-card__items {
-  padding: 10px 14px; display: flex; flex-direction: column;
-  gap: 7px; min-height: 60px;
+/* ── Items ───────────────────────────────────────────────────────────────── */
+.order-card__items {
+  padding: 10px 14px;
+  display: flex; flex-direction: column; gap: 7px;
+  min-height: 50px;
 }
-.kds-item       { display: flex; align-items: flex-start; gap: 8px; }
-.kds-item__qty  { font-size: 13px; font-weight: 700; color: #10b981; font-family: monospace; min-width: 26px; }
-.kds-item__body { display: flex; flex-direction: column; gap: 2px; }
-.kds-item__name { font-size: 13px; font-weight: 600; color: #111827; }
-.kds-item__note { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #f59e0b; }
+.order-card__item {
+  display: flex; align-items: flex-start; gap: 8px;
+}
+.order-card__qty {
+  font-size: 12px; font-weight: 800; color: #0d9488;
+  font-family: monospace; min-width: 26px; padding-top: 1px;
+}
+.order-card__item-body { display: flex; flex-direction: column; gap: 2px; }
+.order-card__item-name { font-size: 13px; font-weight: 600; color: #0f172a; }
+.order-card__item-note {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 10.5px; color: #b45309; font-style: italic;
+}
 
-.kds-card__actions { padding: 0 14px 14px; }
+.order-card__instruction {
+  display: flex; align-items: flex-start; gap: 6px;
+  margin-top: 4px; padding: 7px 10px;
+  background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px;
+  font-size: 11px; color: #92400e; font-style: italic;
+}
+
+/* ── Footer actions ───────────────────────────────────────────────────────── */
+.order-card__footer {
+  padding: 0 12px 12px;
+}
+.order-card__btn {
+  font-weight: 700; font-size: 12px; letter-spacing: .3px;
+  text-transform: none;
+}
+
+.order-card__done {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 12px;
+  font-size: 11px; font-weight: 600;
+}
+.order-card__done--ready { background: #f0fdf4; color: #16a34a; }
+.order-card__done--done  { background: #f8fafc; color: #94a3b8; }
 </style>
