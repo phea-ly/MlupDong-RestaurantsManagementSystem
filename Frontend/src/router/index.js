@@ -68,9 +68,7 @@ const routes = [
       },
       {
         path: "settings",
-        name: "home-settings",
-        meta: { requiresAuth: true },
-        component: () => import("@/views/setting/Settings.vue"),
+        redirect: "/home/admin-dashboard",
       },
     ],
   },

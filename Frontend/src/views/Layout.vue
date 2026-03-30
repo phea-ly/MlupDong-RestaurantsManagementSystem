@@ -9,7 +9,6 @@ const metaByPath = {
   "/home/sales-report": { title: "Sales Report", subtitle: "View sales analytics" },
   "/home/user": { title: "Users", subtitle: "Manage accounts" },
   "/home/activity": { title: "Activity Log", subtitle: "View system activity" },
-  "/home/settings": { title: "Settings", subtitle: "System configuration" },
 };
 
 const defaultMeta = { title: "Dashboard", subtitle: "Restaurant overview" };
