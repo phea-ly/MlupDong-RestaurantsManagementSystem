@@ -25,6 +25,8 @@ See [Vite Configuration Reference](https://vite.dev/config/).
 npm install
 npm install vuetify axios pinia vue-router @jamescoyle/vue-icon @mdi/js
 npm ls @jamescoyle/vue-icon @mdi/js vuetify axios pinia vue-router
+npm install chart.js
+npm install laravel-echo pusher-js axios
 
 ```
 

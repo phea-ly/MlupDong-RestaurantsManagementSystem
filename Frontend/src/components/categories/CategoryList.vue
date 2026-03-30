@@ -10,12 +10,6 @@ defineEmits(['view', 'edit', 'delete', 'view-all'])
 <template>
   <v-card rounded="xl" border flat>
     <v-card-text class="pa-4">
-      <div class="d-flex align-center justify-space-between mb-3">
-        <div class="text-subtitle-1 font-weight-black">All Categories</div>
-        <v-btn variant="outlined" rounded="lg" size="small" @click="$emit('view-all')">
-          View All Items
-        </v-btn>
-      </div>
 
       <div v-if="!categories.length" class="text-caption text-medium-emphasis py-4">
         No categories found.

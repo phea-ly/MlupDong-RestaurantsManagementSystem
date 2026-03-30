@@ -1,17 +1,18 @@
 <script setup>
+// src/components/layout/Sidebar.vue (or wherever your sidebar lives)
 const menu = [
-  { to: '/home/admin-dashboard', label: 'Dashboard',   icon: 'mdi-view-dashboard-outline' },
-  { to: '/home/menu',            label: 'Menus',        icon: 'mdi-silverware-fork-knife'  },
-  { to: '/home/categories',      label: 'Categories',   icon: 'mdi-tag-multiple-outline'   },
-  { to: '/home/staff',           label: 'Staffs',       icon: 'mdi-account-circle-outline' },
-  { to: '/home/table',           label: 'Tables',       icon: 'mdi-table-chair'            },
-  { to: '/home/user',            label: 'Users',        icon: 'mdi-account-group-outline'  },
+  { to: '/home/admin-dashboard', label: 'Dashboard',  icon: 'mdi-view-dashboard-outline' },
+  { to: '/home/categories',      label: 'Categories', icon: 'mdi-tag-multiple-outline'   },
+  { to: '/home/menu',            label: 'Menus',      icon: 'mdi-silverware-fork-knife'  },
+  { to: '/home/roles',           label: 'Roles',      icon: 'mdi-account-edit'           },
+  { to: '/home/user',            label: 'Users',      icon: 'mdi-account-group-outline'  },
+  { to: '/home/staff',           label: 'Staffs',     icon: 'mdi-account-circle-outline' },
+  { to: '/home/table',           label: 'Tables',     icon: 'mdi-table-chair'            },
 ]
 
 const reportsMenu = [
-  { to: '/home/sales-report', label: 'Sales Report', icon: 'mdi-chart-box-outline'      },
-  { to: '/home/activity',     label: 'Activity Log', icon: 'mdi-clipboard-text-outline' },
-  { to: '/home/settings',     label: 'Settings',     icon: 'mdi-cog-outline'            },
+  { to: '/home/sales-report',  label: 'Sales Report', icon: 'mdi-chart-box-outline'      },
+  { to: '/home/activity-log',  label: 'Activity Log', icon: 'mdi-clipboard-text-outline' },
 ]
 </script>
 
@@ -32,7 +33,7 @@ const reportsMenu = [
     </template>
 
     <!-- Main nav -->
-    <v-list nav density="compact" class="px-4 pt-3 ">
+    <v-list nav density="compact" class="px-4 pt-3">
       <v-list-item
         v-for="item in menu"
         :key="item.to"
@@ -40,16 +41,14 @@ const reportsMenu = [
         :prepend-icon="item.icon"
         :title="item.label"
         rounded="lg"
-        color="#1a6b4a"
+        color="secondary"
         base-color="#6b7280"
         class="nav-item mb-0.5"
       />
     </v-list>
 
     <!-- Reports section -->
-    <div class="section-label px-4 mt-4 mb-1">
-      Reports
-    </div>
+    <div class="section-label px-4 mt-4 mb-1">Reports</div>
     <v-list nav density="compact" class="px-4 pb-0">
       <v-list-item
         v-for="item in reportsMenu"
@@ -68,10 +67,6 @@ const reportsMenu = [
 </template>
 
 <style scoped>
-/* Drawer */
-.sidebar-drawer {
-  border-radius: 12px;
-}
 /* Brand */
 .brand-wrap {
   display: flex;
@@ -121,28 +116,19 @@ const reportsMenu = [
   font-weight: 500 !important;
   color: inherit;
 }
-
-/* Prepend icon sizing */
 :deep(.v-list-item__prepend .v-icon) {
   font-size: 18px !important;
   opacity: 0.85;
 }
-
-/* Active state — light green tint, like the image's highlight */
 :deep(.v-list-item--active) {
   background-color: #f0faf4 !important;
-  font-weight: 600 !important;
 }
 :deep(.v-list-item--active .v-list-item-title) {
   font-weight: 600 !important;
 }
-
-/* Hover state — very subtle grey */
 :deep(.v-list-item:not(.v-list-item--active):hover) {
   background-color: #f3f4f6 !important;
 }
-
-/* Tighten internal padding */
 :deep(.v-list-item) {
   min-height: 36px !important;
   padding-top: 2px !important;

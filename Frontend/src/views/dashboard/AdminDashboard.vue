@@ -1,30 +1,5 @@
-<script setup>
-import { onMounted, watch } from 'vue'
-import { useRouter }        from 'vue-router'
-import { storeToRefs }      from 'pinia'
-import { useDashboardStore } from '@/stores/dashboard.store'
-
-const router = useRouter()
-const store  = useDashboardStore()
-
-const {
-  activeRange, stats, bestSelling, peakHours,
-  orderSummary, recentOrders,
-  loadingKpi, loadingChart, loadingBest,
-  loadingPeak, loadingSummary, loadingOrders,
-  quickActions, orderHeaders,
-  chartPoints, weekDays, userName,
-} = storeToRefs(store)
-
-const { init, fetchChart, goTo } = store
-
-onMounted(init)
-watch(activeRange, fetchChart)
-</script>
-
 <template>
   <div>
-
     <!-- ── Welcome header ────────────────────────────────────────────────────── -->
     <v-card rounded="xl" elevation="0" border class="mb-4">
       <v-card-text class="d-flex align-center justify-space-between flex-wrap ga-3 px-5 py-4">
@@ -33,33 +8,21 @@ watch(activeRange, fetchChart)
           <div class="text-caption text-medium-emphasis">Overview of sales and operations today</div>
         </div>
         <div class="d-flex align-center ga-2">
-          <v-btn
-            v-for="action in quickActions"
-            :key="action.label"
-            rounded="lg" size="small" variant="tonal"
-            :color="action.color"
-            :prepend-icon="action.icon"
-            @click="goTo(router, action.route)"
-          >{{ action.label }}</v-btn>
+          <v-btn v-for="action in quickActions" :key="action.label" rounded="lg" size="small" variant="tonal"
+            :color="action.color" :prepend-icon="action.icon" @click="goTo(router, action.route)">{{ action.label
+            }}</v-btn>
         </div>
       </v-card-text>
     </v-card>
 
     <!-- ── KPI Cards ─────────────────────────────────────────────────────────── -->
     <v-row class="mb-4">
-      <v-col
-        v-for="(stat, i) in (loadingKpi ? Array(4).fill(null) : stats)"
-        :key="i" cols="12" md="3"
-      >
+      <v-col v-for="(stat, i) in loadingKpi ? Array(4).fill(null) : stats" :key="i" cols="12" md="3">
         <v-card v-if="!stat" rounded="xl" elevation="0" border>
           <v-card-text><v-skeleton-loader type="list-item-two-line" /></v-card-text>
         </v-card>
 
-        <v-card
-          v-else
-          rounded="xl" elevation="0" border class="kpi-card"
-          @click="goTo(router, stat.route)"
-        >
+        <v-card v-else rounded="xl" elevation="0" border class="kpi-card" @click="goTo(router, stat.route)">
           <v-card-text class="pa-5">
             <div class="d-flex justify-space-between align-start mb-3">
               <div>
@@ -88,13 +51,10 @@ watch(activeRange, fetchChart)
         <div>
           <div class="text-subtitle-1 font-weight-black">Order Statistics</div>
         </div>
-        <v-btn-toggle
-          v-model="activeRange"
-          rounded="lg" density="compact"
-          color="var(--app-primary-600)" variant="outlined"
-        >
+        <v-btn-toggle v-model="activeRange" rounded="lg" density="compact" color="var(--app-primary-600)"
+          variant="outlined">
           <v-btn value="30days" size="small">Last 30 Days</v-btn>
-          <v-btn value="7days"  size="small">Last 7 Days</v-btn>
+          <v-btn value="7days" size="small">Last 7 Days</v-btn>
         </v-btn-toggle>
       </v-card-title>
 
@@ -104,19 +64,13 @@ watch(activeRange, fetchChart)
           <svg width="100%" height="160" viewBox="0 0 700 120" preserveAspectRatio="none">
             <defs>
               <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%"   stop-color="var(--app-primary-600)" stop-opacity="0.15" />
-                <stop offset="100%" stop-color="var(--app-primary-600)" stop-opacity="0"    />
+                <stop offset="0%" stop-color="var(--app-primary-600)" stop-opacity="0.15" />
+                <stop offset="100%" stop-color="var(--app-primary-600)" stop-opacity="0" />
               </linearGradient>
             </defs>
             <polygon :points="chartPoints + ' 650,120 50,120'" fill="url(#lineGrad)" />
-            <polyline
-              :points="chartPoints"
-              fill="none"
-              stroke="var(--app-primary-600)"
-              stroke-width="2.5"
-              stroke-linejoin="round"
-              stroke-linecap="round"
-            />
+            <polyline :points="chartPoints" fill="none" stroke="var(--app-primary-600)" stroke-width="2.5"
+              stroke-linejoin="round" stroke-linecap="round" />
           </svg>
           <div class="d-flex justify-space-between px-2 mt-1">
             <span v-for="d in weekDays" :key="d" class="text-caption text-medium-emphasis">{{ d }}</span>
@@ -125,7 +79,6 @@ watch(activeRange, fetchChart)
 
         <v-divider class="my-4" />
 
-        <!-- Summary row below chart -->
         <div v-if="loadingSummary" class="d-flex flex-wrap ga-4">
           <v-skeleton-loader v-for="i in 3" :key="i" type="list-item-two-line" width="140" />
         </div>
@@ -142,7 +95,7 @@ watch(activeRange, fetchChart)
     <!-- ── Best Selling + Peak Hours ────────────────────────────────────────── -->
     <v-row class="mb-4">
 
-      <!-- Best Selling -->
+      <!-- Best Selling — Line Chart -->
       <v-col cols="12" md="6">
         <v-card rounded="xl" elevation="0" border height="100%">
           <v-card-title class="d-flex justify-space-between align-center pt-5 px-5">
@@ -152,29 +105,18 @@ watch(activeRange, fetchChart)
             </v-btn>
           </v-card-title>
           <v-card-text>
-            <v-skeleton-loader v-if="loadingBest" type="list-item-three-line@5" />
+            <v-skeleton-loader v-if="loadingBest" type="image" height="220" />
             <template v-else>
               <div v-if="!bestSelling.length" class="text-caption text-medium-emphasis py-4 text-center">
                 No sales data for the last 30 days.
               </div>
-              <div v-for="item in bestSelling" :key="item.name" class="mb-4">
-                <div class="d-flex justify-space-between mb-1">
-                  <span class="text-body-2 font-weight-medium">{{ item.name }}</span>
-                  <span class="text-body-2 font-weight-bold">{{ item.sold }} sold</span>
-                </div>
-                <v-progress-linear
-                  :model-value="item.pct"
-                  :color="item.color"
-                  rounded height="6"
-                  bg-color="grey-lighten-3"
-                />
-              </div>
+              <canvas v-else ref="bestSellingCanvas" height="220" style="width:100%;display:block;" />
             </template>
           </v-card-text>
         </v-card>
       </v-col>
 
-      <!-- Peak Hours -->
+      <!-- Peak Hours — Bar Chart -->
       <v-col cols="12" md="6">
         <v-card rounded="xl" elevation="0" border height="100%">
           <v-card-title class="d-flex justify-space-between align-center pt-5 px-5">
@@ -182,28 +124,10 @@ watch(activeRange, fetchChart)
             <v-chip size="small" variant="tonal">24H CYCLE</v-chip>
           </v-card-title>
           <v-card-text>
-            <v-skeleton-loader v-if="loadingPeak" type="image" height="120" />
-            <template v-else>
-              <div class="d-flex align-end ga-2 mb-2" style="height:100px">
-                <div
-                  v-for="bar in peakHours" :key="bar.label"
-                  class="peak-bar"
-                  :style="{ height: (bar.height || 4) + '%' }"
-                  :title="`${bar.label}: ${bar.count} orders`"
-                />
-              </div>
-              <div class="d-flex justify-space-between mb-4">
-                <span v-for="bar in peakHours" :key="bar.label" class="text-caption text-medium-emphasis">
-                  {{ bar.label }}
-                </span>
-              </div>
-            </template>
-            <v-alert type="success" variant="tonal" rounded="lg" density="compact">
-              <span class="text-caption">
-                Dinner service (6 PM – 8 PM) accounts for a large share of daily revenue.
-                Consider increasing floor staff during this window.
-              </span>
-            </v-alert>
+            <v-skeleton-loader v-if="loadingPeak" type="image" height="360" />
+            <div v-else style="position:relative; height:360px;">
+              <canvas ref="peakHoursCanvas" />
+            </div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -214,21 +138,12 @@ watch(activeRange, fetchChart)
     <v-card rounded="xl" elevation="0" border>
       <v-card-title class="d-flex justify-space-between align-center pt-5 px-5">
         <span class="text-subtitle-1 font-weight-black">Recent High-Value Orders</span>
-        <v-btn
-          variant="outlined" rounded="lg" size="small"
-          prepend-icon="mdi-filter-outline"
-          @click="goTo(router, '/home/sales-report')"
-        >Filter</v-btn>
+        <v-btn variant="outlined" rounded="lg" size="small" prepend-icon="mdi-filter-outline"
+          @click="goTo(router, '/home/sales-report')">Filter</v-btn>
       </v-card-title>
 
-      <v-data-table
-        :headers="orderHeaders"
-        :items="recentOrders"
-        :loading="loadingOrders"
-        hide-default-footer
-        items-per-page="-1"
-        density="comfortable"
-      >
+      <v-data-table :headers="orderHeaders" :items="recentOrders" :loading="loadingOrders" hide-default-footer
+        items-per-page="-1" density="comfortable">
         <template #loading>
           <v-skeleton-loader type="table-row@5" />
         </template>
@@ -247,10 +162,9 @@ watch(activeRange, fetchChart)
         </template>
 
         <template #item.items="{ item }">
-          <span
-            class="text-body-2 text-medium-emphasis"
-            style="display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;"
-          >{{ item.items }}</span>
+          <span class="text-body-2 text-medium-emphasis"
+            style="display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;">{{ item.items
+            }}</span>
         </template>
 
         <template #item.status="{ item }">
@@ -279,21 +193,166 @@ watch(activeRange, fetchChart)
   </div>
 </template>
 
+<script setup>
+import { ref, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
+import { useDashboardStore } from '@/stores/dashboard.store'
+import Chart from 'chart.js/auto'
+
+// ── 1. Router & Store ────────────────────────────────────────────────────────
+const router = useRouter()
+const store = useDashboardStore()
+
+const {
+  activeRange, stats, bestSelling, peakHours,
+  orderSummary, recentOrders,
+  loadingKpi, loadingChart, loadingBest,
+  loadingPeak, loadingSummary, loadingOrders,
+  quickActions, orderHeaders,
+  chartPoints, weekDays, userName,
+} = storeToRefs(store)
+
+const { init, fetchChart, goTo } = store
+
+// ── 2. Canvas refs ───────────────────────────────────────────────────────────
+const bestSellingCanvas = ref(null)
+const peakHoursCanvas = ref(null)
+let bestSellingChart = null
+let peakHoursChart = null
+
+// ── 3. Helpers ───────────────────────────────────────────────────────────────
+function getPrimary() {
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue('--app-primary-600').trim() || '#6366f1'
+}
+
+// ── 4. Chart builders ────────────────────────────────────────────────────────
+function buildBestSellingChart() {
+  if (!bestSellingCanvas.value || !bestSelling.value.length) return
+  bestSellingChart?.destroy()
+
+  const primary = getPrimary()
+  const ctx = bestSellingCanvas.value.getContext('2d')
+  const gradient = ctx.createLinearGradient(0, 0, 0, 220)
+  gradient.addColorStop(0, `${primary}26`)
+  gradient.addColorStop(1, `${primary}00`)
+
+  bestSellingChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: bestSelling.value.map(i => i.name),
+      datasets: [{
+        label: 'Units Sold',
+        data: bestSelling.value.map(i => i.sold),
+        fill: true,
+        backgroundColor: gradient,
+        borderColor: primary,
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointBackgroundColor: primary,
+        pointHoverRadius: 6,
+        tension: 0.4,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { mode: 'index', intersect: false },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: { color: 'rgba(0,0,0,0.45)', font: { size: 11 } },
+        },
+        y: {
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          border: { display: false },
+          ticks: { color: 'rgba(0,0,0,0.45)', font: { size: 11 } },
+        },
+      },
+    },
+  })
+}
+
+function buildPeakHoursChart() {
+  if (!peakHoursCanvas.value) return
+  peakHoursChart?.destroy()
+
+  const primary = getPrimary()
+
+  peakHoursChart = new Chart(peakHoursCanvas.value.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: peakHours.value.map(b => b.label),
+      datasets: [{
+        label: 'Orders',
+        data: peakHours.value.map(b => b.count),
+        backgroundColor: `${primary}BF`,
+        borderColor: primary,
+        borderWidth: 1.5,
+        borderRadius: 4,
+        borderSkipped: false,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { mode: 'index', intersect: false },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: { color: 'rgba(0,0,0,0.45)', font: { size: 11 } },
+        },
+        y: {
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          border: { display: false },
+          ticks: { color: 'rgba(0,0,0,0.45)', font: { size: 11 } },
+        },
+      },
+    },
+  })
+}
+
+// ── 5. Watchers & lifecycle ──────────────────────────────────────────────────
+watch(activeRange, fetchChart)
+
+watch(loadingBest, async (loading) => {
+  if (!loading) { await nextTick(); buildBestSellingChart() }
+})
+
+watch(loadingPeak, async (loading) => {
+  if (!loading) { await nextTick(); buildPeakHoursChart() }
+})
+
+onMounted(async () => {
+  await init()
+  await nextTick()
+  if (!loadingBest.value) buildBestSellingChart()
+  if (!loadingPeak.value) buildPeakHoursChart()
+})
+
+onBeforeUnmount(() => {
+  bestSellingChart?.destroy()
+  peakHoursChart?.destroy()
+})
+</script>
+
 <style scoped>
 .kpi-card {
   cursor: pointer;
   transition: transform .2s ease, box-shadow .2s ease;
 }
+
 .kpi-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 24px rgba(15, 23, 42, .08);
-}
-.peak-bar {
-  flex: 1;
-  background: var(--app-primary-600);
-  border-radius: 4px 4px 0 0;
-  opacity: .75;
-  min-height: 4px;
-  transition: height .3s ease;
 }
 </style>

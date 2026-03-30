@@ -7,22 +7,48 @@ import OrderCard from '@/components/kds/OrderCard.vue'
 const store = useKdsStore()
 
 const {
-  incomingOrders, receivedOrders, confirmedOrders, preparingOrders,
-  readyOrders, completedOrders,
+  pendingOrders, preparingOrders, readyOrders, completedOrders,
   loading, connected, error, tab,
   currentTime, activeCount, estimatedWaitMinutes, snackbar,
 } = storeToRefs(store)
 
 const {
-  receiveOrder, confirmCooking, prepareFood, markReady,
+  receiveOrder, confirmCooking, prepareFood, markReady, completeOrder,
   fetchOrders, init, cleanup, getOrderWaitMinutes,
 } = store
 
+const boardCount = computed(() =>
+  pendingOrders.value.length + preparingOrders.value.length + readyOrders.value.length
+)
+
 const columns = computed(() => [
-  { status: 'new', label: 'Incoming', orders: incomingOrders.value },
-  { status: 'received', label: 'Received', orders: receivedOrders.value },
-  { status: 'confirmed', label: 'Confirmed', orders: confirmedOrders.value },
-  { status: 'preparing', label: 'Preparing', orders: preparingOrders.value },
+  {
+    status:  'pending',
+    label:   'Pending',
+    icon:    'mdi-clock-outline',
+    color:   '#f59e0b',
+    bg:      'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+    border:  '#fcd34d',
+    orders:  pendingOrders.value,
+  },
+  {
+    status:  'preparing',
+    label:   'Preparing',
+    icon:    'mdi-fire',
+    color:   '#0d9488',
+    bg:      'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
+    border:  '#5eead4',
+    orders:  preparingOrders.value,
+  },
+  {
+    status:  'ready',
+    label:   'Ready',
+    icon:    'mdi-check-circle',
+    color:   '#16a34a',
+    bg:      'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+    border:  '#86efac',
+    orders:  readyOrders.value,
+  },
 ])
 
 onMounted(init)
@@ -32,118 +58,175 @@ onUnmounted(cleanup)
 <template>
   <v-app class="kds-app">
 
-    <!-- ── App bar ──────────────────────────────────────────────────────────── -->
-    <v-app-bar flat class="kds-bar">
-      <div class="kds-brand">
-        <v-icon size="20">mdi-silverware-fork-knife</v-icon>
-        <span class="kds-brand__title">Kitchen Display</span>
-        <span class="kds-clock">{{ currentTime }}</span>
-      </div>
+    <!-- ── App bar ─────────────────────────────────────────────────────────── -->
+    <v-app-bar flat class="kds-bar" height="56">
+      <template #prepend>
+        <div class="kds-brand">
+          <div class="kds-brand__icon">
+            <v-icon size="18" color="white">mdi-silverware-fork-knife</v-icon>
+          </div>
+          <div>
+            <div class="kds-brand__title">Kitchen Display</div>
+            <div class="kds-brand__sub">mlup dong restaurant</div>
+          </div>
+        </div>
+      </template>
+
       <v-spacer />
 
-      <!-- Global estimated wait -->
-      <v-chip size="small" class="kds-wait mr-3" color="orange" variant="tonal">
-        <v-icon size="14" class="mr-1">mdi-clock-fast</v-icon>
-        ~{{ estimatedWaitMinutes }} min wait
-      </v-chip>
+      <!-- Stats chips -->
+      <div class="kds-stats">
+        <div class="kds-stat-chip kds-stat-pending">
+          <v-icon size="13">mdi-clock-outline</v-icon>
+          <span>{{ pendingOrders.length }} Pending</span>
+        </div>
+        <div class="kds-stat-chip kds-stat-preparing">
+          <v-icon size="13">mdi-fire</v-icon>
+          <span>{{ preparingOrders.length }} Preparing</span>
+        </div>
+        <div class="kds-stat-chip kds-stat-ready">
+          <v-icon size="13">mdi-check-circle</v-icon>
+          <span>{{ readyOrders.length }} Ready</span>
+        </div>
+        <div class="kds-stat-divider" />
+        <div class="kds-stat-chip kds-stat-wait">
+          <v-icon size="13">mdi-timer-sand</v-icon>
+          <span>~{{ estimatedWaitMinutes }}m wait</span>
+        </div>
+      </div>
 
-      <!-- Active / Completed tabs -->
+      <v-spacer />
+
+      <!-- Board / History tabs -->
       <v-btn-toggle v-model="tab" mandatory class="kds-tabs">
         <v-btn value="active" class="kds-tab-btn" variant="text">
-          <v-badge v-if="activeCount > 0" :content="activeCount" color="green">
-            <span>Active</span>
+          <v-badge v-if="boardCount > 0" :content="boardCount" color="green" class="kds-badge">
+            <span>Board</span>
           </v-badge>
-          <span v-else>Active</span>
+          <span v-else>Board</span>
         </v-btn>
-        <v-btn value="done" class="kds-tab-btn" variant="text">Completed</v-btn>
+        <v-btn value="done" class="kds-tab-btn" variant="text">History</v-btn>
       </v-btn-toggle>
 
       <!-- Live indicator -->
-      <v-chip size="small" class="ml-3 mr-2" :color="connected ? 'green' : 'red'" variant="tonal">
-        <v-icon size="14" :icon="connected ? 'mdi-access-point' : 'mdi-access-point-off'" class="mr-1" />
-        {{ connected ? 'Live' : 'Reconnecting' }}
+      <v-chip
+        size="small" class="ml-3 mr-1 kds-live-chip"
+        :class="connected ? 'kds-live-chip--on' : 'kds-live-chip--off'"
+      >
+        <span class="kds-live-dot" :class="connected ? 'dot-pulse' : ''" />
+        {{ connected ? 'Live' : 'Offline' }}
       </v-chip>
 
-      <v-btn icon="mdi-refresh" variant="text" :loading="loading" @click="fetchOrders" />
+      <v-btn icon="mdi-refresh" variant="text" :loading="loading" size="small" @click="fetchOrders" />
+
+      <!-- Current time -->
+      <div class="kds-clock">{{ currentTime }}</div>
     </v-app-bar>
 
     <v-main>
-      <v-container fluid class="kds-body">
+      <v-container fluid class="kds-body pa-4">
 
         <!-- Loading -->
         <div v-if="loading" class="kds-center">
-          <v-progress-circular indeterminate color="green" />
-          <div class="kds-hint">Loading orders...</div>
+          <v-progress-circular indeterminate color="teal" size="48" width="4" />
+          <div class="kds-hint">Loading orders…</div>
         </div>
 
         <!-- Error -->
         <div v-else-if="error" class="kds-center">
-          <v-icon size="44" color="red">mdi-wifi-alert</v-icon>
+          <v-icon size="52" color="red-lighten-1">mdi-wifi-alert</v-icon>
           <div class="kds-hint">{{ error }}</div>
-          <v-btn color="green" variant="flat" @click="fetchOrders">Retry</v-btn>
+          <v-btn color="teal" variant="flat" rounded="lg" @click="fetchOrders">
+            <v-icon start>mdi-refresh</v-icon>Retry
+          </v-btn>
         </div>
 
-        <!-- ── Active tab ──────────────────────────────────────────────────── -->
+        <!-- ── Board tab ──────────────────────────────────────────────────── -->
         <template v-else-if="tab === 'active'">
           <div
-            v-if="!incomingOrders.length && !receivedOrders.length && !confirmedOrders.length && !preparingOrders.length"
-            class="kds-center">
-            <v-icon size="54" color="grey">mdi-check-circle-outline</v-icon>
-            <div class="kds-hint">All clear — no active orders</div>
+            v-if="!pendingOrders.length && !preparingOrders.length && !readyOrders.length"
+            class="kds-center"
+          >
+            <div class="kds-empty-icon">
+              <v-icon size="40" color="green">mdi-check-all</v-icon>
+            </div>
+            <div class="kds-empty-title">Kitchen is clear!</div>
+            <div class="kds-hint">No active orders on the board right now.</div>
           </div>
 
-          <v-row v-else density="comfortable">
-            <v-col v-for="col in columns" :key="col.status" cols="12" md="3">
-              <div class="kds-col__header">
-                <span class="kds-col__dot" :class="`dot-${col.status}`" />
-                {{ col.label }}
-                <v-chip size="x-small" class="kds-col__count">{{ col.orders.length }}</v-chip>
+          <div v-else class="kds-board">
+            <div
+              v-for="col in columns" :key="col.status"
+              class="kds-col"
+              :style="{ '--col-color': col.color, '--col-border': col.border, '--col-bg': col.bg }"
+            >
+              <!-- Column header -->
+              <div class="kds-col__head">
+                <div class="kds-col__head-left">
+                  <div class="kds-col__icon-wrap">
+                    <v-icon size="16" :color="col.color">{{ col.icon }}</v-icon>
+                  </div>
+                  <span class="kds-col__label">{{ col.label }}</span>
+                </div>
+                <span class="kds-col__badge">{{ col.orders.length }}</span>
               </div>
-              <div class="kds-col__list">
-                <OrderCard v-for="o in col.orders" :key="o.id" :order="o" :wait-minutes="getOrderWaitMinutes(o)"
-                  @receive-order="receiveOrder" @confirm-cooking="confirmCooking" @prepare-food="prepareFood"
-                  @mark-ready="markReady" />
+
+              <!-- Orders list -->
+              <div class="kds-col__body">
+                <OrderCard
+                  v-for="o in col.orders" :key="o.id"
+                  :order="o"
+                  :wait-minutes="getOrderWaitMinutes(o)"
+                  @prepare-food="prepareFood"
+                  @mark-ready="markReady"
+                  @complete-order="completeOrder"
+                />
+                <div v-if="!col.orders.length" class="kds-col__empty">
+                  <v-icon size="28" color="grey-lighten-1">{{ col.icon }}</v-icon>
+                  <span>No {{ col.label.toLowerCase() }} orders</span>
+                </div>
               </div>
-            </v-col>
-          </v-row>
+            </div>
+          </div>
         </template>
 
-        <!-- ── Done tab ────────────────────────────────────────────────────── -->
+        <!-- ── History tab ────────────────────────────────────────────────── -->
         <div v-else>
-          <div v-if="!readyOrders.length && !completedOrders.length" class="kds-center">
-            <v-icon size="48" color="grey">mdi-timer-sand</v-icon>
-            <div class="kds-hint">Ready & completed orders show here</div>
+          <div v-if="!completedOrders.length" class="kds-center">
+            <div class="kds-empty-icon">
+              <v-icon size="40" color="grey-lighten-1">mdi-history</v-icon>
+            </div>
+            <div class="kds-empty-title">No history yet</div>
+            <div class="kds-hint">Completed orders will appear here.</div>
           </div>
-          <v-row v-else density="comfortable">
-            <v-col cols="12" md="6">
-              <div class="kds-col__header">
-                <span class="kds-col__dot dot-ready" />
-                Ready
-                <v-chip size="x-small" class="kds-col__count">{{ readyOrders.length }}</v-chip>
-              </div>
-              <div class="kds-col__list">
-                <OrderCard v-for="o in readyOrders" :key="o.id" :order="o" />
-              </div>
-            </v-col>
-            <v-col cols="12" md="6">
-              <div class="kds-col__header">
-                <span class="kds-col__dot dot-completed" />
-                Completed
-                <v-chip size="x-small" class="kds-col__count">{{ completedOrders.length }}</v-chip>
-              </div>
-              <div class="kds-col__list">
-                <OrderCard v-for="o in completedOrders" :key="o.id" :order="o" />
-              </div>
-            </v-col>
-          </v-row>
+
+          <template v-else>
+            <div class="kds-history-header">
+              <v-icon size="16" color="grey">mdi-history</v-icon>
+              <span class="kds-history-title">Completed Orders</span>
+              <v-chip size="x-small" class="kds-col__count ml-2">{{ completedOrders.length }}</v-chip>
+            </div>
+            <v-row dense>
+              <v-col v-for="o in completedOrders" :key="o.id" cols="12" sm="6" md="4" lg="3">
+                <OrderCard :order="o" />
+              </v-col>
+            </v-row>
+          </template>
         </div>
 
       </v-container>
     </v-main>
 
     <!-- Snackbar -->
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="bottom right" rounded="lg" :timeout="4000">
-      {{ snackbar.message }}
+    <v-snackbar
+      v-model="snackbar.show" :color="snackbar.color"
+      location="bottom right" rounded="xl" :timeout="4000"
+      min-width="260"
+    >
+      <div class="d-flex align-center ga-2">
+        <v-icon size="18">{{ snackbar.color === 'error' ? 'mdi-alert-circle' : 'mdi-check-circle' }}</v-icon>
+        {{ snackbar.message }}
+      </div>
       <template #actions>
         <v-btn variant="text" icon="mdi-close" size="small" @click="snackbar.show = false" />
       </template>
@@ -153,122 +236,146 @@ onUnmounted(cleanup)
 </template>
 
 <style scoped>
-.kds-app {
-  background: #f6f7fb;
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+.kds-app { background: #f1f1f1; }
+.kds-bar { background: #f1f5f9 !important; box-shadow: 0 2px 12px rgba(0,0,0,.25) !important; }
+
+/* ── Brand ────────────────────────────────────────────────────────────────── */
+.kds-brand        { display: flex; align-items: center; gap: 10px; padding-left: 4px; }
+.kds-brand__icon  {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: linear-gradient(135deg, #14b8a6, #059669);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.kds-brand__title { font-size: 15px; font-weight: 700; color: #14b8a6; line-height: 1.2; }
+.kds-brand__sub   { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+
+/* ── Stats row ────────────────────────────────────────────────────────────── */
+.kds-stats        { display: flex; align-items: center; gap: 6px; }
+.kds-stat-chip {
+  display: flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; letter-spacing: .2px;
+}
+.kds-stat-pending  { background: rgba(245,158,11,.15); color: #f59e0b; }
+.kds-stat-preparing{ background: rgba(20,184,166,.15);  color: #14b8a6; }
+.kds-stat-ready    { background: rgba(22,163,74,.15);   color: #22c55e; }
+.kds-stat-wait     { background: rgba(148,163,184,.12); color: #94a3b8; }
+.kds-stat-divider  { width: 1px; height: 18px; background: #1e293b; margin: 0 4px; }
+
+/* ── Tabs ─────────────────────────────────────────────────────────────────── */
+.kds-tabs    { border: 1px solid #1e293b; border-radius: 10px; padding: 2px; background: #e2e8f0; }
+.kds-tab-btn { text-transform: none; font-size: 12px; font-weight: 600; color: #64748b !important; border-radius: 8px !important; }
+.kds-tab-btn.v-btn--active { background: #22c55e   !important; color: #f1f5f9 !important; }
+
+/* ── Live chip ────────────────────────────────────────────────────────────── */
+.kds-live-chip     { font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+.kds-live-chip--on { background: rgba(22,163,74,.15) !important; color: #22c55e !important; }
+.kds-live-chip--off{ background: rgba(239,68,68,.15)  !important; color: #ef4444 !important; }
+.kds-live-dot   { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: currentColor; }
+.dot-pulse      { animation: pulse 1.8s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
+
+/* ── Clock ────────────────────────────────────────────────────────────────── */
+.kds-clock { font-size: 12px; color: #475569; font-family: monospace; font-weight: 600; padding: 0 10px 0 4px; }
+
+/* ── Body ─────────────────────────────────────────────────────────────────── */
+.kds-body { padding: 16px 20px; }
+
+/* ── Board (3-column kanban) ──────────────────────────────────────────────── */
+.kds-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  align-items: start;
 }
 
-.kds-bar {
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 0 12px;
-}
-
-.kds-brand {
+/* ── Column ───────────────────────────────────────────────────────────────── */
+.kds-col {
+  background: var(--col-bg);
+  border: 1.5px solid var(--col-border);
+  border-radius: 16px;
+  overflow: hidden;
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  min-height: 200px;
 }
 
-.kds-brand__title {
-  font-size: 16px;
-  font-weight: 700;
+.kds-col__head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255,255,255,.6);
+  border-bottom: 1px solid var(--col-border);
+  backdrop-filter: blur(6px);
 }
 
-.kds-clock {
-  font-size: 12px;
-  color: #6b7280;
-  font-family: monospace;
-  margin-left: 4px;
-}
+.kds-col__head-left { display: flex; align-items: center; gap: 8px; }
 
-.kds-wait {
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.kds-tabs {
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 2px;
-  background: #f8fafc;
-}
-
-.kds-tab-btn {
-  text-transform: none;
-  font-size: 13px;
-  font-weight: 600;
-  color: #6b7280;
-}
-
-.kds-body {
-  padding: 20px;
-}
-
-.kds-col__header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #6b7280;
-  letter-spacing: .6px;
-  text-transform: uppercase;
-  margin-bottom: 12px;
-}
-
-.kds-col__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+.kds-col__icon-wrap {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: rgba(255,255,255,.8);
+  border: 1px solid var(--col-border);
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 
-.dot-new {
-  background: #3b82f6;
+.kds-col__label {
+  font-size: 12px; font-weight: 800; color: #1e293b;
+  letter-spacing: .5px; text-transform: uppercase;
 }
 
-.dot-received {
-  background: #6366f1;
+.kds-col__badge {
+  min-width: 24px; height: 24px; padding: 0 6px;
+  background: var(--col-color); color: white;
+  font-size: 11px; font-weight: 800;
+  border-radius: 999px; display: flex; align-items: center; justify-content: center;
 }
 
-.dot-confirmed {
-  background: #f59e0b;
+.kds-col__body {
+  padding: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+  flex: 1;
 }
 
-.dot-preparing {
-  background: #14b8a6;
+.kds-col__empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 32px 0;
+  color: #94a3b8; font-size: 12px; font-weight: 500;
 }
 
-.dot-ready {
-  background: #22c55e;
+/* ── History header ───────────────────────────────────────────────────────── */
+.kds-history-header {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 16px;
+  font-size: 11px; font-weight: 700; color: #6b7280;
+  letter-spacing: .6px; text-transform: uppercase;
 }
+.kds-history-title { font-size: 11px; font-weight: 700; color: #6b7280; letter-spacing: .5px; text-transform: uppercase; }
+.kds-col__count { background: #eef2ff; color: #475569; }
 
-.dot-completed {
-  background: #94a3b8;
-}
-
-.kds-col__count {
-  background: #eef2ff;
-  color: #475569;
-}
-
-.kds-col__list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
+/* ── Empty / Center ───────────────────────────────────────────────────────── */
 .kds-center {
-  min-height: calc(100vh - 140px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
+  min-height: calc(100vh - 120px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px;
 }
+.kds-empty-icon {
+  width: 72px; height: 72px; border-radius: 20px;
+  background: #f8fafc; border: 2px solid #e2e8f0;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 4px;
+}
+.kds-empty-title { font-size: 17px; font-weight: 700; color: #1e293b; }
+.kds-hint        { font-size: 13px; color: #94a3b8; }
 
-.kds-hint {
-  font-size: 14px;
-  color: #6b7280;
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .kds-board   { grid-template-columns: 1fr; }
+  .kds-stats   { display: none; }
+}
+@media (max-width: 640px) {
+  .kds-brand__sub { display: none; }
+  .kds-clock      { display: none; }
 }
 </style>

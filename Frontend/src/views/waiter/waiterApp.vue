@@ -1,14 +1,28 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth.store';
 
 // Import child components
-import LiveOrder from './liveOrder.vue';
-import QuickMenu from './quickMenu.vue';
-import FloorPlan from './floorPlan.vue';
+import LiveOrder from '../../components/waiter/liveOrder.vue';
+import QuickMenu from '../../components/waiter/quickMenu.vue';
+import FloorPlan from '../../components/waiter/floorPlan.vue';
+
+const router = useRouter();
+const authStore = useAuthStore();
 
 const currentView = ref('Live Orders');
-const search = ref('');
 const selectedTableId = ref(null);
+const currentTime = ref(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+
+// Update clock every minute
+let timer;
+onMounted(() => {
+  timer = setInterval(() => {
+    currentTime.value = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }, 10000);
+});
+onUnmounted(() => clearInterval(timer));
 
 const sidebarMenu = computed(() => [
   { icon: 'mdi-view-grid-outline', text: 'Floor Plan', id: 'Floor Plan' },
@@ -21,133 +35,101 @@ function startOrderWithTable(tableId) {
   selectedTableId.value = tableId;
   currentView.value = 'Quick Menu';
 }
+
+async function handleLogout() {
+  await authStore.logout();
+  router.push('/login');
+}
 </script>
 
 <template>
-  <v-app theme="dark">
-    <!-- APP BAR -->
-    <v-app-bar color="#050a06" height="70" flat style="border-bottom: 1px solid #16241a;">
-      <div class="d-none d-md-flex align-center ml-2 pl-6" style="border-left: 1px solid #16241a; height: 100%;">
-        <div style="line-height:1.1;">
-          <div class="text-caption text-neon-green font-weight-bold">Mlup Dong</div>
-          <div class="text-caption text-grey-darken-1 font-weight-bold text-uppercase ls-1">SERVICE STATION</div>
+  <v-app class="app-background">
+    <!-- NAVIGATION DRAWER: Persistent Sidebar -->
+    <v-navigation-drawer permanent color="#ffffff" width="280" class="sidebar-drawer" border="0" elevation="0">
+      
+      <!-- Brand Area -->
+      <div class="brand-wrap px-4 pt-6 pb-2">
+        <v-avatar size="48" class="brand-avatar">
+          <v-icon color="#1a6b4a" size="28">mdi-leaf</v-icon>
+        </v-avatar>
+        <div class="brand-text">
+          <div class="brand-title">MLUP DONG</div>
+          <div class="brand-subtitle">Service Station</div>
         </div>
       </div>
-      
-      <v-spacer></v-spacer>
-      
-      <div class="d-none d-md-flex align-center h-100 mr-8">
-        <v-btn 
-          variant="text" 
-          height="100%" 
-          min-width="120"
-          :class="['font-weight-bold text-body-1', currentView === 'Floor Plan' ? 'text-neon-green custom-tab-active' : 'text-grey']"
-          @click="currentView = 'Floor Plan'"
-        >Floor Plan</v-btn>
-        
-        <v-btn 
-          variant="text" 
-          height="100%" 
-          min-width="120"
-          :class="['font-weight-bold text-body-1', currentView === 'Live Orders' ? 'text-neon-green custom-tab-active' : 'text-grey']"
-          @click="currentView = 'Live Orders'"
-        >Live Orders</v-btn>
+      <!-- Navigation Section -->
+      <div class="section-label px-6 mt-8 mb-4">Main Menu</div>
 
-        <v-btn 
-          variant="text" 
-          height="100%" 
-          min-width="120"
-          :class="['font-weight-bold text-body-1', currentView === 'Quick Menu' ? 'text-neon-green custom-tab-active' : 'text-grey']"
-          @click="currentView = 'Quick Menu'"
-        >Quick Menu</v-btn>
-      </div>
-      
-      <div class="d-none d-sm-flex align-center mr-6" style="width: 300px;">
-        <v-text-field
-          v-model="search"
-          placeholder="Search items..."
-          prepend-inner-icon="mdi-magnify"
-          variant="solo-filled"
-          bg-color="#121f15"
-          color="white"
-          rounded="pill"
-          density="compact"
-          hide-details
-          class="custom-search"
-        ></v-text-field>
-      </div>
-      
-      <v-btn icon="mdi-bell" color="#00ff00" variant="text" size="small" class="mr-2"></v-btn>
-      <v-btn icon="mdi-cog" color="#00ff00" variant="text" size="small" class="mr-4"></v-btn>
-      <v-btn icon color="#00ff00" variant="text" size="small" class="mr-6 rounded-lg bg-dark-green border-neon-slim">
-        <v-icon size="20">mdi-account-outline</v-icon>
-      </v-btn>
-    </v-app-bar>
-
-    <!-- NAVIGATION DRAWER -->
-    <v-navigation-drawer permanent color="#111413" width="260" style="border-right: 1px solid #1c241e;">
-      <v-list class="pt-6">
-        <v-list-item class="mb-4 px-6 d-flex align-center">
-          <template v-slot:prepend>
-            <v-avatar color="#f9cb9c" size="48" class="mr-4">
-               <v-icon size="30" color="#b45f06">mdi-face-woman-profile</v-icon>
-            </v-avatar>
-          </template>
-          <v-list-item-title class="font-weight-black text-white text-body-1">Waiter Mode</v-list-item-title>
-          <v-list-item-subtitle class="font-weight-bold text-grey-darken-1 text-uppercase ls-1">Station 04</v-list-item-subtitle>
-        </v-list-item>
-
+      <v-list nav class="px-3 pb-0" bg-color="transparent">
         <v-list-item
           v-for="(item, i) in sidebarMenu"
           :key="i"
           @click="currentView = item.id"
-          class="sidebar-item mx-4 mb-2 rounded-lg"
-          :class="{'bg-active-sidebar border-left-neon': currentView === item.id}"
-          height="54"
+          :prepend-icon="item.icon"
+          :title="item.text"
+          :active="currentView === item.id"
+          rounded="xl"
+          base-color="#64748b"
+          class="nav-item mx-1"
         >
-          <template v-slot:prepend>
-             <v-icon size="22" :color="currentView === item.id ? '#00ff00' : '#718076'" class="mr-2">{{item.icon}}</v-icon>
+          <template v-if="currentView === item.id" v-slot:append>
+             <div class="active-indicator"></div>
           </template>
-          <v-list-item-title class="font-weight-bold text-body-2" :class="currentView === item.id ? 'text-neon-green' : 'text-grey-lighten-1'">
-            {{item.text}}
-          </v-list-item-title>
         </v-list-item>
       </v-list>
       
-      <template v-slot:append>
-        <div class="pa-6">
-          <v-btn 
-            block 
-            color="#00ff00"
-            height="56"
-            class="text-black font-weight-black text-button rounded-lg order-btn-hover"
-            elevation="0"
-            @click="currentView = 'Quick Menu'"
-          >
-            <v-icon start size="20">mdi-plus</v-icon> New Order
-          </v-btn>
-        </div>
-      </template>
+      <v-spacer></v-spacer>
+
+      <!-- System Section -->
+      <div class="px-3 pb-6">
+        <div class="section-label px-3 mb-4">System</div>
+        <v-list-item
+          prepend-icon="mdi-logout-variant"
+          title="Sign Out"
+          @click="handleLogout"
+          rounded="xl"
+          base-color="#64748b"
+          class="logout-item mx-1"
+        />
+      </div>
+      
     </v-navigation-drawer>
 
     <!-- MAIN CONTENT SHELL -->
-    <v-main style="background-color: #0b110c;">
+    <v-main class="app-background">
+      <!-- Premium Top Header -->
+      <header class="content-header px-8 d-flex align-center justify-space-between">
+        <div class="d-flex align-center">
+          <h1 class="view-title">{{ currentView }}</h1>
+          <v-chip size="x-small" color="#0d8465" variant="flat" class="ml-4 px-2 font-weight-bold" style="letter-spacing: 0.05em;">LIVE</v-chip>
+        </div>
+
+        <div class="d-flex align-center">
+          <div class="status-badge mr-6">
+            <div class="status-dot"></div>
+            <span>System Online</span>
+          </div>
+          <div class="clock-display">{{ currentTime }}</div>
+        </div>
+      </header>
+
       <!-- Dynamic View Rendering -->
-      <LiveOrder v-if="currentView === 'Live Orders'" />
-      
-      <QuickMenu 
-        v-else-if="currentView === 'Quick Menu'" 
-        :initial-table-id="selectedTableId"
-        @reset-table="selectedTableId = null"
-      />
+      <div class="view-container">
+        <transition name="fade-view" mode="out-in">
+          <LiveOrder v-if="currentView === 'Live Orders'" />
+          
+          <QuickMenu 
+            v-else-if="currentView === 'Quick Menu'" 
+            :initial-table-id="selectedTableId"
+            @reset-table="selectedTableId = null"
+          />
 
-      <Report v-else-if="currentView === 'Reports'" />
-
-      <FloorPlan 
-        v-else-if="currentView === 'Floor Plan'" 
-        @start-order="startOrderWithTable"
-      />
-
+          <FloorPlan 
+            v-else-if="currentView === 'Floor Plan'" 
+            @start-order="startOrderWithTable"
+          />
+        </transition>
+      </div>
     </v-main>
   </v-app>
 </template>
@@ -159,27 +141,179 @@ function startOrderWithTable(tableId) {
   font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
 
-/* Global Navigation Styles */
-.text-neon-green { color: #00ff00 !important; }
-.bg-dark-green { background-color: #133317 !important; }
-.bg-active-sidebar { background-color: #162a1c !important; }
-.border-left-neon { border-left: 3px solid #00ff00 !important; }
-.border-neon-slim { border: 1px solid #164f1e !important; }
+/* Core App */
+.app-background { background-color: #f8fafc !important; }
 
-.ls-1 { letter-spacing: 1px !important; }
+/* Drawer */
+.sidebar-drawer {
+  border-right: 1px solid #f1f5f9 !important;
+  display: flex;
+  flex-direction: column;
+}
 
-/* Custom Overrides for inputs and appbar tabs */
-.custom-tab-active { border-bottom: 2px solid #00ff00 !important; }
-.custom-search :deep(.v-field__outline) { display: none; }
-.custom-search :deep(.v-field) {
-  border: 1px solid #1c2f1f;
+/* Brand */
+.brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.brand-avatar {
+  flex-shrink: 0;
+  background-color: #eaf5f0 !important;
+}
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.brand-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #0f172a;
+}
+.brand-subtitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: #0d8465;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+
+/* Waiter Card */
+.waiter-card {
+  background-color: #ffffff;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+.waiter-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
+}
+.waiter-station {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Section label */
+.section-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #94a3b8;
+}
+
+/* Nav items */
+.nav-item {
+  min-height: 52px !important;
+  margin-bottom: 6px !important;
+  transition: all 0.2s ease;
+}
+
+:deep(.v-list-item-title) {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+/* Active Indicator */
+.active-indicator {
+  width: 4px;
+  height: 20px;
+  background-color: #059669;
+  border-radius: 4px;
+}
+
+/* Active State */
+:deep(.v-list-item--active) {
+  background-color: #dcfce7 !important;
+  color: #065f46 !important;
+}
+
+/* Logout Item */
+.logout-item:hover {
+  background-color: #fee2e2 !important;
+  color: #dc2626 !important;
+}
+
+/* Header Styling */
+.content-header {
+  height: 80px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #f1f5f9;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.view-title {
+  font-size: 24px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.clock-display {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  background: #f1f5f9;
+  padding: 8px 16px;
+  border-radius: 12px;
+  min-width: 100px;
+  text-align: center;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #e0f2fe;
+  padding: 6px 12px;
   border-radius: 50px;
 }
+.status-badge span {
+  font-size: 11px;
+  font-weight: 800;
+  color: #0369a1;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #0ea5e9;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
 
-/* Base Interactions */
-.order-btn-hover { transition: all 0.2s; }
-.order-btn-hover:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 0 15px rgba(0,255,0,0.4) !important;
+@keyframes pulse {
+  0% { transform: scale(0.95); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.5; }
+}
+
+/* Main View Container */
+.view-container {
+  padding: 24px;
+  min-height: calc(100vh - 80px);
+}
+
+/* View Transition Animations */
+.fade-view-enter-active, .fade-view-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.fade-view-enter-from, .fade-view-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
 }
 </style>
+

@@ -29,6 +29,11 @@ composer require tymon/jwt-auth
 php artisan optimize:clear
 php artisan vendor:publish --provider="Tymon\JWTAuth\Providers\LaravelServiceProvider"
 composer require chillerlan/php-qrcode
+composer require laravel/reverb
+composer require predis/predis
+php artisan reverb:install
+php artisan install:broadcasting
+
 
 ```
 

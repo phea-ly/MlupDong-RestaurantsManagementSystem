@@ -109,15 +109,6 @@ const TABLE_HEADERS = [
                   <div class="text-caption text-medium-emphasis" style="font-size:10px">Server @ Downtown</div>
                 </div>
               </div>
-              <div class="d-flex align-center ga-2">
-                <v-avatar size="28" rounded="lg" style="background:linear-gradient(135deg,#ec4899,#f43f5e)">
-                  <span class="pending-initials">AS</span>
-                </v-avatar>
-                <div>
-                  <div class="text-caption font-weight-bold" style="line-height:1.2">Anna Smith</div>
-                  <div class="text-caption text-medium-emphasis" style="font-size:10px">Chef @ Uptown</div>
-                </div>
-              </div>
             </div>
           </v-card-text>
         </v-card>

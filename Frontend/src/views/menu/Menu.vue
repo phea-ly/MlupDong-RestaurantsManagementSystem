@@ -175,12 +175,11 @@ onMounted(init);
     <div class="d-flex align-center justify-space-between flex-wrap ga-3 mb-6">
       <div />
       <div class="d-flex align-center ga-2">
-        <v-btn variant="outlined" rounded="lg" height="40" prepend-icon="mdi-tag-multiple-outline"
-          @click="goToCategories(router)">
-          Manage Categories
-        </v-btn>
-        <v-btn color="var(--app-primary)" rounded="lg" height="40" elevation="0" prepend-icon="mdi-plus"
-          @click="handleAddNew">
+        <v-btn
+          color="var(--app-primary)" rounded="lg" height="40" elevation="0"
+          prepend-icon="mdi-plus"
+          @click="handleAddNew"
+        >
           <span style="color:#063824; font-weight:800">Add New Item</span>
         </v-btn>
       </div>

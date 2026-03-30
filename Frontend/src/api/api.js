@@ -1,35 +1,87 @@
-// api.js
 import axios from 'axios'
+import { clearSession } from '@/utils/auth'
+
+/**
+ * Endpoints that should trigger a full logout + redirect on 401.
+ * Public endpoints (KDS, customer menu) must NOT redirect on 401.
+ */
+const PROTECTED_ENDPOINTS = ['/user', '/logout']
 
 const api = axios.create({
-  baseURL: 'http://34.236.143.58:82/api',
-  headers: { 'Content-Type': 'application/json' },
+  baseURL: 'http://34.236.143.58:82/api' || 'http://127.0.0.1:8000/api',
+  withCredentials: true,   // ← sends the HttpOnly JWT cookie on every request
+  headers: {
+    Accept: 'application/json',
+  },
 })
 
-// ── Request interceptor: attach token on every call ──────────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => Promise.reject(error)
-)
+/**
+ * No request interceptor needed.
+ * The browser automatically attaches the HttpOnly cookie set by the server.
+ * We never read or write the token in JavaScript.
+ */
 
-// ── Response interceptor: handle auth errors globally ────────────────────────
+// ── RESPONSE: normalize errors ─────────────────────────────────────────────
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      // Redirect to login without a full page reload loop
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
-      }
+    const { response, config } = error
+
+    // Network / timeout — no response at all
+    if (!response) {
+      return Promise.reject({
+        message: 'Network error — check your connection.',
+        errors:  {},
+      })
     }
-    return Promise.reject(error)
+
+    const { status, data } = response
+    const requestUrl = config?.url ?? ''
+
+    if (status === 401) {
+      // Only redirect to /login when a protected endpoint returns 401.
+      // Public pages (/chef, /menu/:token) may call endpoints that return
+      // 401 legitimately — we must NOT redirect those.
+      const isProtected = PROTECTED_ENDPOINTS.some((ep) =>
+        requestUrl.includes(ep)
+      )
+
+      if (isProtected) {
+        clearSession()
+        if (window.location.pathname !== '/login') {
+          window.location.replace('/login')
+        }
+      }
+
+      return Promise.reject({ message: 'Unauthenticated.', errors: {} })
+    }
+
+    if (status === 403) {
+      return Promise.reject({
+        message: data?.message ?? 'Forbidden.',
+        errors:  {},
+      })
+    }
+
+    // Laravel validation errors
+    if (status === 422) {
+      return Promise.reject({
+        message: data?.message ?? 'Validation failed.',
+        errors: data?.errors ?? {},
+      })
+    }
+
+    if (status >= 500) {
+      return Promise.reject({
+        message: 'Server error — try again later.',
+        errors:  {},
+      })
+    }
+
+    return Promise.reject({
+      message: data?.message ?? 'An error occurred.',
+      errors: data?.errors ?? {},
+    })
   }
 )
 

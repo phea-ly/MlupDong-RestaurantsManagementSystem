@@ -19,10 +19,13 @@ const clearError = () => authStore.clearError()
 async function login() {
   if (!email.value || !password.value) return
   try {
-    const res = await authStore.login(email.value, password.value)
-    console.log('Login successful, user role:', res.user.role_id)
+    await authStore.login(email.value, password.value)
 
-    if (res.user.role_id === 1) {
+    // Role-based redirect
+    const role = authStore.role?.toUpperCase() || ''
+    if (['WAITRESS', 'SERVER', 'WAITER'].includes(role)) {
+      router.push('/waiter')
+    } else {
       router.push('/home')
     } else {
       router.push('/waiter')
@@ -48,14 +51,12 @@ async function login() {
 
                 <!-- Brand -->
                 <div class="d-flex flex-column align-center ga-3 mb-6">
-                  <v-avatar size="44" rounded="lg"
-                    style="background:linear-gradient(135deg,var(--app-primary),var(--app-primary-600)); box-shadow:0 4px 14px rgba(15,158,95,0.4);">
-                    <span style="font-size:17px; font-weight:900; color:#063824;">M</span>
-                  </v-avatar>
+                  <div class="brand-logo-wrapper">
+                    <img src="/logo.png" alt="Mlup Dong" class="brand-logo-img" />
+                  </div>
                   <div class="text-center">
-                    <div class="text-subtitle-2 font-weight-black" style="color:#fff">Mlup Dong</div>
-                    <div class="text-caption font-weight-bold text-uppercase"
-                      style="color:rgba(255,255,255,0.6); letter-spacing:0.1em">Restaurant Management</div>
+                    <div class="brand-name">Mlup Dong</div>
+                    <div class="brand-sub">Restaurant Management</div>
                   </div>
                 </div>
 
@@ -220,5 +221,44 @@ async function login() {
 .login-btn:active {
   transform: translateY(0);
   box-shadow: 0 4px 14px rgba(15, 158, 95, 0.4) !important;
+}
+
+.brand-logo-wrapper {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  filter: drop-shadow(0 4px 16px rgba(15, 158, 95, 0.5));
+  transition: transform .2s ease;
+  flex-shrink: 0;
+}
+
+.brand-logo-wrapper:hover {
+  transform: scale(1.06);
+}
+
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Crop the black corners so only the green circle shows */
+  object-position: center;
+  display: block;
+}
+
+.brand-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.01em;
+}
+
+.brand-sub {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.12em;
+  margin-top: 2px;
 }
 </style>

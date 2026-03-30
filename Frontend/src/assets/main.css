@@ -98,7 +98,7 @@ body::-webkit-scrollbar,
 .v-field,
 .v-input,
 .v-toolbar {
-  border-radius: var(--app-radius-lg) !important;
+  border-radius: 0px;
 }
 
 .v-text-field .v-field,

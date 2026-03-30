@@ -68,10 +68,10 @@ function logout() {
           {{ actionLabel }}
         </v-btn>
 
-        <v-btn icon variant="text" size="small" class="appbar-icon">
+        <!-- <v-btn icon variant="text" size="small" class="appbar-icon">
           <v-icon>mdi-bell-outline</v-icon>
           <v-badge color="error" content="1" floating />
-        </v-btn>
+        </v-btn> -->
 
         <!-- Profile menu -->
         <v-menu location="bottom end" :close-on-content-click="false" transition="slide-y-transition">
