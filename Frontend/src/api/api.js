@@ -1,4 +1,3 @@
-// src/api/api.js
 import axios from 'axios'
 import { clearSession } from '@/utils/auth'
 
@@ -69,7 +68,7 @@ api.interceptors.response.use(
     if (status === 422) {
       return Promise.reject({
         message: data?.message ?? 'Validation failed.',
-        errors:  data?.errors  ?? {},
+        errors: data?.errors ?? {},
       })
     }
 
@@ -82,7 +81,7 @@ api.interceptors.response.use(
 
     return Promise.reject({
       message: data?.message ?? 'An error occurred.',
-      errors:  data?.errors  ?? {},
+      errors: data?.errors ?? {},
     })
   }
 )

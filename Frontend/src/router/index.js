@@ -63,14 +63,8 @@ const routes = [
         component: () => import('@/views/salesReport/SalesReport.vue'),
       },
       {
-        path:      'activity',
-        name:      'home-activity',
-        component: () => import('@/views/activity/Activity.vue'),
-      },
-      {
-        path:      'settings',
-        name:      'home-settings',
-        component: () => import('@/views/setting/Settings.vue'),
+        path: "settings",
+        redirect: "/home/admin-dashboard",
       },
     ],
   },
@@ -91,11 +85,11 @@ const routes = [
   },
 
   // ── Public: customer-facing (token-based, no login required) ─────────────
-  // {
-  //   path:      '/menu/:token',
-  //   name:      'customer-menu',
-  //   component: () => import('@/views/customer/customerMenu.vue'),
-  // },
+  {
+    path:      '/menu/:token',
+    name:      'customer-menu',
+    component: () => import('@/views/customer/customerMenu.vue'),
+  },
   {
     path:      '/order/:token',
     name:      'customer-order',

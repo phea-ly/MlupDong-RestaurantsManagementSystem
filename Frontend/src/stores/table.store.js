@@ -84,7 +84,7 @@ export const useTableStore = defineStore('table', () => {
   function getQrUrl(path) {
     if (!path) return null
     if (path.startsWith('http://') || path.startsWith('https://')) return path
-    const base = (import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/api').replace(/\/api\/?$/, '').replace(/\/+$/, '')
+    const base = (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api').replace(/\/api\/?$/, '').replace(/\/+$/, '')
     return `${base}/${path}`
   }
 
