@@ -110,26 +110,30 @@ const router = createRouter({
 })
 
 // ── Navigation guard ──────────────────────────────────────────────────────
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, from) => {
   const authStore = useAuthStore()
 
-  const needsAuthCheck = to.meta.requiresAuth || to.meta.guestOnly
-
-  if (needsAuthCheck) {
-    await authStore.ensureAuthChecked()
+  const token = localStorage.getItem('token')
+  if (token && !authStore.user) {
+    try {
+      await authStore.fetchMe()
+    } catch {
+      // ✅ if token is invalid, clean up and continue
+      localStorage.removeItem('token')
+    }
   }
 
   const isAuthed = authStore.isAuthenticated
 
   if (to.meta.requiresAuth && !isAuthed) {
-    return next({ name: 'login', query: { redirect: to.fullPath } })
+    return '/login'
   }
 
   if (to.meta.guestOnly && isAuthed) {
-    return next(authStore.dashboardPath)
+    return '/home'
   }
 
-  return next()
+  return true
 })
 
 export default router

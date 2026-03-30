@@ -27,8 +27,6 @@ async function login() {
       router.push('/waiter')
     } else {
       router.push('/home')
-    } else {
-      router.push('/waiter')
     }
   } catch {
     // error already set in store - shown by v-alert

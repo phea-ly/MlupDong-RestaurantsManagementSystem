@@ -4,7 +4,7 @@ import api from './api'
 // ── Auth ───────────────────────────────────────────────────────────────────
 export const loginApi          = (credentials) => api.post('/login',        credentials)
 export const logoutApi         = ()             => api.post('/logout')
-export const fetchApi          = ()             => api.get('/user')
+export const fetchMeApi          = ()             => api.get('/me')
 export const updateApi         = (data)         => api.post('/user',         data)
 export const updatePasswordApi = (data)         => api.put('/user/password', data)
 
