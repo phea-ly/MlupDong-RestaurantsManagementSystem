@@ -1,4 +1,3 @@
-// src/stores/dashboard.store.js
 import { defineStore }   from 'pinia'
 import { ref, computed } from 'vue'
 import dashboardApi      from '@/api/dashboard.api'
