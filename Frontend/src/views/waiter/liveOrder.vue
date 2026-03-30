@@ -27,7 +27,13 @@ const liveOrders = computed(() => {
         }))
       };
     })
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    .sort((a, b) => {
+      // Prioritize 'ready' status
+      if (a.status === 'ready' && b.status !== 'ready') return -1;
+      if (a.status !== 'ready' && b.status === 'ready') return 1;
+      // Then sort by most recent
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
 });
 
 function calcTimer(createdAt) {
@@ -66,26 +72,15 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <v-container fluid class="pa-10 d-flex flex-column h-100 overflow-y-auto" style="background-color: #edf2f1;">
+  <div class="d-flex flex-column h-100">
     
-    <!-- Header -->
-    <v-row no-gutters class="mb-10 flex-0-0">
-      <v-col cols="12">
-        <h1 class="text-h4 font-weight-black text-black mb-2" style="letter-spacing: -1.5px;">Live Orders</h1>
-        <div class="d-flex align-center">
-           <div class="live-dot mr-3"></div>
-           <span class="text-subtitle-1 text-grey-darken-1 font-weight-bold uppercase-ls">Active Station Monitoring</span>
-        </div>
-      </v-col>
-    </v-row>
-
     <!-- Order Grid -->
     <v-row v-if="liveOrders.length" class="align-start">
       <v-col
         v-for="order in liveOrders" 
         :key="order.id"
         cols="12" sm="6" md="6" lg="4" xl="3"
-        class="mb-4"
+        class="mb-6"
       >
         <v-card 
           class="order-card-refined h-100 d-flex flex-column"
@@ -149,14 +144,14 @@ onUnmounted(() => {
     </v-row>
 
     <!-- Empty State -->
-    <v-row v-else class="flex-grow-1 align-center justify-center">
+    <v-row v-else class="flex-grow-1 align-center justify-center py-16">
       <v-col cols="12" class="text-center" style="opacity: 0.6;">
          <v-icon size="100" color="grey-lighten-1" class="mb-4">mdi-tray-minus</v-icon>
          <div class="text-h5 font-weight-black text-grey-darken-2">No Pending Orders</div>
+         <p class="text-body-2 mt-2">New orders will appear here automatically.</p>
       </v-col>
     </v-row>
-
-  </v-container>
+  </div>
 </template>
 
 <style scoped>

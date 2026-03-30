@@ -129,44 +129,36 @@ async function submitOrder() {
 
 
 <<template>
-  <div class="d-flex flex-row h-100 position-relative w-100 bg-surface">
+  <div class="d-flex flex-row h-100 position-relative w-100">
     
     <!-- Left: Menu Grid -->
-    <div class="flex-grow-1 h-100 pa-8 overflow-y-auto" style="background-color: #edf2f1;" v-if="!menuStore.loading">
+    <div class="flex-grow-1 h-100 overflow-y-auto" v-if="!menuStore.loading">
       
-      <!-- Header -->
-      <div class="mb-6 d-flex align-center justify-space-between">
-         <div>
-            <h1 class="text-h4 font-weight-black text-grey-darken-4 mb-1" style="letter-spacing: -1px;">Point of Sale</h1>
-            <p class="text-body-2 text-grey-darken-1 font-weight-medium">Select items to add to the current order</p>
-         </div>
-      </div>
-
       <!-- Category Filters (Modern v-slide-group) -->
       <v-slide-group
         v-model="selectedCategoryId"
         mandatory
         show-arrows
-        class="mb-8"
+        class="mb-6"
         selected-class="bg-black text-white elevation-4"
       >
-        <v-slide-group-item v-for="cat in menuStore.categoryTabs" :key="cat.value" :value="cat.value" v-slot="{ isSelected, toggle, selectedClass }">
+        <v-slide-group-item v-for="cat in menuStore.categoryTabs" :key="cat.value" :value="cat.value" v-slot="{ isSelected, toggle }">
           <v-chip
-            :class="['font-weight-bold', 'text-body-1', 'px-6', 'mr-3', selectedClass]"
-            :variant="isSelected ? 'elevated' : 'flat'"
-            :color="isSelected ? 'black' : 'white'"
+            class="font-weight-bold text-body-1 px-8 mr-3 filter-chip-refined"
+            :variant="isSelected ? 'flat' : 'flat'"
+            :color="isSelected ? '#0f9d58' : '#f1f5f9'"
+            :text-color="isSelected ? 'white' : '#64748b'"
             size="x-large"
-            style="height: 48px; border-radius: 24px;"
             @click="toggle"
           >
-            <v-icon start size="20" v-if="cat.icon" :class="isSelected ? 'text-neon-green' : 'text-grey-darken-2'">{{ cat.icon }}</v-icon>
+            <v-icon start size="20" v-if="cat.icon" :color="isSelected ? 'white' : '#94a3b8'">{{ cat.icon }}</v-icon>
             {{ cat.label }}
           </v-chip>
         </v-slide-group-item>
       </v-slide-group>
 
       <!-- Items Grid -->
-      <v-row v-if="filteredItems.length">
+      <v-row v-if="filteredItems.length" class="pr-2">
         <template v-for="item in filteredItems" :key="item.id">
           <v-col cols="12" sm="6" md="4" lg="3" xl="2">
             <v-card 
@@ -217,7 +209,7 @@ async function submitOrder() {
     </div>
     
     <!-- Loading State -->
-    <div class="flex-grow-1 h-100 pa-8 d-flex align-center justify-center" style="background-color: #edf2f1;" v-else>
+    <div class="flex-grow-1 h-100 d-flex align-center justify-center" v-else>
       <div class="text-center">
         <v-progress-circular indeterminate color="black" size="64" width="6" class="mb-4"></v-progress-circular>
         <div class="text-h6 font-weight-bold text-grey-darken-2">Loading Menu...</div>
@@ -449,6 +441,25 @@ async function submitOrder() {
 .ls-1 { letter-spacing: 1px !important; }
 .line-height-1 { line-height: 1.2 !important; }
 .cursor-pointer { cursor: pointer; }
+
+/* Refined Filter Chips */
+.filter-chip-refined {
+  height: 48px !important;
+  border-radius: 14px !important;
+  transition: all 0.2s ease !important;
+  border: 1px solid transparent !important;
+  letter-spacing: 0.01em !important;
+}
+
+.filter-chip-refined:not(.v-chip--selected):hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.v-chip--selected.filter-chip-refined {
+  box-shadow: 0 4px 12px rgba(15, 157, 88, 0.2) !important;
+  color: white !important;
+}
 
 /* Interactive colors */
 .hover-neon { transition: color 0.2s; }
