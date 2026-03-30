@@ -32,6 +32,19 @@ class MenuItem extends Model
         ];
     }
 
+    public function getImageAttribute($value): ?string
+    {
+        if (!$value) return null;
+
+        // Already a full URL (external images)
+        if (str_starts_with($value, 'http')) {
+            return $value;
+        }
+
+        // Relative path — prepend APP_URL
+        return url($value);
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'category_id', 'category_id');
