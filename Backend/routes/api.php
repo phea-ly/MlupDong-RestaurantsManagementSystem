@@ -15,7 +15,6 @@ use App\Http\Controllers\StaffController;
 use App\Http\Controllers\TableController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\AppSettingController;
 use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CustomerOrderController;
@@ -39,8 +38,6 @@ Route::apiResource('order-items', OrderItemController::class);
 Route::apiResource('payments', PaymentController::class);
 Route::apiResource('discounts', DiscountController::class);
 Route::apiResource('order-status-logs', OrderStastusLogController::class);
-Route::get('app-settings', [AppSettingController::class, 'show']);
-Route::put('app-settings', [AppSettingController::class, 'update']);
 
 Route::get('activity-logs/summary', [ActivityLogController::class, 'summary']);
 Route::get('activity-logs/{id}',    [ActivityLogController::class, 'show']);

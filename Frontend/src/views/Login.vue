@@ -101,7 +101,7 @@ async function login() {
 </template>
 
 <style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Manrope:wght@400;600;700;800&display=swap");
+
 
 .login-bg {
   font-family: "Manrope", sans-serif;

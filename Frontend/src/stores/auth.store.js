@@ -1,6 +1,5 @@
-// src/stores/auth.store.js
 import { defineStore } from 'pinia'
-import * as authApi    from '@/api/auth.api'
+import * as authApi from '@/api/auth.api'
 import {
   saveSession,
   clearSession,
@@ -15,22 +14,16 @@ export const useAuthStore = defineStore('auth', {
   state: () => {
     const session = getSessionUser()
     return {
-      user:       session?.user ?? null,
-      // No token in state — it lives in the server-set HttpOnly cookie.
-      // JavaScript can never read it, which protects against XSS.
-      loading:    false,
-      error:      null,
-      errors:     {},
+      user: session?.user ?? null,
+      loading: false,
+      error: null,
+      errors: {},
       hasChecked: false,
     }
   },
 
   // ── Getters ──────────────────────────────────────────────────────────────
   getters: {
-    /**
-     * Authenticated if a user object is present.
-     * True token validity is enforced server-side via the HttpOnly cookie.
-     */
     isAuthenticated: (state) => !!state.user,
 
     fullName:  (state) => `${state.user?.first_name ?? ''} ${state.user?.last_name ?? ''}`.trim(),
@@ -85,21 +78,25 @@ export const useAuthStore = defineStore('auth', {
     // ── Public helpers ─────────────────────────────────────────────────────
 
     clearError() {
-      this.error  = null
+      this.error = null
       this.errors = {}
     },
 
-    // ── Auth ──────────────────────────────────────────────────────────────
+    clearSession() {
+      this.user = null
+      this.hasChecked = true
+      clearSession()
+    },
 
-    /**
-     * Sign in with email + password.
-     * Server sets the HttpOnly JWT cookie in the response.
-     * We only store the user object from the response body.
-     */
+    async logout() {
+      this.clearSession()
+      authApi.logoutApi().catch(() => { })
+    },
+
     async login(email, password) {
       this.loading = true
-      this.error   = null
-      this.errors  = {}
+      this.error = null
+      this.errors = {}
       try {
         const { data } = await authApi.loginApi({ email, password })
 
@@ -120,28 +117,17 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    /**
-     * Sign out: clear local state immediately, then tell the server to
-     * invalidate the cookie. Fire-and-forget — UI is never blocked.
-     */
     async logout() {
       authApi.logoutApi().catch(() => {})
       this._clearState()
     },
 
-    /**
-     * Verify the session is still valid by fetching the user from the server.
-     * The HttpOnly cookie is sent automatically by the browser.
-     * On failure (expired/invalid cookie), state is cleared.
-     */
     async fetchUser() {
       this.loading = true
       try {
         const { data } = await authApi.fetchApi()
         this._persist(data.user ?? data)
       } catch {
-        // Axios interceptor handles the /login redirect on 401.
-        // We clear local state here to stay consistent.
         this._clearState()
       } finally {
         this.loading    = false
@@ -149,13 +135,6 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    /**
-     * Called by the router guard before every protected navigation.
-     *
-     * Skips the network call when:
-     *  - already verified this session (hasChecked), OR
-     *  - no user cached locally (guest — cookie won't exist either)
-     */
     async ensureAuthChecked() {
       if (this.hasChecked) return
       if (!hasUser()) {
@@ -169,13 +148,14 @@ export const useAuthStore = defineStore('auth', {
 
     async updateProfile(payload) {
       this.loading = true
-      this.error   = null
-      this.errors  = {}
+      this.error = null
+      this.errors = {}
       try {
         const { data } = await authApi.updateApi(payload)
         this._patchUser(data.user ?? data)
       } catch (err) {
-        this._setError(err)
+        this.error = err.message ?? 'Failed to update profile.'
+        this.errors = err.errors ?? {}
         throw err
       } finally {
         this.loading = false
@@ -184,8 +164,7 @@ export const useAuthStore = defineStore('auth', {
 
     async updateAvatar(payload) {
       this.loading = true
-      this.error   = null
-      this.errors  = {}
+      this.error = null
       try {
         const { data } = await authApi.putApi('/user/avatar', payload)
         this._patchUser(data.user ?? data)
@@ -199,13 +178,14 @@ export const useAuthStore = defineStore('auth', {
 
     async updateEmail(payload) {
       this.loading = true
-      this.error   = null
-      this.errors  = {}
+      this.error = null
+      this.errors = {}
       try {
         const { data } = await authApi.putApi('/user/email', payload)
         this._patchUser(data.user ?? data)
       } catch (err) {
-        this._setError(err)
+        this.error = err.message ?? 'Failed to update email.'
+        this.errors = err.errors ?? {}
         throw err
       } finally {
         this.loading = false
@@ -214,12 +194,13 @@ export const useAuthStore = defineStore('auth', {
 
     async updatePassword(payload) {
       this.loading = true
-      this.error   = null
-      this.errors  = {}
+      this.error = null
+      this.errors = {}
       try {
         await authApi.updatePasswordApi(payload)
       } catch (err) {
-        this._setError(err)
+        this.error = err.message ?? 'Failed to update password.'
+        this.errors = err.errors ?? {}
         throw err
       } finally {
         this.loading = false

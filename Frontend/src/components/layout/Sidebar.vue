@@ -12,7 +12,6 @@ const menu = [
 const reportsMenu = [
   { to: '/home/sales-report', label: 'Sales Report', icon: 'mdi-chart-box-outline'      },
   { to: '/home/activity',     label: 'Activity Log', icon: 'mdi-clipboard-text-outline' },
-  { to: '/home/settings',     label: 'Settings',     icon: 'mdi-cog-outline'            },
 ]
 </script>
 

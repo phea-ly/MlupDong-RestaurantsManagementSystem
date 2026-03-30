@@ -10,7 +10,6 @@ const metaByPath = {
   "/home/user": { title: "Users", subtitle: "Manage accounts" },
   "/home/roles": { title: "Roles", subtitle: "Manage user roles" },
   "/home/activity": { title: "Activity Log", subtitle: "View system activity" },
-  "/home/settings": { title: "Settings", subtitle: "System configuration" },
 };
 
 const defaultMeta = { title: "Dashboard", subtitle: "Restaurant overview" };
