@@ -15,7 +15,7 @@ const routes = [
     component: () => import('@/views/Login.vue'),
   },
 
-  // ── Protected: admin / manager shell ─────────────────────────────────────
+  // ── Protected: admin / manager shell ────────────────────────────────────
   {
     path:      '/home',
     meta:      { requiresAuth: true },
@@ -63,17 +63,18 @@ const routes = [
         component: () => import('@/views/salesReport/SalesReport.vue'),
       },
       {
-        path: "settings",
-        redirect: "/home/admin-dashboard",
+        path:      'activity-log',
+        name:      'home-activity-log',
+        component: () => import('@/views/activity/Activity.vue'),
       },
     ],
   },
 
-  // ── Protected: staff ─────────────────────────────────────────────────────
+  // ── Protected: waiter / cashier / staff ──────────────────────────────────
   {
     path:      '/waiter',
     name:      'waiter-dashboard',
-    // meta:      { requiresAuth: true },
+    // meta:   { requiresAuth: true },
     component: () => import('@/views/waiter/waiterApp.vue'),
   },
 
@@ -108,7 +109,7 @@ const router = createRouter({
   routes,
 })
 
-// ── Navigation guard ───────────────────────────────────────────────────────
+// ── Navigation guard ──────────────────────────────────────────────────────
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
@@ -121,7 +122,6 @@ router.beforeEach(async (to, from, next) => {
   const isAuthed = authStore.isAuthenticated
 
   if (to.meta.requiresAuth && !isAuthed) {
-
     return next({ name: 'login', query: { redirect: to.fullPath } })
   }
 
