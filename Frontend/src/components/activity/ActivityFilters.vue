@@ -29,30 +29,14 @@ defineEmits(['apply', 'reset'])
             variant="outlined" density="compact" rounded="lg" hide-details
           />
         </v-col>
-        <v-col cols="12" md="2">
-          <v-select
-            v-model="filters.event_type"
-            :items="['All Events', ...eventTypes]"
-            label="Event Type"
-            variant="outlined" density="compact" rounded="lg" hide-details clearable
-          />
-        </v-col>
-        <v-col cols="12" md="2">
-          <v-select
-            v-model="filters.action"
-            :items="['All Actions', ...actions]"
-            label="Action"
-            variant="outlined" density="compact" rounded="lg" hide-details clearable
-          />
-        </v-col>
         <v-col cols="12" md="4" class="d-flex align-center justify-end">
           <v-sheet rounded="lg" border class="d-flex align-center px-3 py-2 ga-3" style="min-width:260px">
             <div class="text-caption text-medium-emphasis">
-              Total Entries: <strong class="text-primary">{{ summary.total_entries?.toLocaleString() }}</strong>
+              Total Entries: <strong color="#407709">{{ summary.total_entries?.toLocaleString() }}</strong>
             </div>
             <v-divider vertical />
             <div class="text-caption text-medium-emphasis">
-              DB Size: <strong class="text-primary">{{ summary.db_size_mb }} MB</strong>
+              DB Size: <strong color="#407709">{{ summary.db_size_mb }} MB</strong>
             </div>
           </v-sheet>
         </v-col>
@@ -79,7 +63,7 @@ defineEmits(['apply', 'reset'])
             :loading="loading"
             @click="$emit('apply')"
           >
-            <span style="color:#063824; font-weight:800">Apply Filters</span>
+            <span style="color:white; font-weight:800">Apply Filters</span>
           </v-btn>
           <v-btn variant="outlined" rounded="lg" size="small" @click="$emit('reset')">
             Reset

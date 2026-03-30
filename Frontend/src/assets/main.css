@@ -7,9 +7,9 @@
 
 :root {
   --app-font: 'Plus Jakarta Sans', 'Segoe UI', Inter, system-ui, sans-serif;
-  --app-primary: #1FE57A;
+  --app-primary: #407709;
   --app-primary-600: #16B861;
-  --app-primary-100: #D7FBE8;
+  --app-primary-100: white;
   --page-horizontal-padding: 24px;
   --page-vertical-padding: 20px;
   --app-radius-xs: 12px;

@@ -27,20 +27,6 @@ watch(searchQuery, () => fetchOrders(1))
 <template>
   <v-container fluid class="pa-0">
 
-    <!-- ── Tabs + Export ─────────────────────────────────────────────────────── -->
-    <div class="d-flex justify-space-between align-center flex-wrap ga-3 mb-5">
-      <v-tabs v-model="activeTab" color="var(--app-primary-600)" bg-color="transparent">
-        <v-tab v-for="tab in tabs" :key="tab.value" :value="tab.value" rounded="lg">
-          {{ tab.label }}
-          <v-icon v-if="tab.value === 'custom'" size="14" class="ml-1">mdi-calendar-outline</v-icon>
-        </v-tab>
-      </v-tabs>
-      <v-btn
-        color="var(--app-primary-600)" rounded="lg"
-        prepend-icon="mdi-download-outline" variant="flat"
-      >Export Report</v-btn>
-    </div>
-
     <!-- ── Custom date range ──────────────────────────────────────────────────── -->
     <v-expand-transition>
       <v-card v-if="activeTab === 'custom'" rounded="xl" border flat class="mb-5 pa-4">

@@ -35,7 +35,7 @@ const chartPoints = computed(() => {
   }
 })
 
-// ── Heatmap (static pattern — replace with real data if available) ────────
+// ── Heatmap ───────────────────────────────────────────────────────────────
 const heatmap = [
   { day: 'Mon', values: [2, 3, 5, 7, 6, 4, 3, 2] },
   { day: 'Tue', values: [1, 2, 4, 5, 4, 2, 1, 1] },
@@ -46,20 +46,31 @@ const heatmap = [
   { day: 'Sun', values: [0, 0, 0, 1, 1, 0, 0, 0] },
 ]
 
+// Green-tinted heat scale derived from #407709
 function heatColor(v) {
-  if (v >= 6) return '#1d4ed8'
-  if (v >= 4) return '#3b82f6'
-  if (v >= 2) return '#93c5fd'
-  if (v >= 1) return '#dbeafe'
-  return '#f1f5f9'
+  if (v >= 6) return '#407709'          // darkest — full intensity
+  if (v >= 4) return '#5a9e14'          // medium-dark
+  if (v >= 2) return '#a8d475'          // medium-light
+  if (v >= 1) return '#ddf0bc'          // very light
+  return '#f4faea'                      // near-white tint
 }
 
-// ── Derived totals for the donut labels ───────────────────────────────────
+// ── Derived totals ────────────────────────────────────────────────────────
 const totalEvents  = computed(() => props.trendData.reduce((s, i) => s + i.count, 0))
 const totalActions = computed(() => props.topActions.reduce((s, i) => s + i.count, 0))
 const topAction    = computed(() => props.topActions[0])
 
-const EVENT_COLORS  = ['#1d4ed8','var(--app-primary)','#a3e635','#f59e0b','#f97316','#ef4444','#a855f7','#06b6d4']
+// Green palette shades for event type dots
+const EVENT_COLORS = [
+  '#407709',  // primary
+  '#5a9e14',  // shade 1
+  '#76c420',  // shade 2
+  '#a8d475',  // shade 3
+  '#2d5506',  // dark
+  '#c5e89d',  // light
+  '#1a3303',  // darkest
+  '#ddf0bc',  // lightest
+]
 </script>
 
 <template>
@@ -73,7 +84,8 @@ const EVENT_COLORS  = ['#1d4ed8','var(--app-primary)','#a3e635','#f59e0b','#f973
         v-model="range"
         :items="rangeOptions"
         variant="outlined" density="compact" rounded="lg"
-        hide-details style="max-width:180px"
+        hide-details color="#407709"
+        style="max-width:180px"
       />
     </v-card-title>
 
@@ -83,15 +95,15 @@ const EVENT_COLORS  = ['#1d4ed8','var(--app-primary)','#a3e635','#f59e0b','#f973
       <svg width="100%" height="160" viewBox="0 0 700 150" preserveAspectRatio="none">
         <defs>
           <linearGradient id="actFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.18" />
-            <stop offset="100%" stop-color="#3b82f6" stop-opacity="0" />
+            <stop offset="0%"   stop-color="#407709" stop-opacity="0.20" />
+            <stop offset="100%" stop-color="#407709" stop-opacity="0"    />
           </linearGradient>
         </defs>
         <polygon v-if="chartPoints.fill" :points="chartPoints.fill" fill="url(#actFill)" />
         <polyline
           v-if="chartPoints.activity"
           :points="chartPoints.activity"
-          fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round"
+          fill="none" stroke="#407709" stroke-width="2.5" stroke-linejoin="round"
         />
         <!-- Fallback static line when no data -->
         <polyline
@@ -120,7 +132,7 @@ const EVENT_COLORS  = ['#1d4ed8','var(--app-primary)','#a3e635','#f59e0b','#f973
             <div class="d-flex align-center ga-4">
               <v-progress-circular
                 :model-value="totalEvents ? Math.round((trendData[0]?.count ?? 0) / totalEvents * 100) : 0"
-                size="100" width="10" color="#1d4ed8"
+                size="100" width="10" color="#407709"
               >
                 <span class="text-caption font-weight-black">{{ totalEvents }}</span>
               </v-progress-circular>
@@ -149,7 +161,7 @@ const EVENT_COLORS  = ['#1d4ed8','var(--app-primary)','#a3e635','#f59e0b','#f973
             <div class="d-flex align-center ga-4">
               <v-progress-circular
                 :model-value="topAction?.pct ?? 0"
-                size="100" width="10" color="#3b82f6"
+                size="100" width="10" color="#5a9e14"
               >
                 <span class="text-caption font-weight-black">{{ topAction?.pct ?? 0 }}%</span>
               </v-progress-circular>
@@ -189,7 +201,10 @@ const EVENT_COLORS  = ['#1d4ed8','var(--app-primary)','#a3e635','#f59e0b','#f973
             <div class="heatmap">
               <div class="heatmap-header">
                 <span />
-                <span v-for="h in ['0','3','6','9','12','15','18','21']" :key="h" class="text-caption text-medium-emphasis">{{ h }}</span>
+                <span
+                  v-for="h in ['0','3','6','9','12','15','18','21']" :key="h"
+                  class="text-caption text-medium-emphasis"
+                >{{ h }}</span>
               </div>
               <div v-for="row in heatmap" :key="row.day" class="heatmap-row">
                 <span class="text-caption text-medium-emphasis">{{ row.day }}</span>
@@ -202,7 +217,17 @@ const EVENT_COLORS  = ['#1d4ed8','var(--app-primary)','#a3e635','#f59e0b','#f973
                 </div>
               </div>
             </div>
-            <div class="text-caption text-medium-emphasis mt-3">
+            <!-- Heatmap legend -->
+            <div class="d-flex align-center ga-1 mt-3">
+              <span class="text-caption text-medium-emphasis mr-1">Less</span>
+              <span class="legend-cell" style="background:#f4faea" />
+              <span class="legend-cell" style="background:#ddf0bc" />
+              <span class="legend-cell" style="background:#a8d475" />
+              <span class="legend-cell" style="background:#5a9e14" />
+              <span class="legend-cell" style="background:#407709" />
+              <span class="text-caption text-medium-emphasis ml-1">More</span>
+            </div>
+            <div class="text-caption text-medium-emphasis mt-2">
               Monday is typically the busiest day.
             </div>
           </v-card>
@@ -214,11 +239,31 @@ const EVENT_COLORS  = ['#1d4ed8','var(--app-primary)','#a3e635','#f59e0b','#f973
 </template>
 
 <style scoped>
-.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
 
-.heatmap         { display: flex; flex-direction: column; gap: 5px; }
-.heatmap-header  { display: grid; grid-template-columns: 32px repeat(8, 1fr); gap: 4px; }
-.heatmap-row     { display: grid; grid-template-columns: 32px 1fr; gap: 6px; align-items: center; }
-.heatmap-cells   { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
-.heatmap-cell    { height: 14px; border-radius: 3px; border: 1px solid #e5e7eb; }
+/* Heatmap grid */
+.heatmap        { display: flex; flex-direction: column; gap: 5px; }
+.heatmap-header { display: grid; grid-template-columns: 32px repeat(8, 1fr); gap: 4px; }
+.heatmap-row    { display: grid; grid-template-columns: 32px 1fr; gap: 6px; align-items: center; }
+.heatmap-cells  { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
+.heatmap-cell   {
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid rgba(64, 119, 9, 0.12);
+  transition: opacity .15s;
+}
+.heatmap-cell:hover { opacity: .75; }
+
+/* Legend pills */
+.legend-cell {
+  width: 14px; height: 10px;
+  border-radius: 2px;
+  border: 1px solid rgba(64, 119, 9, 0.12);
+  display: inline-block;
+}
 </style>
