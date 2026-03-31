@@ -1,6 +1,6 @@
 <script setup>
-import { onMounted }     from 'vue'
-import { storeToRefs }   from 'pinia'
+import { onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useStaffStore } from '@/stores/staff.store'
 
 const store = useStaffStore()
@@ -75,30 +75,17 @@ onMounted(init)
     <v-card rounded="xl" elevation="0" border>
       <v-card-text>
         <div class="d-flex align-center ga-3 flex-wrap">
-          <v-text-field
-            v-model="search"
-            placeholder="Search staff..."
-            prepend-inner-icon="mdi-magnify"
-            variant="outlined" density="compact" rounded="lg" hide-details
-            style="min-width:220px; max-width:320px"
-          />
+          <v-text-field v-model="search" placeholder="Search staff..." prepend-inner-icon="mdi-magnify"
+            variant="outlined" density="compact" rounded="lg" hide-details style="min-width:220px; max-width:320px" />
           <v-spacer />
-          <v-btn
-            color="var(--app-primary)" rounded="lg"
-            prepend-icon="mdi-plus" @click="openAdd"
-          >
+          <!-- <v-btn color="var(--app-primary)" rounded="lg" prepend-icon="mdi-plus" @click="openAdd">
             <span style="color:#063824; font-weight:800">Add Staff</span>
-          </v-btn>
+          </v-btn> -->
         </div>
       </v-card-text>
 
-      <v-data-table
-        :headers="headers"
-        :items="filteredStaff"
-        :loading="loading"
-        items-per-page="10"
-        :header-props="{ class: 'text-caption font-weight-bold text-uppercase text-medium-emphasis' }"
-      >
+      <v-data-table :headers="headers" :items="filteredStaff" :loading="loading" items-per-page="10"
+        :header-props="{ class: 'text-caption font-weight-bold text-uppercase text-medium-emphasis' }">
         <template #loading>
           <v-skeleton-loader type="table-row@6" />
         </template>
@@ -118,10 +105,7 @@ onMounted(init)
 
         <!-- Role -->
         <template #item.role="{ item }">
-          <v-chip
-            :color="roleColors[item.role] ?? 'grey'"
-            size="small" variant="tonal" rounded="lg"
-          >
+          <v-chip :color="roleColors[item.role] ?? 'grey'" size="small" variant="tonal" rounded="lg">
             {{ item.role }}
           </v-chip>
         </template>
@@ -138,10 +122,7 @@ onMounted(init)
 
         <!-- Status -->
         <template #item.status="{ item }">
-          <v-chip
-            :color="item.status === 'Active' ? 'success' : 'default'"
-            size="small" variant="tonal" rounded="lg"
-          >
+          <v-chip :color="item.status === 'Active' ? 'success' : 'default'" size="small" variant="tonal" rounded="lg">
             <template #prepend>
               <v-icon size="8">mdi-circle</v-icon>
             </template>
@@ -166,7 +147,7 @@ onMounted(init)
       </v-data-table>
     </v-card>
 
-    <!-- ── Add Staff dialog ───────────────────────────────────────────────── -->
+    <!-- ── Add Staff dialog ─────────────────────────────────────────────────
     <v-dialog v-model="showAddDialog" max-width="480">
       <v-card rounded="xl" elevation="0">
         <v-card-title class="d-flex align-center ga-3 pt-6 px-6">
@@ -177,68 +158,50 @@ onMounted(init)
         </v-card-title>
         <v-card-text class="px-6 pt-3">
 
-          <!-- User picker -->
-          <v-select
-            v-model="newStaff.user_id"
-            :items="userOptions"
-            item-title="name" item-value="id"
-            label="User *"
-            variant="outlined" rounded="lg" density="comfortable"
-            class="mb-2"
-          >
+          <v-select v-model="newStaff.user_id" :items="userOptions" item-title="name" item-value="id" label="User *"
+            variant="outlined" rounded="lg" density="comfortable" class="mb-2" no-data-text="No users available">
             <template #item="{ item, props }">
               <v-list-item v-bind="props">
                 <template #subtitle>
                   <span class="text-caption text-medium-emphasis">{{ item.raw.email }}</span>
-                  <v-chip v-if="item.raw.role" size="x-small" class="ml-2" variant="tonal">{{ item.raw.role }}</v-chip>
+                  <v-chip v-if="item.raw.role" size="x-small" class="ml-2" variant="tonal">
+                    {{ item.raw.role }}
+                  </v-chip>
                 </template>
               </v-list-item>
             </template>
           </v-select>
 
-          <v-text-field
-            v-model="newStaff.position"
-            label="Position"
-            variant="outlined" rounded="lg" density="comfortable" class="mb-2"
-          />
+          <v-text-field v-model="newStaff.position" label="Position" variant="outlined" rounded="lg"
+            density="comfortable" class="mb-2" />
 
-          <v-text-field
-            v-model="newStaff.salary"
-            label="Salary (optional)"
-            type="number" prefix="$"
-            variant="outlined" rounded="lg" density="comfortable" class="mb-2"
-          />
+          <v-text-field v-model="newStaff.salary" label="Salary (optional)" type="number" prefix="$" variant="outlined"
+            rounded="lg" density="comfortable" class="mb-2" />
 
-          <v-row dense>
+          <v-row>
             <v-col cols="6">
-              <v-select
-                v-model="newStaff.status"
-                :items="statusOptions" label="Status"
-                variant="outlined" rounded="lg" density="comfortable"
-              />
+              <v-select v-model="newStaff.status" :items="statusOptions" label="Status" variant="outlined" rounded="lg"
+                density="comfortable" />
             </v-col>
             <v-col cols="6">
-              <v-text-field
-                v-model="newStaff.hire_date"
-                label="Hire Date" type="date"
-                variant="outlined" rounded="lg" density="comfortable"
-              />
+              <v-text-field v-model="newStaff.hire_date" label="Hire Date" type="date" variant="outlined" rounded="lg"
+                density="comfortable" />
             </v-col>
           </v-row>
+
         </v-card-text>
         <v-card-actions class="px-6 pb-6 pt-0">
           <v-spacer />
-          <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="showAddDialog = false">Cancel</v-btn>
-          <v-btn
-            color="var(--app-primary)" rounded="lg"
-            :loading="saving" :disabled="!newStaff.user_id"
-            @click="addStaff"
-          >
+          <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="showAddDialog = false">
+            Cancel
+          </v-btn>
+          <v-btn color="var(--app-primary)" rounded="lg" :loading="saving" :disabled="!newStaff.user_id"
+            @click="addStaff">
             <span style="color:#063824; font-weight:800">Add Staff</span>
           </v-btn>
         </v-card-actions>
       </v-card>
-    </v-dialog>
+    </v-dialog> -->
 
     <!-- ── Edit Staff dialog ──────────────────────────────────────────────── -->
     <v-dialog v-model="showEditDialog" max-width="480">
@@ -251,14 +214,8 @@ onMounted(init)
         </v-card-title>
         <v-card-text class="px-6 pt-3">
 
-          <v-select
-            v-model="editForm.user_id"
-            :items="userOptions"
-            item-title="name" item-value="id"
-            label="User *"
-            variant="outlined" rounded="lg" density="comfortable"
-            class="mb-2"
-          >
+          <v-select v-model="editForm.user_id" :items="userOptions" item-title="name" item-value="id" label="User *"
+            variant="outlined" rounded="lg" density="comfortable" class="mb-2">
             <template #item="{ item, props }">
               <v-list-item v-bind="props">
                 <template #subtitle>
@@ -269,33 +226,20 @@ onMounted(init)
             </template>
           </v-select>
 
-          <v-text-field
-            v-model="editForm.position"
-            label="Position"
-            variant="outlined" rounded="lg" density="comfortable" class="mb-2"
-          />
+          <v-text-field v-model="editForm.position" label="Position" variant="outlined" rounded="lg"
+            density="comfortable" class="mb-2" />
 
-          <v-text-field
-            v-model="editForm.salary"
-            label="Salary (optional)"
-            type="number" prefix="$"
-            variant="outlined" rounded="lg" density="comfortable" class="mb-2"
-          />
+          <v-text-field v-model="editForm.salary" label="Salary (optional)" type="number" prefix="$" variant="outlined"
+            rounded="lg" density="comfortable" class="mb-2" />
 
-          <v-row dense>
+          <v-row>
             <v-col cols="6">
-              <v-select
-                v-model="editForm.status"
-                :items="statusOptions" label="Status"
-                variant="outlined" rounded="lg" density="comfortable"
-              />
+              <v-select v-model="editForm.status" :items="statusOptions" label="Status" variant="outlined" rounded="lg"
+                density="comfortable" />
             </v-col>
             <v-col cols="6">
-              <v-text-field
-                v-model="editForm.hire_date"
-                label="Hire Date" type="date"
-                variant="outlined" rounded="lg" density="comfortable"
-              />
+              <v-text-field v-model="editForm.hire_date" label="Hire Date" type="date" variant="outlined" rounded="lg"
+                density="comfortable" />
             </v-col>
           </v-row>
         </v-card-text>
@@ -330,10 +274,7 @@ onMounted(init)
     </v-dialog>
 
     <!-- ── Snackbar ───────────────────────────────────────────────────────── -->
-    <v-snackbar
-      v-model="snackbar.show" :color="snackbar.color"
-      location="bottom right" rounded="lg" :timeout="3000"
-    >
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="bottom right" rounded="lg" :timeout="3000">
       {{ snackbar.message }}
       <template #actions>
         <v-btn variant="text" icon="mdi-close" size="small" @click="snackbar.show = false" />
@@ -349,6 +290,6 @@ onMounted(init)
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .08em;
-  color: rgba(0,0,0,.5);
+  color: rgba(0, 0, 0, .5);
 }
 </style>

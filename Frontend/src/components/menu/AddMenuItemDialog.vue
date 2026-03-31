@@ -233,12 +233,6 @@ function close() { emit('update:modelValue', false) }
             color="var(--app-primary)"
             @click="selectUpload"
           >Upload (Local)</v-btn>
-          <v-btn
-            size="small" rounded="lg" prepend-icon="mdi-link-variant"
-            :variant="imageSource === 'url' ? 'flat' : 'outlined'"
-            color="var(--app-primary)"
-            @click="selectUrl"
-          >Paste Image URL</v-btn>
         </div>
 
         <!-- Upload area -->
@@ -264,23 +258,6 @@ function close() { emit('update:modelValue', false) }
           </div>
           <div v-if="errors.image" class="text-caption text-error mb-2">{{ errors.image }}</div>
           <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="onFileChange" />
-        </template>
-
-        <!-- URL input -->
-        <template v-else>
-          <v-text-field
-            ref="imageUrlInput"
-            v-model="imageUrl"
-            label="Image URL"
-            placeholder="https://example.com/image.jpg"
-            prepend-inner-icon="mdi-link-variant"
-            variant="outlined" rounded="lg" density="comfortable"
-            :error-messages="errors.image"
-            class="mb-2"
-          />
-          <v-card v-if="imagePreview" rounded="lg" border flat class="mb-3" style="overflow:hidden">
-            <v-img :src="imagePreview" height="58" cover />
-          </v-card>
         </template>
 
         <!-- Item name -->

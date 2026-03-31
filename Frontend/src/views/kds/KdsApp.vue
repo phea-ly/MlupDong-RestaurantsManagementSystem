@@ -1,10 +1,12 @@
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { storeToRefs }  from 'pinia'
 import { useKdsStore }  from '@/stores/kds.store'
+import { useAuthStore } from '@/stores/auth.store'   // ← add your auth store import
 import OrderCard        from '@/components/kds/OrderCard.vue'
 
 const store = useKdsStore()
+const auth  = useAuthStore()                         // ← auth store instance
 
 const {
   pendingOrders, preparingOrders, readyOrders, completedOrders,
@@ -16,6 +18,16 @@ const {
   receiveOrder, confirmCooking, prepareFood, markReady, completeOrder,
   fetchOrders, init, cleanup, getOrderWaitMinutes,
 } = store
+
+// ── Logout ──────────────────────────────────────────────────────────────────
+const logoutDialog = ref(false)
+
+async function handleLogout () {
+  logoutDialog.value = false
+  await auth.logout()           // calls your existing auth store logout action
+  // router.push('/login')      // uncomment if your auth.logout() doesn't redirect
+}
+// ────────────────────────────────────────────────────────────────────────────
 
 const boardCount = computed(() =>
   pendingOrders.value.length + preparingOrders.value.length + readyOrders.value.length
@@ -110,17 +122,30 @@ onUnmounted(cleanup)
 
       <!-- Live indicator -->
       <v-chip
-        size="small" class="ml-3 mr-1 kds-live-chip"
+        size="small" class="ml-3 kds-live-chip"
         :class="connected ? 'kds-live-chip--on' : 'kds-live-chip--off'"
       >
         <span class="kds-live-dot" :class="connected ? 'dot-pulse' : ''" />
         {{ connected ? 'Live' : 'Offline' }}
       </v-chip>
 
-      <v-btn icon="mdi-refresh" variant="text" :loading="loading" size="small" @click="fetchOrders" />
+      <v-btn icon="mdi-refresh" variant="text" :loading="loading" size="small" @click="fetchOrders" class="ml-1" />
 
       <!-- Current time -->
       <div class="kds-clock">{{ currentTime }}</div>
+
+      <!-- ── Logout button ──────────────────────────────────────────────── -->
+      <v-btn
+        icon
+        variant="text"
+        size="small"
+        class="kds-logout-btn ml-1 mr-1"
+        @click="logoutDialog = true"
+      >
+        <v-icon size="18">mdi-logout</v-icon>
+        <v-tooltip activator="parent" location="bottom">Logout</v-tooltip>
+      </v-btn>
+      <!-- ─────────────────────────────────────────────────────────────── -->
     </v-app-bar>
 
     <v-main>
@@ -217,6 +242,44 @@ onUnmounted(cleanup)
       </v-container>
     </v-main>
 
+    <!-- ── Logout confirm dialog ──────────────────────────────────────────── -->
+    <v-dialog v-model="logoutDialog" max-width="360" persistent>
+      <v-card rounded="xl" class="kds-logout-dialog">
+        <div class="kds-logout-dialog__icon-wrap">
+          <div class="kds-logout-dialog__icon">
+            <v-icon size="28" color="white">mdi-logout</v-icon>
+          </div>
+        </div>
+
+        <v-card-title class="kds-logout-dialog__title">Sign out?</v-card-title>
+        <v-card-text class="kds-logout-dialog__body">
+          You'll be signed out of the Kitchen Display System. Any unsaved state will be lost.
+        </v-card-text>
+
+        <v-card-actions class="kds-logout-dialog__actions">
+          <v-btn
+            variant="tonal"
+            rounded="lg"
+            class="kds-logout-dialog__cancel"
+            @click="logoutDialog = false"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="flat"
+            rounded="lg"
+            class="kds-logout-dialog__confirm"
+            @click="handleLogout"
+          >
+            <v-icon start size="16">mdi-logout</v-icon>
+            Sign out
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+
     <!-- Snackbar -->
     <v-snackbar
       v-model="snackbar.show" :color="snackbar.color"
@@ -278,7 +341,54 @@ onUnmounted(cleanup)
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
 
 /* ── Clock ────────────────────────────────────────────────────────────────── */
-.kds-clock { font-size: 12px; color: #475569; font-family: monospace; font-weight: 600; padding: 0 10px 0 4px; }
+.kds-clock { font-size: 12px; color: #475569; font-family: monospace; font-weight: 600; padding: 0 4px; }
+
+/* ── Logout button ────────────────────────────────────────────────────────── */
+.kds-logout-btn {
+  color: #94a3b8 !important;
+  transition: color .15s ease, background .15s ease;
+}
+.kds-logout-btn:hover {
+  color: #ef4444 !important;
+  background: rgba(239,68,68,.08) !important;
+}
+
+/* ── Logout dialog ────────────────────────────────────────────────────────── */
+.kds-logout-dialog {
+  padding: 8px 4px 4px;
+  text-align: center;
+}
+.kds-logout-dialog__icon-wrap {
+  display: flex; justify-content: center;
+  padding-top: 24px; padding-bottom: 4px;
+}
+.kds-logout-dialog__icon {
+  width: 56px; height: 56px; border-radius: 16px;
+  background: linear-gradient(135deg, #f87171, #ef4444);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 20px rgba(239,68,68,.3);
+}
+.kds-logout-dialog__title {
+  font-size: 17px !important; font-weight: 800 !important;
+  color: #0f172a; text-align: center; padding-bottom: 4px !important;
+}
+.kds-logout-dialog__body {
+  font-size: 13px; color: #64748b; text-align: center;
+  padding-top: 0 !important; padding-bottom: 20px !important;
+  line-height: 1.5;
+}
+.kds-logout-dialog__actions {
+  display: flex; gap: 8px;
+  padding: 0 16px 20px !important;
+}
+.kds-logout-dialog__cancel {
+  flex: 1; font-weight: 600; font-size: 13px;
+  text-transform: none; color: #64748b !important;
+}
+.kds-logout-dialog__confirm {
+  flex: 1.4; font-weight: 700; font-size: 13px;
+  text-transform: none;
+}
 
 /* ── Body ─────────────────────────────────────────────────────────────────── */
 .kds-body { padding: 16px 20px; }

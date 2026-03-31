@@ -72,7 +72,7 @@ const TABLE_HEADERS = [
                 <div class="text-h3 font-weight-black" style="color:var(--app-primary)">{{ stats.active }}</div>
                 <div class="text-caption text-medium-emphasis">Active</div>
               </div>
-              <div class="pb-1">
+              <div>
                 <div class="text-h5 font-weight-black text-medium-emphasis">{{ stats.inactive }}</div>
                 <div class="text-caption text-medium-emphasis">Inactive</div>
               </div>

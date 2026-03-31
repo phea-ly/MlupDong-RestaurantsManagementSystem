@@ -13,12 +13,21 @@ class UserController extends Controller
 {
     public function index()
     {
-        return response()->json(
-            User::query()
-                ->with(['role', 'restaurant', 'staff'])
-                ->latest('user_id')
-                ->get()
-        );
+        $users = User::with('role')->get();
+
+        return response()->json($users->map(function ($user) {
+            return [
+                'user_id'    => $user->user_id,
+                'first_name' => $user->first_name,
+                'last_name'  => $user->last_name,
+                'email'      => $user->email,
+                'role_id'    => $user->role_id,
+                'role_name'  => $user->getRelation('role')?->role_name ?? null,
+                'status'     => $user->status,
+                'avatar'     => $user->avatar_url,
+                'created_at' => $user->created_at,
+            ];
+        }));
     }
 
     public function store(Request $request)
@@ -95,10 +104,15 @@ class UserController extends Controller
     public function destroy(string $id)
     {
         $user = User::query()->findOrFail($id);
+
         $authId = auth('api')->id();
         if ($authId && (int) $authId === (int) $user->user_id) {
             return response()->json(['message' => 'You cannot delete your own account.'], 403);
         }
+
+        // Delete related staff record first to avoid foreign key constraint
+        $user->staff()->delete();
+
         $user->delete();
 
         return response()->noContent();
@@ -106,22 +120,28 @@ class UserController extends Controller
 
     private function syncStaffRecord(User $user): void
     {
-        $roleName = strtoupper((string) ($user->role?->role_name ?? $user->role ?? ''));
-        $adminRoles = ['ADMIN', 'ADMINISTRATOR'];
+        $roleName = strtolower((string) ($user->role?->role_name ?? $user->role ?? ''));
 
-        if (in_array($roleName, $adminRoles, true)) {
-            if ($user->staff) {
-                $user->staff()->delete();
-            }
+        // Roles that automatically get a staff record
+        $staffRoles = ['staff', 'waiter', 'cashier', 'chef', 'cheff'];
+        // Roles that never get a staff record
+        $excludedRoles = ['admin', 'administrator'];
+
+        // Remove staff record if role changed to admin
+        if (in_array($roleName, $excludedRoles, true)) {
+            $user->staff()->delete();
             return;
         }
 
-        if (! $user->staff) {
-            Staff::query()->create([
+        // Auto-create staff record only for staff roles
+        if (in_array($roleName, $staffRoles, true) && !$user->staff) {
+            Staff::create([
                 'user_id'   => $user->user_id,
-                'position'  => $roleName !== '' ? $roleName : null,
-                'is_active' => true,
+                'position'  => ucfirst($roleName),
+                'is_active' => (bool) $user->status,
             ]);
         }
+
+        // Client/other roles: don't auto-create, but don't delete existing either
     }
 }

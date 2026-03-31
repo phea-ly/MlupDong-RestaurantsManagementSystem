@@ -6,26 +6,15 @@
       <div>
       </div>
 
-      <v-btn
-        color="var(--app-primary)"
-        rounded="lg"
-        prepend-icon="mdi-plus"
-        :disabled="store.loading"
-        @click="openCreate"
-      >
+      <v-btn color="var(--app-primary)" rounded="lg" prepend-icon="mdi-plus" :disabled="store.loading"
+        @click="openCreate">
         <span style="color:#063824; font-weight:800">New Role</span>
       </v-btn>
     </div>
 
     <!-- ── Global Error Banner ─────────────────────────────────────────── -->
-    <v-alert
-      v-if="store.error && !dialogOpen"
-      type="error"
-      variant="tonal"
-      closable
-      class="mb-4"
-      @click:close="store.clearErrors()"
-    >
+    <v-alert v-if="store.error && !dialogOpen" type="error" variant="tonal" closable class="mb-4"
+      @click:close="store.clearErrors()">
       {{ store.error }}
     </v-alert>
 
@@ -33,39 +22,18 @@
     <v-card rounded="xl" elevation="0" border>
       <v-card-text>
         <div class="d-flex align-center ga-3 flex-wrap">
-          <v-text-field
-            v-model="search"
-            placeholder="Search roles..."
-            prepend-inner-icon="mdi-magnify"
-            variant="outlined"
-            density="compact"
-            rounded="lg"
-            hide-details
-            clearable
-            style="min-width: 220px; max-width: 320px"
-          />
+          <v-text-field v-model="search" placeholder="Search roles..." prepend-inner-icon="mdi-magnify"
+            variant="outlined" density="compact" rounded="lg" hide-details clearable
+            style="min-width: 220px; max-width: 320px" />
           <v-spacer />
-          <v-btn
-            icon="mdi-refresh"
-            variant="text"
-            rounded="lg"
-            :loading="store.loading"
-            title="Refresh"
-            @click="store.fetchRoles()"
-          />
+          <v-btn icon="mdi-refresh" variant="text" rounded="lg" :loading="store.loading" title="Refresh"
+            @click="store.fetchRoles()" />
         </div>
       </v-card-text>
 
-      <v-data-table
-        :headers="headers"
-        :items="store.roles"
-        :loading="store.loading"
-        :search="search"
-        item-value="role_id"
-        items-per-page="10"
-        hover
-        :header-props="{ class: 'text-caption font-weight-bold text-uppercase text-medium-emphasis' }"
-      >
+      <v-data-table :headers="headers" :items="store.roles" :loading="store.loading" :search="search"
+        item-value="role_id" items-per-page="10" hover
+        :header-props="{ class: 'text-caption font-weight-bold text-uppercase text-medium-emphasis' }">
         <!-- Loading skeleton -->
         <template #loading>
           <v-skeleton-loader type="table-row@6" />
@@ -96,19 +64,19 @@
         <!-- Actions -->
         <template #item.actions="{ item }">
           <div class="d-flex align-center justify-end ga-1">
-            <v-btn icon size="small" variant="text" @click="openEdit(item)">
+            <v-btn icon size="small" variant="text" :disabled="item.role_name.toLowerCase() === 'admin'"
+              @click="openEdit(item)">
               <v-icon size="17" color="grey">mdi-pencil-outline</v-icon>
-              <v-tooltip activator="parent" location="top">Edit</v-tooltip>
+              <v-tooltip activator="parent" location="top">
+                {{ item.role_name.toLowerCase() === 'admin' ? 'Cannot edit admin role' : 'Edit' }}
+              </v-tooltip>
             </v-btn>
-            <v-btn
-              icon
-              size="small"
-              variant="text"
-              :loading="store.deleting && deletingId === item.role_id"
-              @click="confirmDelete(item)"
-            >
+            <v-btn icon size="small" variant="text" :disabled="item.role_name.toLowerCase() === 'admin'"
+              :loading="store.deleting && deletingId === item.role_id" @click="confirmDelete(item)">
               <v-icon size="17" color="grey">mdi-delete-outline</v-icon>
-              <v-tooltip activator="parent" location="top">Delete</v-tooltip>
+              <v-tooltip activator="parent" location="top">
+                {{ item.role_name.toLowerCase() === 'admin' ? 'Cannot delete admin role' : 'Delete' }}
+              </v-tooltip>
             </v-btn>
           </div>
         </template>
@@ -120,14 +88,8 @@
               mdi-shield-account-outline
             </v-icon>
             <p class="text-body-1 text-medium-emphasis">No roles found.</p>
-            <v-btn
-              class="mt-4"
-              color="var(--app-primary)"
-              variant="tonal"
-              rounded="lg"
-              prepend-icon="mdi-plus"
-              @click="openCreate"
-            >
+            <v-btn class="mt-4" color="var(--app-primary)" variant="tonal" rounded="lg" prepend-icon="mdi-plus"
+              @click="openCreate">
               <span style="color:#063824; font-weight:700">Create first role</span>
             </v-btn>
           </div>
@@ -139,12 +101,7 @@
     <v-dialog v-model="dialogOpen" max-width="480" persistent>
       <v-card rounded="xl" elevation="0">
         <v-card-title class="d-flex align-center ga-3 pt-6 px-6">
-          <v-avatar
-            :color="isEditing ? 'primary' : 'success'"
-            variant="tonal"
-            size="40"
-            rounded="lg"
-          >
+          <v-avatar :color="isEditing ? 'primary' : 'success'" variant="tonal" size="40" rounded="lg">
             <v-icon size="20">
               {{ isEditing ? 'mdi-account-edit-outline' : 'mdi-shield-plus-outline' }}
             </v-icon>
@@ -156,60 +113,27 @@
 
         <v-card-text class="px-6 pt-3">
           <!-- API error -->
-          <v-alert
-            v-if="store.error"
-            type="error"
-            variant="tonal"
-            density="compact"
-            class="mb-4"
-          >
+          <v-alert v-if="store.error" type="error" variant="tonal" density="compact" class="mb-4">
             {{ store.error }}
           </v-alert>
 
           <v-form ref="formRef" @submit.prevent="submitForm">
-            <v-text-field
-              v-model="form.role_name"
-              label="Role Name *"
-              placeholder="e.g. Administrator"
-              :error-messages="store.fieldErrors?.role_name"
-              :rules="[rules.required, rules.maxLen(100)]"
-              variant="outlined"
-              rounded="lg"
-              density="comfortable"
-              autofocus
-              class="mb-2"
-            />
+            <v-text-field v-model="form.role_name" label="Role Name *" placeholder="e.g. Administrator"
+              :error-messages="store.fieldErrors?.role_name" :rules="[rules.required, rules.maxLen(100)]"
+              variant="outlined" rounded="lg" density="comfortable" autofocus class="mb-2" />
 
-            <v-textarea
-              v-model="form.description"
-              label="Description"
-              placeholder="Brief description of this role…"
-              :error-messages="store.fieldErrors?.description"
-              variant="outlined"
-              rounded="lg"
-              density="comfortable"
-              rows="3"
-              no-resize
-            />
+            <v-textarea v-model="form.description" label="Description" placeholder="Brief description of this role…"
+              :error-messages="store.fieldErrors?.description" variant="outlined" rounded="lg" density="comfortable"
+              rows="3" no-resize />
           </v-form>
         </v-card-text>
 
         <v-card-actions class="px-6 pb-6 pt-0">
           <v-spacer />
-          <v-btn
-            variant="outlined"
-            rounded="lg"
-            :disabled="store.saving"
-            @click="closeDialog"
-          >
+          <v-btn variant="outlined" rounded="lg" :disabled="store.saving" @click="closeDialog">
             Cancel
           </v-btn>
-          <v-btn
-            color="var(--app-primary)"
-            rounded="lg"
-            :loading="store.saving"
-            @click="submitForm"
-          >
+          <v-btn color="var(--app-primary)" rounded="lg" :loading="store.saving" @click="submitForm">
             <span style="color:#063824; font-weight:800">
               {{ isEditing ? 'Save Changes' : 'Create Role' }}
             </span>
@@ -223,12 +147,7 @@
       <v-card rounded="xl" elevation="0">
         <v-card-text class="pa-6">
           <div class="d-flex align-center ga-3 mb-4">
-            <v-avatar
-              color="red-lighten-5"
-              rounded="lg"
-              size="44"
-              style="border: 1px solid #fca5a5"
-            >
+            <v-avatar color="red-lighten-5" rounded="lg" size="44" style="border: 1px solid #fca5a5">
               <v-icon color="error" size="22">mdi-delete-outline</v-icon>
             </v-avatar>
             <span class="text-h6 font-weight-black">Delete Role</span>
@@ -242,21 +161,10 @@
 
         <v-card-actions class="px-6 pb-6 pt-0">
           <v-spacer />
-          <v-btn
-            variant="outlined"
-            rounded="lg"
-            :disabled="store.deleting"
-            @click="deleteDialogOpen = false"
-          >
+          <v-btn variant="outlined" rounded="lg" :disabled="store.deleting" @click="deleteDialogOpen = false">
             Cancel
           </v-btn>
-          <v-btn
-            color="error"
-            variant="flat"
-            rounded="lg"
-            :loading="store.deleting"
-            @click="handleDelete"
-          >
+          <v-btn color="error" variant="flat" rounded="lg" :loading="store.deleting" @click="handleDelete">
             Delete
           </v-btn>
         </v-card-actions>
@@ -277,10 +185,10 @@ const store = useRoleStore()
 const search = ref('')
 
 const headers = [
-  { title: 'Role Name',   key: 'role_name',   sortable: true,  width: '20%'   },
-  { title: 'Description', key: 'description', sortable: false                  },
-  { title: 'Created',     key: 'created_at',  sortable: true,  width: '180px' },
-  { title: '',            key: 'actions',     sortable: false, width: '90px', align: 'end' },
+  { title: 'Role Name', key: 'role_name', sortable: true, width: '20%' },
+  { title: 'Description', key: 'description', sortable: false },
+  { title: 'Created', key: 'created_at', sortable: true, width: '180px' },
+  { title: '', key: 'actions', sortable: false, width: '90px', align: 'end' },
 ]
 
 function formatDate(iso) {
@@ -292,30 +200,30 @@ function formatDate(iso) {
 
 // ─── Form Dialog ─────────────────────────────────────────────────────────────
 const dialogOpen = ref(false)
-const isEditing  = ref(false)
-const formRef    = ref(null)
-const editingId  = ref(null)
+const isEditing = ref(false)
+const formRef = ref(null)
+const editingId = ref(null)
 
 const emptyForm = () => ({ role_name: '', description: '' })
-const form      = ref(emptyForm())
+const form = ref(emptyForm())
 
 const rules = {
   required: (v) => !!v?.trim() || 'This field is required.',
-  maxLen:   (n) => (v) => !v || v.length <= n || `Max ${n} characters.`,
+  maxLen: (n) => (v) => !v || v.length <= n || `Max ${n} characters.`,
 }
 
 function openCreate() {
-  isEditing.value  = false
-  editingId.value  = null
-  form.value       = emptyForm()
+  isEditing.value = false
+  editingId.value = null
+  form.value = emptyForm()
   store.clearErrors()
   dialogOpen.value = true
 }
 
 function openEdit(role) {
-  isEditing.value  = true
-  editingId.value  = role.role_id
-  form.value       = { role_name: role.role_name, description: role.description ?? '' }
+  isEditing.value = true
+  editingId.value = role.role_id
+  form.value = { role_name: role.role_name, description: role.description ?? '' }
   store.clearErrors()
   dialogOpen.value = true
 }
@@ -331,7 +239,7 @@ async function submitForm() {
   if (!valid) return
 
   const payload = {
-    role_name:   form.value.role_name.trim(),
+    role_name: form.value.role_name.trim(),
     description: form.value.description?.trim() || null,
   }
 
@@ -344,11 +252,11 @@ async function submitForm() {
 
 // ─── Delete Dialog ───────────────────────────────────────────────────────────
 const deleteDialogOpen = ref(false)
-const roleToDelete     = ref(null)
-const deletingId       = ref(null)
+const roleToDelete = ref(null)
+const deletingId = ref(null)
 
 function confirmDelete(role) {
-  roleToDelete.value     = role
+  roleToDelete.value = role
   deleteDialogOpen.value = true
 }
 
@@ -358,7 +266,7 @@ async function handleDelete() {
   const ok = await store.deleteRole(roleToDelete.value.role_id)
   if (ok) {
     deleteDialogOpen.value = false
-    roleToDelete.value     = null
+    roleToDelete.value = null
   }
   deletingId.value = null
 }
