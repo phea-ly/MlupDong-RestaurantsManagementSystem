@@ -3,7 +3,7 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 # API Arguments
-ARG VITE_API_BASE_URL=/api
+ARG VITE_API_BASE_URL
 
 # Reverb Arguments (Add these)
 ARG VITE_REVERB_APP_KEY
