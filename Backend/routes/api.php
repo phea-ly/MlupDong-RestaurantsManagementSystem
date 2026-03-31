@@ -52,7 +52,7 @@ Route::prefix('sales-report')->group(function () {
 });
 
 Route::prefix('dashboard')->group(function () {
-    Route::get('kpi',           [DashboardController::class, 'kpi']);
+    Route::get('/dashboard/kpi', [DashboardController::class, 'kpi']);
     Route::get('best-selling',  [DashboardController::class, 'bestSelling']);
     Route::get('peak-hours',    [DashboardController::class, 'peakHours']);
     Route::get('order-summary', [DashboardController::class, 'orderSummary']);
