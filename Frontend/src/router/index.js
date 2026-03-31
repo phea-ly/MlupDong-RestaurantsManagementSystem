@@ -98,11 +98,13 @@ const routes = [
   {
     path: "/menu/:token",
     name: "customer-menu",
+    meta: { isPublic: true }, // ← mark as public
     component: () => import("@/views/customer/customerMenu.vue"),
   },
   {
     path: "/order/:token",
     name: "customer-order",
+    meta: { isPublic: true }, // ← mark as public
     component: () => import("@/views/customer/customerOrder.vue"),
   },
 
@@ -119,7 +121,12 @@ const router = createRouter({
 });
 
 // ── Navigation guard ──────────────────────────────────────────────────────
-router.beforeEach(async (to, from) => {
+router.beforeEach(async (to) => {
+  // ✅ Let public/customer routes through immediately — no auth needed
+  if (to.meta.isPublic) {
+    return true;
+  }
+
   const authStore = useAuthStore();
 
   const token = localStorage.getItem("token");
