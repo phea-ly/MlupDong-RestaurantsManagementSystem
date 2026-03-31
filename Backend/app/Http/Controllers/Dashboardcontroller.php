@@ -31,7 +31,7 @@ class DashboardController extends Controller
         $colors = ['success', 'blue', 'orange', 'pink', 'teal'];
 
         return response()->json(
-            $rows->values()->map(fn ($row, $i) => [
+            $rows->values()->map(fn($row, $i) => [
                 'name'  => $row->name,
                 'sold'  => (int) $row->sold,
                 'pct'   => round(($row->sold / $max) * 100),
@@ -59,20 +59,20 @@ class DashboardController extends Controller
 
         // Return a fixed set of display hours with counts
         $displayHours = [
-            ['label' => '8 AM',  'hour' => 8  ],
-            ['label' => '10 AM', 'hour' => 10 ],
-            ['label' => '12 PM', 'hour' => 12 ],
-            ['label' => '2 PM',  'hour' => 14 ],
-            ['label' => '4 PM',  'hour' => 16 ],
-            ['label' => '6 PM',  'hour' => 18 ],
-            ['label' => '8 PM',  'hour' => 20 ],
+            ['label' => '8 AM',  'hour' => 8],
+            ['label' => '10 AM', 'hour' => 10],
+            ['label' => '12 PM', 'hour' => 12],
+            ['label' => '2 PM',  'hour' => 14],
+            ['label' => '4 PM',  'hour' => 16],
+            ['label' => '6 PM',  'hour' => 18],
+            ['label' => '8 PM',  'hour' => 20],
         ];
 
-        $counts = array_map(fn ($h) => $rows[$h['hour']] ?? 0, $displayHours);
+        $counts = array_map(fn($h) => $rows[$h['hour']] ?? 0, $displayHours);
         $max    = max($counts) ?: 1;
 
         return response()->json(
-            array_map(fn ($h, $count) => [
+            array_map(fn($h, $count) => [
                 'label'  => $h['label'],
                 'count'  => $count,
                 'height' => (int) round(($count / $max) * 100),
@@ -100,6 +100,7 @@ class DashboardController extends Controller
         $orderGrowth   = $lastMonthOrders > 0
             ? round((($totalOrders - $lastMonthOrders) / $lastMonthOrders) * 100, 1)
             : 0;
+
 
         // Repeat guests = users with more than 1 completed order this month
         $repeatGuests  = Order::whereIn('order_status', ['completed'])
@@ -165,6 +166,7 @@ class DashboardController extends Controller
         // New users registered today
         $newGuests = User::whereDate('created_at', $today->toDateString())->count();
         $prevGuests = User::whereDate('created_at', $today->copy()->subDay()->toDateString())->count();
+
 
         return response()->json([
             [
@@ -245,4 +247,3 @@ class DashboardController extends Controller
         return "HOUR({$column})";
     }
 }
-
