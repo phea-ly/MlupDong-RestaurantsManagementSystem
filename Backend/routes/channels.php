@@ -1,8 +1,15 @@
 <?php
-
-// kds.orders is a PUBLIC channel — no auth needed
+// routes/channels.php
 
 use Illuminate\Support\Facades\Broadcast;
 
-// KDS public channel — kitchen display doesn't need auth
-Broadcast::channel('kds.orders', fn () => true);
+// KDS screen — kitchen staff
+Broadcast::channel('kitchen', function () {
+    return true; // Public for KDS devices
+});
+
+// Per-table channel — customer tracks their order
+// Pattern: table.1, table.2, table.A3, etc.
+Broadcast::channel('table.{tableNumber}', function ($user, $tableNumber) {
+    return true; // Public — customer has no auth
+});

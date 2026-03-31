@@ -27,6 +27,7 @@ class Order extends Model
         'table_id',
         'discount_id',
         'restaurant_id',
+        'special_instructions', 
     ];
 
     protected function casts(): array

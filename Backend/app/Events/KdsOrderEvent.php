@@ -9,26 +9,32 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-// ✅ Use ShouldBroadcastNow (not ShouldBroadcast) so it fires immediately
-//    without needing a queue worker running
 class KdsOrderEvent implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public function __construct(
-        public readonly string     $eventType,
-        public readonly KdsPayload $payload,
-    ) {}
+    public string $eventName;
+    public array  $payload;
 
+    public function __construct(string $eventName, KdsPayload $payload)
+    {
+        $this->eventName = $eventName;
+        $this->payload   = $payload->toArray();
+    }
+
+    /**
+     * Broadcast on BOTH channels:
+     *  - "kitchen"         → KDS screen
+     *  - "table.{number}"  → Customer success screen
+     */
     public function broadcastOn(): array
     {
-        $channels = [
-            new Channel('kitchen'),
-        ];
+        $channels = [new Channel('kitchen')];
 
-        // Also push to per-table channel so customer menu can track status
-        if ($this->payload->tableNumber) {
-            $channels[] = new Channel('table.' . $this->payload->tableNumber);
+        // Add per-table channel so customer can track their order
+        $tableNumber = $this->payload['table_number'] ?? null;
+        if ($tableNumber) {
+            $channels[] = new Channel("table.{$tableNumber}");
         }
 
         return $channels;
@@ -36,11 +42,11 @@ class KdsOrderEvent implements ShouldBroadcastNow
 
     public function broadcastAs(): string
     {
-        return $this->eventType;   // frontend listens as '.order.created' etc.
+        return $this->eventName;
     }
 
     public function broadcastWith(): array
     {
-        return $this->payload->toArray();
+        return $this->payload;
     }
 }
