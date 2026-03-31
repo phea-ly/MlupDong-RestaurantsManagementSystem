@@ -29,7 +29,7 @@ class MenuItemController extends Controller
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('menu-images', 'public');
-            $validated['image'] = Storage::url($path);
+            $validated['image'] = Storage::disk('public')->url($path);
         }
 
         $menuItem = MenuItem::query()->create($validated);
@@ -62,7 +62,7 @@ class MenuItemController extends Controller
                 Storage::delete($oldPath);
             }
             $path = $request->file('image')->store('menu-images', 'public');
-            $validated['image'] = Storage::url($path);
+            $validated['image'] = Storage::disk('public')->url($path);
         }
 
         $menuItem->update($validated);

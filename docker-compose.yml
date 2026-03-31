@@ -5,7 +5,7 @@ services:
     container_name: mlupdong_backend
     restart: always
     networks: [web]
-    env_file: ./backend/.env
+    env_file: ./Backend/.env
     volumes:
       - backend_storage:/var/www/html/storage
       - backend_cache:/var/www/html/bootstrap/cache
