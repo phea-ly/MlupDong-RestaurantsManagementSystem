@@ -34,7 +34,7 @@ jobs:
           push: true
           no-cache: true
           build-args: |
-            VITE_API_BASE_URL=${{ secrets.PROD_API_URL }}
+            VITE_API_BASE_URL=http://34.236.143.58:82/api
             VITE_REVERB_APP_KEY=${{ secrets.VITE_REVERB_APP_KEY }}
             VITE_REVERB_HOST=${{ secrets.VITE_REVERB_HOST }}
             VITE_REVERB_PORT=${{ secrets.VITE_REVERB_PORT }}
