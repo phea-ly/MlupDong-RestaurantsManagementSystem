@@ -7,7 +7,9 @@ const dashboardApi = {
 
 
   getChart: (period = '7days') =>
-    api.get('/sales-report/chart', { params: { period: period === '7days' ? 'last7days' : 'last7days' } }),
+    api.get('/sales-report/chart', {
+      params: { period: period === '7days' ? 'last7days' : period }
+    }),
 
 
   getCategories: (period = 'last7days') =>
