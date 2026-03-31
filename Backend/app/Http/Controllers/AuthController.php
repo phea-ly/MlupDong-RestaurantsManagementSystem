@@ -26,9 +26,7 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        // User not found
         if (!$user) {
-            // Log without Auth::id() — user doesn't exist
             ActivityLog::create([
                 'user_id'     => null,
                 'event_type'  => 'user',
@@ -41,7 +39,6 @@ class AuthController extends Controller
         }
 
         if (!$token = JWTAuth::attempt($request->only('email', 'password'))) {
-            // User exists but wrong password
             ActivityLog::create([
                 'user_id'     => $user->user_id,
                 'event_type'  => 'user',
@@ -53,14 +50,17 @@ class AuthController extends Controller
             return response()->json(['message' => 'Incorrect password.'], 401);
         }
 
-        // Successful login
         $this->logActivity('user', 'login', "User \"{$user->email}\" logged in.");
 
-        $cookieName = config('jwt.cookie.name', 'auth_token');
-        $cookieTtl  = (int) config('jwt.ttl', 60);
-        $cookiePath = config('jwt.cookie.path', '/');
-        $cookieDomain = config('jwt.cookie.domain');
-        $cookieSecure = (bool) config('jwt.cookie.secure', false);
+        // Eager-load role so role_name is always present in the response.
+        // The Vue router uses role_name to decide which dashboard to land on.
+        $user->load('role');
+
+        $cookieName     = config('jwt.cookie.name', 'auth_token');
+        $cookieTtl      = (int) config('jwt.ttl', 60);
+        $cookiePath     = config('jwt.cookie.path', '/');
+        $cookieDomain   = config('jwt.cookie.domain');
+        $cookieSecure   = (bool) config('jwt.cookie.secure', false);
         $cookieSameSite = config('jwt.cookie.same_site', 'lax');
 
         return response()->json([
@@ -73,7 +73,7 @@ class AuthController extends Controller
             $cookiePath,
             $cookieDomain,
             $cookieSecure,
-            true,
+            true,   // httpOnly — JS can never read the raw token
             false,
             $cookieSameSite
         );
@@ -93,12 +93,13 @@ class AuthController extends Controller
             return response()->json(['error' => 'Failed to logout, please try again'], 500);
         }
 
-        $cookieName = config('jwt.cookie.name', 'auth_token');
-        $cookiePath = config('jwt.cookie.path', '/');
-        $cookieDomain = config('jwt.cookie.domain');
-        $cookieSecure = (bool) config('jwt.cookie.secure', false);
+        $cookieName     = config('jwt.cookie.name', 'auth_token');
+        $cookiePath     = config('jwt.cookie.path', '/');
+        $cookieDomain   = config('jwt.cookie.domain');
+        $cookieSecure   = (bool) config('jwt.cookie.secure', false);
         $cookieSameSite = config('jwt.cookie.same_site', 'lax');
 
+        // Set TTL to -1 so the browser expires the cookie immediately
         return response()->json(['message' => 'Successfully logged out'])->cookie(
             $cookieName,
             '',
@@ -125,10 +126,15 @@ class AuthController extends Controller
                     'origin'      => request()->headers->get('origin'),
                 ]);
             }
+
             $user = auth('api')->user();
             if (!$user) {
                 return response()->json(['error' => 'User not found'], 404);
             }
+
+            // Reload role on every /user call so a role change takes effect immediately
+            $user->load('role');
+
             return response()->json(['user' => $this->formatUser($user)]);
         } catch (JWTException $e) {
             return response()->json(['error' => 'Failed to fetch user profile'], 500);
@@ -161,12 +167,11 @@ class AuthController extends Controller
                 return response()->json(['message' => 'Current password is incorrect.'], 422);
             }
             $data['password'] = Hash::make($request->password);
-            // Log password change explicitly (observer shows 'updated' but not what changed)
             $this->logActivity('user', 'password_changed', "User \"{$user->email}\" changed their password.");
         }
 
         $user->update($data);
-        $user->refresh();
+        $user->refresh()->load('role');
 
         return response()->json([
             'success' => true,
@@ -174,14 +179,33 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Serialize a User for API responses.
+     *
+     * role_name (from the roles table via the eager-loaded relation) is now
+     * included at the top level. The frontend auth store reads this field to
+     * determine which dashboard to redirect to after login / on refresh.
+     *
+     * Routing matrix (matched case-insensitively in utils/auth.js):
+     *   admin            → /home          (full admin dashboard)
+     *   chef             → /chef          (KDS / kitchen display)
+     *   waiter           → /waiter        (service station)
+     *   cashier          → /waiter
+     *   staff            → /waiter        (default; may also visit /chef)
+     */
+    // AuthController.php — find this method and replace it
+
     private function formatUser(User $user): array
     {
+        $role = $user->getRelation('role'); // ← add this line
+
         return [
             'id'         => $user->user_id,
             'email'      => $user->email,
             'first_name' => $user->first_name,
             'last_name'  => $user->last_name,
             'role_id'    => $user->role_id,
+            'role_name'  => $role?->role_name ?? null, // ← changed from $user->role?->role_name
             'avatar'     => $user->avatar_url
                 ? $user->avatar_url . '?t=' . time()
                 : null,

@@ -98,7 +98,7 @@ async function saveProfile() {
 </script>
 
 <template>
-  <v-app style="background:#edf2f1">
+  <div style="background:#edf2f1; min-height:100vh; position:relative; z-index:100;">
     <Sidebar />
     <AppBar :title="title" :subtitle="subtitle" @open-edit="openEdit" />
 
@@ -111,12 +111,11 @@ async function saveProfile() {
     </v-main>
 
     <!-- ── Edit Profile Dialog ── -->
-    <v-dialog v-model="editDialog"  persistent rounded="xl">
+    <v-dialog v-model="editDialog" persistent rounded="xl">
       <v-card rounded="xl" elevation="0">
 
         <v-card-title class="d-flex align-center justify-space-between pt-5 px-6">
-          <div>
-          </div>
+          <div></div>
           <v-btn icon size="small" variant="text" @click="editDialog = false">
             <v-icon>mdi-close</v-icon>
           </v-btn>
@@ -171,7 +170,7 @@ async function saveProfile() {
                   <v-text-field v-model="editFirstName" label="First Name" variant="outlined" rounded="lg" density="comfortable" prepend-inner-icon="mdi-account-outline" />
                 </v-col>
                 <v-col cols="6">
-                  <v-text-field v-model="editLastName"  label="Last Name"  variant="outlined" rounded="lg" density="comfortable" />
+                  <v-text-field v-model="editLastName" label="Last Name" variant="outlined" rounded="lg" density="comfortable" />
                 </v-col>
               </v-row>
               <v-text-field v-model="editEmail" label="Email Address" variant="outlined" rounded="lg" density="comfortable" prepend-inner-icon="mdi-email-outline" readonly bg-color="grey-lighten-4" />
@@ -226,6 +225,5 @@ async function saveProfile() {
 
       </v-card>
     </v-dialog>
-  </v-app>
+  </div>
 </template>
-

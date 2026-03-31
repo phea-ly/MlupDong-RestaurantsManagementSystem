@@ -1,135 +1,167 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth.store'
+// src/router/index.js
+import { createRouter, createWebHistory } from "vue-router";
+import { useAuthStore } from "@/stores/auth.store";
+import { canAccessPath } from "@/utils/auth";
 
 const routes = [
   {
-    path:     '/',
-    redirect: '/login',
+    path: "/",
+    redirect: "/login",
   },
 
-  // ── Guest only ───────────────────────────────────────────────────────────
+  // ── Guest only ─────────────────────────────────────────────────────────────
   {
-    path:      '/login',
-    name:      'login',
-    meta:      { guestOnly: true },
-    component: () => import('@/views/Login.vue'),
+    path: "/login",
+    name: "login",
+    meta: { guestOnly: true },
+    component: () => import("@/views/Login.vue"),
   },
 
-  // ── Protected: admin / manager shell ────────────────────────────────────
+  // ── Admin dashboard (/home/**) — admin only ────────────────────────────────
+  // The canAccessPath() guard enforces this. Any other role trying to visit
+  // /home/* is redirected to their own dashboard.
   {
-    path:      '/home',
-    meta:      { requiresAuth: true },
-    component: () => import('@/views/Layout.vue'),
+    path: "/home",
+    meta: { requiresAuth: true, section: "home" },
+    component: () => import("@/views/Layout.vue"),
     children: [
-      { path: '', redirect: '/home/admin-dashboard' },
+      { path: "", redirect: "/home/admin-dashboard" },
       {
-        path:      'admin-dashboard',
-        name:      'home-dashboard',
-        component: () => import('@/views/dashboard/AdminDashboard.vue'),
+        path: "admin-dashboard",
+        name: "home-dashboard",
+        component: () => import("@/views/dashboard/AdminDashboard.vue"),
       },
       {
-        path:      'menu',
-        name:      'home-menu',
-        component: () => import('@/views/menu/Menu.vue'),
+        path: "menu",
+        name: "home-menu",
+        component: () => import("@/views/menu/Menu.vue"),
       },
       {
-        path:      'roles',
-        name:      'home-roles',
-        component: () => import('@/views/roles/roles.vue'),
+        path: "roles",
+        name: "home-roles",
+        component: () => import("@/views/roles/roles.vue"),
       },
       {
-        path:      'categories',
-        name:      'home-categories',
-        component: () => import('@/views/categories/Categories.vue'),
+        path: "categories",
+        name: "home-categories",
+        component: () => import("@/views/categories/Categories.vue"),
       },
       {
-        path:      'staff',
-        name:      'home-staff',
-        component: () => import('@/views/staff/Staff.vue'),
+        path: "staff",
+        name: "home-staff",
+        component: () => import("@/views/staff/Staff.vue"),
       },
       {
-        path:      'table',
-        name:      'home-table',
-        component: () => import('@/views/table/Table.vue'),
+        path: "table",
+        name: "home-table",
+        component: () => import("@/views/table/Table.vue"),
       },
       {
-        path:      'user',
-        name:      'home-user',
-        component: () => import('@/views/user/User.vue'),
+        path: "user",
+        name: "home-user",
+        component: () => import("@/views/user/User.vue"),
       },
       {
-        path:      'sales-report',
-        name:      'home-sales-report',
-        component: () => import('@/views/salesReport/SalesReport.vue'),
+        path: "sales-report",
+        name: "home-sales-report",
+        component: () => import("@/views/salesReport/SalesReport.vue"),
       },
       {
-        path:      'activity-log',
-        name:      'home-activity-log',
-        component: () => import('@/views/activity/Activity.vue'),
+        path: "activity-log",
+        name: "home-activity-log",
+        component: () => import("@/views/activity/Activity.vue"),
       },
     ],
   },
 
-  // ── Protected: waiter / cashier / staff ──────────────────────────────────
+  // ── Waiter / cashier / staff / admin ──────────────────────────────────────
   {
-    path:      '/waiter',
-    name:      'waiter-dashboard',
-    // meta:   { requiresAuth: true },
-    component: () => import('@/views/waiter/waiterApp.vue'),
+    path: "/waiter",
+    name: "waiter-dashboard",
+    meta: { requiresAuth: true, section: "waiter" },
+    component: () => import("@/views/waiter/waiterApp.vue"),
   },
 
-  // ── Public: kitchen display ───────────────────────────────────────────────
+  // ── Chef / KDS — chef, staff, admin ───────────────────────────────────────
   {
-    path:      '/chef',
-    name:      'chef-menu',
-    component: () => import('@/views/kds/KdsApp.vue'),
+    path: "/chef",
+    name: "chef-menu",
+    meta: { requiresAuth: true, section: "chef" },
+    component: () => import("@/views/kds/KdsApp.vue"),
   },
 
-  // ── Public: customer-facing (token-based, no login required) ─────────────
+  // ── Public: customer QR menu (no login required) ──────────────────────────
   {
-    path:      '/menu/:token',
-    name:      'customer-menu',
-    component: () => import('@/views/customer/customerMenu.vue'),
+    path: "/menu/:token",
+    name: "customer-menu",
+    meta: { public: true },
+    component: () => import("@/views/customer/customerMenu.vue"),
   },
   {
-    path:      '/order/:token',
-    name:      'customer-order',
-    component: () => import('@/views/customer/customerOrder.vue'),
+    path: "/order/:token",
+    name: "customer-order",
+    meta: { public: true },
+    component: () => import("@/views/customer/customerOrder.vue"),
   },
 
-  // ── Fallback ──────────────────────────────────────────────────────────────
+  // ── Fallback ───────────────────────────────────────────────────────────────
   {
-    path:     '/:pathMatch(.*)*',
-    redirect: '/login',
+    path: "/:pathMatch(.*)*",
+    redirect: "/login",
   },
-]
+];
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
-})
+});
 
-// ── Navigation guard ──────────────────────────────────────────────────────
-router.beforeEach(async (to, from, next) => {
-  const authStore = useAuthStore()
+// ── Navigation guard ──────────────────────────────────────────────────────────
 
-  const needsAuthCheck = to.meta.requiresAuth || to.meta.guestOnly
+router.beforeEach(async (to) => {
+  const auth = useAuthStore();
 
-  if (needsAuthCheck) {
-    await authStore.ensureAuthChecked()
+  if (to.meta.public) return true;
+
+  await auth.ensureAuthChecked();
+
+  const isAuthed = auth.isAuthenticated;
+
+  console.log(
+    "Guard:",
+    to.path,
+    "| isAuthed:",
+    isAuthed,
+    "| role:",
+    auth.role,
+    "| dashboard:",
+    auth.dashboardPath,
+  );
+
+  if (to.meta.guestOnly) {
+    if (isAuthed) return auth.dashboardPath;
+    return true;
   }
 
-  const isAuthed = authStore.isAuthenticated
+  if (to.meta.requiresAuth) {
+    if (!isAuthed) {
+      return { name: "login", query: { redirect: to.fullPath } };
+    }
 
-  if (to.meta.requiresAuth && !isAuthed) {
-    return next({ name: 'login', query: { redirect: to.fullPath } })
+    const section = to.meta.section;
+    console.log(
+      "Section:",
+      section,
+      "| canAccess:",
+      canAccessPath(auth.role, `/${section}`),
+    );
+
+    if (section && !canAccessPath(auth.role, `/${section}`)) {
+      return auth.dashboardPath;
+    }
   }
 
-  if (to.meta.guestOnly && isAuthed) {
-    return next(authStore.dashboardPath)
-  }
+  return true;
+});
 
-  return next()
-})
-
-export default router
+export default router;

@@ -18,9 +18,10 @@ class DatabaseSeeder extends Seeder
             ['email' => 'mlupdong@gmail.com'],
             [
                 'first_name' => 'Mlup',
-                'last_name' => 'Dong',
-                'role' => 'admin',
-                'password' => Hash::make('mlupdong@12345'),
+                'last_name'  => 'Dong',
+                'role'       => 'admin',   // ← make sure this column exists
+                'role_id'    => null,      // ← or set the correct role_id if using a roles table
+                'password'   => Hash::make('mlupdong@12345'),
             ]
         );
 

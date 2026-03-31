@@ -1,227 +1,200 @@
-// src/stores/auth.store.js
-import { defineStore } from 'pinia'
-import * as authApi from '@/api/auth.api'
+import { defineStore } from "pinia";
+import * as authApi from "@/api/auth.api";
 import {
   saveSession,
   clearSession,
   getSessionUser,
   hasUser,
   getDashboardPathByRole,
-} from '@/utils/auth'
+} from "@/utils/auth";
 
-export const useAuthStore = defineStore('auth', {
-
-  // ── State ────────────────────────────────────────────────────────────────
+export const useAuthStore = defineStore("auth", {
   state: () => {
-    const session = getSessionUser()
+    const session = getSessionUser();
     return {
       user: session?.user ?? null,
       loading: false,
       error: null,
       errors: {},
       hasChecked: false,
-    }
+    };
   },
 
-  // ── Getters ──────────────────────────────────────────────────────────────
   getters: {
-    /**
-     * Authenticated if a user object is present.
-     * True token validity is enforced server-side via the HttpOnly cookie.
-     */
     isAuthenticated: (state) => !!state.user,
-    fullName: (state) => `${state.user?.first_name ?? ''} ${state.user?.last_name ?? ''}`.trim(),
-    userEmail: (state) => state.user?.email ?? '',
+    fullName: (state) =>
+      `${state.user?.first_name ?? ""} ${state.user?.last_name ?? ""}`.trim(),
+    userEmail: (state) => state.user?.email ?? "",
     avatar: (state) => state.user?.avatar ?? null,
-    role: (state) => state.user?.role?.name || state.user?.role?.role_name || state.user?.role || null,
+    role: (state) => state.user?.role_name ?? null,
+
+    dashboardPath: (state) => {
+      const role = state.user?.role_name ?? null;
+
+      if (!role) return "/login";
+
+      switch (role.toLowerCase()) {
+        case "admin":
+          return "/home/admin-dashboard";
+        case "waiter":
+        case "cashier":
+        case "staff":
+          return "/waiter";
+        case "chef":
+        case "cheff":
+          return "/chef";
+        default:
+          return "/login";
+      }
+    },
   },
 
-  // ── Actions ──────────────────────────────────────────────────────────────
   actions: {
-
-    // ── Private helpers ────────────────────────────────────────────────────
-
-    /** Save user to state and localStorage. No token — cookie handles that. */
     _persist(user) {
-      this.user = user
-      saveSession(user)
+      this.user = user;
+      saveSession(user);
     },
 
-    /** Merge partial data into the user without a full replace. */
     _patchUser(partial = {}) {
-      this.user = { ...this.user, ...partial }
-      saveSession(this.user)
+      this.user = { ...this.user, ...partial };
+      saveSession(this.user);
     },
 
-    /** Wipe all auth state and localStorage. Cookie is cleared by the server. */
     _clearState() {
-      this.user       = null
-      this.error      = null
-      this.errors     = {}
-      this.hasChecked = true
-      clearSession()
+      this.user = null;
+      this.error = null;
+      this.errors = {};
+      this.hasChecked = true;
+      clearSession();
     },
 
-    /** Centralised error setter. */
     _setError(err) {
-      this.error  = err?.message ?? 'Something went wrong.'
-      this.errors = err?.errors  ?? {}
+      this.error = err?.message ?? "Something went wrong.";
+      this.errors = err?.errors ?? {};
     },
-
-    // ── Public helpers ─────────────────────────────────────────────────────
 
     clearError() {
-      this.error = null
-      this.errors = {}
+      this.error = null;
+      this.errors = {};
     },
 
     clearSession() {
-      this.user = null
-      this.hasChecked = true
-      clearSession()
+      this.user = null;
+      this.hasChecked = true;
+      clearSession();
     },
 
+    // ✅ Fixed — duplicate logout removed, only one remains
     async logout() {
-      this.clearSession()
-      authApi.logoutApi().catch(() => { })
+      authApi.logoutApi().catch(() => {});
+      this._clearState();
     },
 
-    /**
-     * Sign in with email + password.
-     * Server sets the HttpOnly JWT cookie in the response.
-     * We only store the user object from the response body.
-     */
     async login(email, password) {
-      this.loading = true
-      this.error = null
-      this.errors = {}
+      this.loading = true;
+      this.error = null;
+      this.errors = {};
       try {
-        const { data } = await authApi.loginApi({ email, password })
+        const { data } = await authApi.loginApi({ email, password });
 
-        const user = data.user ?? null
+        const user = data.user ?? null;
         if (!user) {
-          throw { message: 'No user returned from server.', errors: {} }
+          throw { message: "No user returned from server.", errors: {} };
         }
 
-        this._persist(user)
-        this.hasChecked = true
-
-        return data
+        this._persist(user);
+        this.hasChecked = true;
+        return data;
       } catch (err) {
-        this.error = err.message
-        this.errors = err.errors ?? {}
-        throw err
+        this.error = err.message;
+        this.errors = err.errors ?? {};
+        throw err;
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
 
-    /**
-     * Sign out: clear local state immediately, then tell the server to
-     * invalidate the cookie. Fire-and-forget — UI is never blocked.
-     */
-    async logout() {
-      authApi.logoutApi().catch(() => {})
-      this._clearState()
-    },
-
-    /**
-     * Verify the session is still valid by fetching the user from the server.
-     * The HttpOnly cookie is sent automatically by the browser.
-     * On failure (expired/invalid cookie), state is cleared.
-     */
     async fetchUser() {
-      this.loading = true
+      this.loading = true;
       try {
-        const { data } = await authApi.fetchApi()
-        this._persist(data.user ?? data)
+        const { data } = await authApi.fetchApi();
+        this._persist(data.user ?? data);
       } catch {
-        // Axios interceptor handles the /login redirect on 401.
-        // We clear local state here to stay consistent.
-        this._clearState()
+        this._clearState();
       } finally {
-        this.loading    = false
-        this.hasChecked = true
+        this.loading = false;
+        this.hasChecked = true;
       }
     },
 
-    /**
-     * Called by the router guard before every protected navigation.
-     *
-     * Skips the network call when:
-     *  - already verified this session (hasChecked), OR
-     *  - no user cached locally (guest — cookie won't exist either)
-     */
     async ensureAuthChecked() {
-      if (this.hasChecked) return
+      if (this.hasChecked) return; // ← login sets hasChecked = true, so this returns immediately
       if (!hasUser()) {
-        this.hasChecked = true
-        return
+        this.hasChecked = true;
+        return;
       }
-      await this.fetchUser()
+      await this.fetchUser();
     },
-
-    // ── Profile ───────────────────────────────────────────────────────────
 
     async updateProfile(payload) {
-      this.loading = true
-      this.error = null
-      this.errors = {}
+      this.loading = true;
+      this.error = null;
+      this.errors = {};
       try {
-        const { data } = await authApi.updateApi(payload)
-        this._patchUser(data.user ?? data)
+        const { data } = await authApi.updateApi(payload);
+        this._patchUser(data.user ?? data);
       } catch (err) {
-        this.error = err.message ?? 'Failed to update profile.'
-        this.errors = err.errors ?? {}
-        throw err
+        this.error = err.message ?? "Failed to update profile.";
+        this.errors = err.errors ?? {};
+        throw err;
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
 
     async updateAvatar(payload) {
-      this.loading = true
-      this.error = null
+      this.loading = true;
+      this.error = null;
       try {
-        const { data } = await authApi.putApi('/user/avatar', payload)
-        this._patchUser(data.user ?? data)
+        const { data } = await authApi.putApi("/user/avatar", payload);
+        this._patchUser(data.user ?? data);
       } catch (err) {
-        this._setError(err)
-        throw err
+        this._setError(err);
+        throw err;
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
 
     async updateEmail(payload) {
-      this.loading = true
-      this.error = null
-      this.errors = {}
+      this.loading = true;
+      this.error = null;
+      this.errors = {};
       try {
-        const { data } = await authApi.putApi('/user/email', payload)
-        this._patchUser(data.user ?? data)
+        const { data } = await authApi.putApi("/user/email", payload);
+        this._patchUser(data.user ?? data);
       } catch (err) {
-        this.error = err.message ?? 'Failed to update email.'
-        this.errors = err.errors ?? {}
-        throw err
+        this.error = err.message ?? "Failed to update email.";
+        this.errors = err.errors ?? {};
+        throw err;
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
 
     async updatePassword(payload) {
-      this.loading = true
-      this.error = null
-      this.errors = {}
+      this.loading = true;
+      this.error = null;
+      this.errors = {};
       try {
-        await authApi.updatePasswordApi(payload)
+        await authApi.updatePasswordApi(payload);
       } catch (err) {
-        this.error = err.message ?? 'Failed to update password.'
-        this.errors = err.errors ?? {}
-        throw err
+        this.error = err.message ?? "Failed to update password.";
+        this.errors = err.errors ?? {};
+        throw err;
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
   },
-})
+});

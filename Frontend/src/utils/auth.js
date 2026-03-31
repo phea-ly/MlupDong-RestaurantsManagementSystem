@@ -1,31 +1,11 @@
-// src/utils/auth.js
-
 const SESSION_KEY = 'auth_session'
 
-// ── Session ────────────────────────────────────────────────────────────────
-
-/**
- * Persist only the user object to localStorage.
- * The JWT token is stored in an HttpOnly cookie by the server —
- * it is never accessible to JavaScript.
- */
 export function saveSession(user) {
-  if (user) {
+  try {
     localStorage.setItem(SESSION_KEY, JSON.stringify({ user }))
-  } else {
-    localStorage.removeItem(SESSION_KEY)
-  }
+  } catch {}
 }
 
-/** Remove the session from localStorage. */
-export function clearSession() {
-  localStorage.removeItem(SESSION_KEY)
-}
-
-/**
- * Read and parse the stored session.
- * Returns { user } or null.
- */
 export function getSessionUser() {
   try {
     const raw = localStorage.getItem(SESSION_KEY)
@@ -35,53 +15,45 @@ export function getSessionUser() {
   }
 }
 
-// ── User ───────────────────────────────────────────────────────────────────
-
-/** Return the stored user object, or null. */
-export function getUser() {
-  return getSessionUser()?.user ?? null
-}
-
-/**
- * True if a user object is cached in localStorage.
- * The actual token validity is always verified server-side via the cookie.
- */
 export function hasUser() {
-  return !!getUser()
+  return !!getSessionUser()?.user
 }
 
-/**
- * Resolve the user's role string from any shape Laravel may return:
- *   role: 'admin'
- *   role: { name: 'admin' }
- *   role: { role_name: 'admin' }
- */
-export function getUserRole() {
-  const user = getUser()
-  return (
-    user?.role?.name      ??
-    user?.role?.role_name ??
-    user?.role            ??
-    null
-  )
+export function clearSession() {
+  try {
+    localStorage.removeItem(SESSION_KEY)
+  } catch {}
 }
 
-// ── Routing ────────────────────────────────────────────────────────────────
-
-/**
- * Map a role string to its home route.
- * Extend this switch as you add more roles.
- */
 export function getDashboardPathByRole(role) {
-  switch (role) {
-    case 'admin':
-    case 'manager':
-      return '/home/admin-dashboard'
-    case 'waiter':
-      return '/waiter'
+  if (!role) return '/home'
+  switch (role.toString().toLowerCase().trim()) {
     case 'chef':
       return '/chef'
+    case 'waiter':
+    case 'cashier':
+    case 'staff':
+      return '/waiter'
+    case 'admin':
+    case 'administrator':
+    case 'manager':
     default:
-      return '/home/admin-dashboard'
+      return '/home'
+  }
+}
+
+export function canAccessPath(role, path) {
+  if (!role) return false
+  const r    = role.toString().toLowerCase().trim()
+  const base = '/' + (path.split('/')[1] ?? '')
+  switch (base) {
+    case '/home':
+      return ['admin', 'administrator', 'manager'].includes(r)
+    case '/chef':
+      return ['admin', 'administrator', 'manager', 'chef', 'staff'].includes(r)
+    case '/waiter':
+      return ['admin', 'administrator', 'manager', 'waiter', 'cashier', 'staff'].includes(r)
+    default:
+      return ['admin', 'administrator'].includes(r)
   }
 }
