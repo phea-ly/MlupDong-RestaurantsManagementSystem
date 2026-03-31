@@ -30,7 +30,7 @@ class TableController extends Controller
 
             $token = $table->qr_code_url ?? Str::random(32);
 
-            $baseUrl = 'http://34.236.143.58:82/';
+            $baseUrl = 'http://34.236.143.58:82';
             $data        = "{$baseUrl}/menu/{$token}";
 
             $options = new QROptions([
