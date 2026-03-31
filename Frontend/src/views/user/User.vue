@@ -148,7 +148,7 @@ const TABLE_HEADERS = [
             style="max-width:260px; min-width:200px"
           />
           <v-btn color="var(--app-primary)" rounded="lg" elevation="0" prepend-icon="mdi-account-multiple-plus" @click="openAdd">
-            <span style="color:#063824; font-weight:800">Create Account</span>
+            <span style="color:white; font-weight:800">Create Account</span>
           </v-btn>
         </div>
       </v-card-text>
@@ -302,8 +302,8 @@ const TABLE_HEADERS = [
         <v-card-actions class="px-6 pb-6 pt-0">
           <v-spacer />
           <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="showAddDialog = false">Cancel</v-btn>
-          <v-btn color="var(--app-primary)" rounded="lg" :loading="saving" @click="saveUser">
-            <span style="color:#063824; font-weight:800">Create Account</span>
+          <v-btn color="var(--app-primary)" variant="flat" rounded="lg" :loading="saving" @click="saveUser">
+            <span style="color:white; font-weight:800">Create Account</span>
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -313,7 +313,7 @@ const TABLE_HEADERS = [
     <v-dialog v-model="showEditDialog" max-width="500">
       <v-card rounded="xl" elevation="0">
         <v-card-title class="d-flex align-center ga-3 pt-6 px-6">
-          <v-avatar color="primary" variant="tonal" size="40" rounded="lg">
+          <v-avatar color="var(--app-primary)" variant="tonal" size="40" rounded="lg">
             <v-icon size="20">mdi-account-edit-outline</v-icon>
           </v-avatar>
           <span class="text-h6 font-weight-black">Edit Account</span>
@@ -384,7 +384,7 @@ const TABLE_HEADERS = [
         <v-card-actions class="px-6 pb-6 pt-0">
           <v-spacer />
           <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="showEditDialog = false">Cancel</v-btn>
-          <v-btn color="primary" variant="flat" rounded="lg" :loading="saving" @click="saveEdit">Save Changes</v-btn>
+          <v-btn color="var(--app-primary)" variant="flat" rounded="lg" :loading="saving" @click="saveEdit">Save Changes</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

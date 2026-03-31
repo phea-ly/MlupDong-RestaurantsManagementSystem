@@ -51,7 +51,7 @@
         <div>
           <div class="text-subtitle-1 font-weight-black">Order Statistics</div>
         </div>
-        <v-btn-toggle v-model="activeRange" rounded="lg" density="compact" color="var(--app-primary-600)"
+        <v-btn-toggle v-model="activeRange" rounded="lg" density="compact" color="#407709"
           variant="outlined">
           <v-btn value="30days" size="small">Last 30 Days</v-btn>
           <v-btn value="7days" size="small">Last 7 Days</v-btn>
@@ -64,12 +64,12 @@
           <svg width="100%" height="160" viewBox="0 0 700 120" preserveAspectRatio="none">
             <defs>
               <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="var(--app-primary-600)" stop-opacity="0.15" />
-                <stop offset="100%" stop-color="var(--app-primary-600)" stop-opacity="0" />
+                <stop offset="0%" stop-color="#407709" stop-opacity="0.18" />
+                <stop offset="100%" stop-color="#407709" stop-opacity="0" />
               </linearGradient>
             </defs>
             <polygon :points="chartPoints + ' 650,120 50,120'" fill="url(#lineGrad)" />
-            <polyline :points="chartPoints" fill="none" stroke="var(--app-primary-600)" stroke-width="2.5"
+            <polyline :points="chartPoints" fill="none" stroke="#407709" stroke-width="2.5"
               stroke-linejoin="round" stroke-linecap="round" />
           </svg>
           <div class="d-flex justify-space-between px-2 mt-1">
@@ -223,8 +223,7 @@ let peakHoursChart = null
 
 // ── 3. Helpers ───────────────────────────────────────────────────────────────
 function getPrimary() {
-  return getComputedStyle(document.documentElement)
-    .getPropertyValue("#407709").trim() || '#407709'
+  return '#407709'
 }
 
 // ── 4. Chart builders ────────────────────────────────────────────────────────

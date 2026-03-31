@@ -13,7 +13,7 @@
         :disabled="store.loading"
         @click="openCreate"
       >
-        <span style="color:#063824; font-weight:800">New Role</span>
+        <span style="color:white; font-weight:800">New Role</span>
       </v-btn>
     </div>
 

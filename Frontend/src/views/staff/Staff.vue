@@ -87,7 +87,7 @@ onMounted(init)
             color="var(--app-primary)" rounded="lg"
             prepend-icon="mdi-plus" @click="openAdd"
           >
-            <span style="color:#063824; font-weight:800">Add Staff</span>
+            <span style="color:white; font-weight:800">Add Staff</span>
           </v-btn>
         </div>
       </v-card-text>

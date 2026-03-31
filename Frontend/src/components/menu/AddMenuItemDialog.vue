@@ -216,7 +216,7 @@ function close() { emit('update:modelValue', false) }
               {{ isEdit ? 'mdi-pencil-outline' : 'mdi-silverware-fork-knife' }}
             </v-icon>
           </v-avatar>
-          <span class="text-h6 font-weight-black">{{ title }}</span>
+          <span class="text-h6 font-weight-white color-white">{{ title }}</span>
         </div>
         <v-btn icon size="small" variant="text" @click="close">
           <v-icon>mdi-close</v-icon>
@@ -324,10 +324,10 @@ function close() { emit('update:modelValue', false) }
         />
 
         <!-- Status -->
-        <v-card rounded="lg" variant="tonal" color="grey-lighten-3">
+        <v-card rounded="lg" color="grey-lighten-3">
           <v-card-text class="d-flex align-center justify-space-between py-3">
             <div>
-              <div class="text-body-2 font-weight-bold">Availability</div>
+              <div class="text-body-2 font-weight-bold" style="color: black;">Availability</div>
               <div class="text-caption text-medium-emphasis">
                 {{ form.status ? 'Visible on menu' : 'Hidden from menu' }}
               </div>
@@ -341,8 +341,8 @@ function close() { emit('update:modelValue', false) }
       <v-card-actions class="px-6 pb-6">
         <v-spacer />
         <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="close">Cancel</v-btn>
-        <v-btn color="var(--app-primary)" rounded="lg" :loading="saving" @click="handleSave">
-          <span style="color:#063824; font-weight:800">{{ isEdit ? 'Save Changes' : 'Add Item' }}</span>
+        <v-btn color="var(--app-primary)" variant="flat" rounded="lg" :loading="saving" @click="handleSave">
+          <span style="color:white; font-weight:800">{{ isEdit ? 'Save Changes' : 'Add Item' }}</span>
         </v-btn>
       </v-card-actions>
 

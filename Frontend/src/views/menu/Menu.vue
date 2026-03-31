@@ -180,7 +180,7 @@ onMounted(init);
           prepend-icon="mdi-plus"
           @click="handleAddNew"
         >
-          <span style="color:#063824; font-weight:800">Add New Item</span>
+          <span style="color:white; font-weight:800">Add New Item</span>
         </v-btn>
       </div>
     </div>

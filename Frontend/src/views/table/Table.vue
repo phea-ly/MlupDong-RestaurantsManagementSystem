@@ -39,7 +39,7 @@ onMounted(init)
         prepend-icon="mdi-plus"
         @click="openAdd"
       >
-        <span style="color:#063824; font-weight:800">Register New Table</span>
+        <span style="color:white; font-weight:800">Register New Table</span>
       </v-btn>
     </div>
 
@@ -154,10 +154,10 @@ onMounted(init)
               class="text-none flex-grow-1 mr-3 text-left h-auto py-3 asset-btn deployed-state"
               @click="printQr(table)"
             >
-              <v-icon size="24" color="#10b981" class="mr-2">mdi-check-circle</v-icon>
+              <v-icon size="24" color="#407709" class="mr-2">mdi-check-circle</v-icon>
               <div class="d-flex flex-column align-start">
-                <span class="font-weight-black uppercase-mini text-green-darken-1">ASSET</span>
-                <span class="font-weight-black uppercase-main text-green-darken-3">DEPLOYED</span>
+                <span class="font-weight-black uppercase-mini" style="color:#5a9e12">ASSET</span>
+                <span class="font-weight-black uppercase-main" style="color:#2d5505">DEPLOYED</span>
               </div>
             </v-btn>
 
@@ -284,7 +284,7 @@ onMounted(init)
             color="var(--app-primary)" rounded="lg"
             :loading="saving" @click="addTable"
           >
-            <span style="color:#063824; font-weight:800">Register Table</span>
+            <span style="color:#f0f7e6; font-weight:800">Register Table</span>
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -404,7 +404,7 @@ onMounted(init)
 }
 
 .stat-card:hover {
-  box-shadow: 0 10px 25px -5px rgba(22, 198, 91, .1) !important;
+  box-shadow: 0 10px 25px -5px rgba(64, 119, 9, .15) !important;
   transform: translateY(-2px);
 }
 
@@ -427,7 +427,7 @@ onMounted(init)
   position: absolute;
   inset: 0;
   border-radius: 16px;
-  background: radial-gradient(circle at top right, rgba(22, 198, 91, .03), transparent 70%);
+  background: radial-gradient(circle at top right, rgba(64, 119, 9, .04), transparent 70%);
   opacity: 0;
   transition: opacity .6s ease;
   pointer-events: none;
@@ -450,9 +450,9 @@ onMounted(init)
 }
 
 .chip-ready {
-  background: linear-gradient(135deg, #f0fdf4, #dcfce7) !important;
-  color: #166534 !important;
-  border: 1px solid rgba(22, 163, 74, .1) !important;
+  background: linear-gradient(135deg, #f2f8e8, #e2f0cc) !important;
+  color: #2d5505 !important;
+  border: 1px solid rgba(64, 119, 9, .15) !important;
 }
 
 .chip-pending {
@@ -508,14 +508,14 @@ onMounted(init)
 
 /* ── Action buttons ── */
 .asset-btn {
-  background: #f0fdf4 !important;
-  border: 1px solid #dcfce7 !important;
+  background: #f2f8e8 !important;
+  border: 1px solid #d4eaaa !important;
   border-radius: 12px !important;
   transition: all .3s ease;
 }
 
 .asset-btn:hover {
-  background: #dcfce7 !important;
+  background: #e2f0cc !important;
   transform: translateX(4px);
 }
 
@@ -563,7 +563,7 @@ onMounted(init)
 }
 
 .sync-status {
-  color: #10b981;
+  color: #407709;
   font-size: 11px;
   letter-spacing: .5px;
 }
@@ -596,7 +596,7 @@ onMounted(init)
 
 @keyframes check-pop {
   from { transform: scale(1); }
-  to   { transform: scale(1.1); filter: drop-shadow(0 0 4px rgba(16, 185, 129, .4)); }
+  to   { transform: scale(1.1); filter: drop-shadow(0 0 4px rgba(64, 119, 9, .4)); }
 }
 
 /* ── Filters ── */
@@ -611,9 +611,9 @@ onMounted(init)
 }
 
 .active-filter-chip {
-  background: #1e293b !important;
+  background: #407709 !important;
   color: #fff !important;
-  box-shadow: 0 4px 12px rgba(30, 41, 59, .25) !important;
+  box-shadow: 0 4px 12px rgba(64, 119, 9, .3) !important;
 }
 
 /* ── Stagger animation ── */
@@ -657,7 +657,7 @@ onMounted(init)
   .print-header {
     font-size: 24px;
     font-weight: 800;
-    color: #16c65b;
+    color: #407709;
     margin-bottom: 2cm;
     letter-spacing: 2px;
     text-transform: uppercase;

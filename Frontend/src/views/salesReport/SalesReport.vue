@@ -107,7 +107,7 @@ watch(searchQuery, () => fetchOrders(1))
                 Earnings over the selected period
               </div>
             </div>
-            <v-btn variant="outlined" rounded="lg" size="small" append-icon="mdi-chevron-down">
+            <v-btn variant="outlined" rounded="lg" size="small" append-icon="mdi-chevron-down" color="#407709">
               Weekly
             </v-btn>
           </v-card-title>
@@ -117,15 +117,15 @@ watch(searchQuery, () => fetchOrders(1))
               <svg width="100%" height="160" viewBox="0 0 600 110" preserveAspectRatio="none">
                 <defs>
                   <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%"   stop-color="var(--app-primary-600)" stop-opacity="0.18" />
-                    <stop offset="100%" stop-color="var(--app-primary-600)" stop-opacity="0"    />
+                    <stop offset="0%"   stop-color="#407709" stop-opacity="0.18" />
+                    <stop offset="100%" stop-color="#407709" stop-opacity="0"    />
                   </linearGradient>
                 </defs>
                 <polygon :points="chartPoints + ' 550,110 50,110'" fill="url(#areaGrad)" />
                 <polyline
                   :points="chartPoints"
                   fill="none"
-                  stroke="var(--app-primary-600)"
+                  stroke="#407709"
                   stroke-width="2.5"
                   stroke-linejoin="round"
                   stroke-linecap="round"

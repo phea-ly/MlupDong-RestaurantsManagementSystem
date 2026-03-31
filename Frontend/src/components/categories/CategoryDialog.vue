@@ -21,8 +21,8 @@ defineEmits(['update:modelValue', 'save'])
 
         <!-- Header -->
         <div class="d-flex align-center ga-3 mb-5">
-          <v-avatar color="purple-lighten-5" rounded="lg" size="44" style="border:1px solid rgba(168,85,247,0.25)">
-            <v-icon color="#a855f7" size="20">mdi-tag-outline</v-icon>
+          <v-avatar color="#f2f8e8" rounded="lg" size="44" style="border:1px solid rgba(64,119,9,0.22)">
+            <v-icon color="#407709" size="20">mdi-tag-outline</v-icon>
           </v-avatar>
           <span class="text-h6 font-weight-black">
             {{ editing ? 'Edit Category' : 'Add Category' }}
@@ -55,7 +55,7 @@ defineEmits(['update:modelValue', 'save'])
         />
 
         <!-- Status toggle -->
-        <v-card variant="tonal" color="grey-lighten-3" rounded="lg">
+        <v-card variant="tonal" color="black" rounded="lg">
           <v-card-text class="d-flex align-center justify-space-between py-3 px-4">
             <div>
               <div class="text-body-2 font-weight-bold">Status</div>
@@ -80,12 +80,12 @@ defineEmits(['update:modelValue', 'save'])
           @click="$emit('update:modelValue', false)"
         >Cancel</v-btn>
         <v-btn
-          color="var(--app-primary)" variant="flat" rounded="lg"
+          color="#407709" variant="flat" rounded="lg"
           :loading="saving"
           :disabled="!form.category_name?.trim()"
           @click="$emit('save')"
         >
-          <span style="color:#063824; font-weight:800">
+          <span style="color:white; font-weight:800">
             {{ editing ? 'Update' : 'Add' }}
           </span>
         </v-btn>

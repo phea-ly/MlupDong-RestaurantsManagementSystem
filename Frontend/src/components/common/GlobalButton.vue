@@ -8,7 +8,7 @@
 defineProps({
   color: {
     type: String,
-    default: 'primary'
+    default: 'app-primary'
   }
 })
 </script>

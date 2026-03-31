@@ -225,7 +225,7 @@ function handleSave() {
         <v-spacer />
         <v-btn variant="outlined" rounded="lg" @click="close">Cancel</v-btn>
         <v-btn color="var(--app-primary)" variant="flat" rounded="lg" @click="handleSave">
-          <span style="color:#063824;font-weight:800">Save Profile</span>
+          <span style="color:white;font-weight:800">Save Profile</span>
         </v-btn>
       </v-card-actions>
 

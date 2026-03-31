@@ -56,9 +56,9 @@ export const useTableStore = defineStore('table', () => {
     {
       label: 'ASSETS READY',
       value: tables.value.filter(t => t.qr_code).length,
-      icon:  'mdi-qrcode-check',
-      color: '#16c65b',
-      bg:    '#f0fdf4',
+      icon:  'mdi-check-circle-outline',
+      color: '#407709',
+      bg:    '#f2f8e8',
     },
     {
       label: 'PENDING QRS',
