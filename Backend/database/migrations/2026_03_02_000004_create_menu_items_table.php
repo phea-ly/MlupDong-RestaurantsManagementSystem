@@ -13,6 +13,8 @@ return new class extends Migration
         }
 
         Schema::create('menu_items', function (Blueprint $table) {
+            
+            $table->unsignedTinyInteger('prep_time_minutes')->default(10)->after('status');
             $table->id('menu_item_id');
             $table->string('item_name', 150);
             $table->decimal('price', 10, 2);

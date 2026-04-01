@@ -1,12 +1,12 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { storeToRefs }  from 'pinia'
-import { useKdsStore }  from '@/stores/kds.store'
+import { storeToRefs } from 'pinia'
+import { useKdsStore } from '@/stores/kds.store'
 import { useAuthStore } from '@/stores/auth.store'   // ← add your auth store import
-import OrderCard        from '@/components/kds/OrderCard.vue'
+import OrderCard from '@/components/kds/OrderCard.vue'
 
 const store = useKdsStore()
-const auth  = useAuthStore()                         // ← auth store instance
+const auth = useAuthStore()                         // ← auth store instance
 
 const {
   pendingOrders, preparingOrders, readyOrders, completedOrders,
@@ -22,7 +22,7 @@ const {
 // ── Logout ──────────────────────────────────────────────────────────────────
 const logoutDialog = ref(false)
 
-async function handleLogout () {
+async function handleLogout() {
   logoutDialog.value = false
   await auth.logout()           // calls your existing auth store logout action
   // router.push('/login')      // uncomment if your auth.logout() doesn't redirect
@@ -35,31 +35,31 @@ const boardCount = computed(() =>
 
 const columns = computed(() => [
   {
-    status:  'pending',
-    label:   'Pending',
-    icon:    'mdi-clock-outline',
-    color:   '#f59e0b',
-    bg:      'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
-    border:  '#fcd34d',
-    orders:  pendingOrders.value,
+    status: 'pending',
+    label: 'Pending',
+    icon: 'mdi-clock-outline',
+    color: '#f59e0b',
+    bg: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+    border: '#fcd34d',
+    orders: pendingOrders.value,
   },
   {
-    status:  'preparing',
-    label:   'Preparing',
-    icon:    'mdi-fire',
-    color:   '#0d9488',
-    bg:      'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
-    border:  '#5eead4',
-    orders:  preparingOrders.value,
+    status: 'preparing',
+    label: 'Preparing',
+    icon: 'mdi-fire',
+    color: '#0d9488',
+    bg: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
+    border: '#5eead4',
+    orders: preparingOrders.value,
   },
   {
-    status:  'ready',
-    label:   'Ready',
-    icon:    'mdi-check-circle',
-    color:   '#16a34a',
-    bg:      'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
-    border:  '#86efac',
-    orders:  readyOrders.value,
+    status: 'ready',
+    label: 'Ready',
+    icon: 'mdi-check-circle',
+    color: '#16a34a',
+    bg: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+    border: '#86efac',
+    orders: readyOrders.value,
   },
 ])
 
@@ -121,10 +121,7 @@ onUnmounted(cleanup)
       </v-btn-toggle>
 
       <!-- Live indicator -->
-      <v-chip
-        size="small" class="ml-3 kds-live-chip"
-        :class="connected ? 'kds-live-chip--on' : 'kds-live-chip--off'"
-      >
+      <v-chip size="small" class="ml-3 kds-live-chip" :class="connected ? 'kds-live-chip--on' : 'kds-live-chip--off'">
         <span class="kds-live-dot" :class="connected ? 'dot-pulse' : ''" />
         {{ connected ? 'Live' : 'Offline' }}
       </v-chip>
@@ -135,13 +132,7 @@ onUnmounted(cleanup)
       <div class="kds-clock">{{ currentTime }}</div>
 
       <!-- ── Logout button ──────────────────────────────────────────────── -->
-      <v-btn
-        icon
-        variant="text"
-        size="small"
-        class="kds-logout-btn ml-1 mr-1"
-        @click="logoutDialog = true"
-      >
+      <v-btn icon variant="text" size="small" class="kds-logout-btn ml-1 mr-1" @click="logoutDialog = true">
         <v-icon size="18">mdi-logout</v-icon>
         <v-tooltip activator="parent" location="bottom">Logout</v-tooltip>
       </v-btn>
@@ -168,10 +159,7 @@ onUnmounted(cleanup)
 
         <!-- ── Board tab ──────────────────────────────────────────────────── -->
         <template v-else-if="tab === 'active'">
-          <div
-            v-if="!pendingOrders.length && !preparingOrders.length && !readyOrders.length"
-            class="kds-center"
-          >
+          <div v-if="!pendingOrders.length && !preparingOrders.length && !readyOrders.length" class="kds-center">
             <div class="kds-empty-icon">
               <v-icon size="40" color="green">mdi-check-all</v-icon>
             </div>
@@ -180,11 +168,8 @@ onUnmounted(cleanup)
           </div>
 
           <div v-else class="kds-board">
-            <div
-              v-for="col in columns" :key="col.status"
-              class="kds-col"
-              :style="{ '--col-color': col.color, '--col-border': col.border, '--col-bg': col.bg }"
-            >
+            <div v-for="col in columns" :key="col.status" class="kds-col"
+              :style="{ '--col-color': col.color, '--col-border': col.border, '--col-bg': col.bg }">
               <!-- Column header -->
               <div class="kds-col__head">
                 <div class="kds-col__head-left">
@@ -198,14 +183,8 @@ onUnmounted(cleanup)
 
               <!-- Orders list -->
               <div class="kds-col__body">
-                <OrderCard
-                  v-for="o in col.orders" :key="o.id"
-                  :order="o"
-                  :wait-minutes="getOrderWaitMinutes(o)"
-                  @prepare-food="prepareFood"
-                  @mark-ready="markReady"
-                  @complete-order="completeOrder"
-                />
+                <OrderCard v-for="o in col.orders" :key="o.id" :order="o" :wait-minutes="getOrderWaitMinutes(o)"
+                  @prepare-food="prepareFood" @mark-ready="markReady" @complete-order="completeOrder" />
                 <div v-if="!col.orders.length" class="kds-col__empty">
                   <v-icon size="28" color="grey-lighten-1">{{ col.icon }}</v-icon>
                   <span>No {{ col.label.toLowerCase() }} orders</span>
@@ -257,21 +236,10 @@ onUnmounted(cleanup)
         </v-card-text>
 
         <v-card-actions class="kds-logout-dialog__actions">
-          <v-btn
-            variant="tonal"
-            rounded="lg"
-            class="kds-logout-dialog__cancel"
-            @click="logoutDialog = false"
-          >
+          <v-btn variant="tonal" rounded="lg" class="kds-logout-dialog__cancel" @click="logoutDialog = false">
             Cancel
           </v-btn>
-          <v-btn
-            color="error"
-            variant="flat"
-            rounded="lg"
-            class="kds-logout-dialog__confirm"
-            @click="handleLogout"
-          >
+          <v-btn color="error" variant="flat" rounded="lg" class="kds-logout-dialog__confirm" @click="handleLogout">
             <v-icon start size="16">mdi-logout</v-icon>
             Sign out
           </v-btn>
@@ -281,11 +249,8 @@ onUnmounted(cleanup)
     <!-- ─────────────────────────────────────────────────────────────────── -->
 
     <!-- Snackbar -->
-    <v-snackbar
-      v-model="snackbar.show" :color="snackbar.color"
-      location="bottom right" rounded="xl" :timeout="4000"
-      min-width="260"
-    >
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" location="bottom right" rounded="xl" :timeout="4000"
+      min-width="260">
       <div class="d-flex align-center ga-2">
         <v-icon size="18">{{ snackbar.color === 'error' ? 'mdi-alert-circle' : 'mdi-check-circle' }}</v-icon>
         {{ snackbar.message }}
@@ -299,58 +264,207 @@ onUnmounted(cleanup)
 </template>
 
 <style scoped>
+.kds-item__note {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 28px;
+  margin-top: 2px;
+  font-size: 11px;
+  color: #f59e0b;
+  font-weight: 600;
+  background: rgba(245, 158, 11, .08);
+  border-radius: 6px;
+  padding: 3px 8px;
+}
+
+.kds-special-instructions {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 8px 0;
+  padding: 8px 10px;
+  background: rgba(245, 158, 11, .10);
+  border: 1px dashed rgba(245, 158, 11, .3);
+  border-radius: 8px;
+  font-size: 12px;
+  color: #b45309;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
 /* ── Base ─────────────────────────────────────────────────────────────────── */
-.kds-app { background: #f1f1f1; }
-.kds-bar { background: #f1f5f9 !important; box-shadow: 0 2px 12px rgba(0,0,0,.25) !important; }
+.kds-app {
+  background: #f1f1f1;
+}
+
+.kds-bar {
+  background: #f1f5f9 !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, .25) !important;
+}
 
 /* ── Brand ────────────────────────────────────────────────────────────────── */
-.kds-brand        { display: flex; align-items: center; gap: 10px; padding-left: 4px; }
-.kds-brand__icon  {
-  width: 34px; height: 34px; border-radius: 9px;
+.kds-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 4px;
+}
+
+.kds-brand__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
   background: linear-gradient(135deg, #14b8a6, #059669);
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
-.kds-brand__title { font-size: 15px; font-weight: 700; color: #14b8a6; line-height: 1.2; }
-.kds-brand__sub   { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+
+.kds-brand__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #14b8a6;
+  line-height: 1.2;
+}
+
+.kds-brand__sub {
+  font-size: 10px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
 
 /* ── Stats row ────────────────────────────────────────────────────────────── */
-.kds-stats        { display: flex; align-items: center; gap: 6px; }
-.kds-stat-chip {
-  display: flex; align-items: center; gap: 5px;
-  padding: 4px 10px; border-radius: 999px;
-  font-size: 11px; font-weight: 600; letter-spacing: .2px;
+.kds-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
-.kds-stat-pending  { background: rgba(245,158,11,.15); color: #f59e0b; }
-.kds-stat-preparing{ background: rgba(20,184,166,.15);  color: #14b8a6; }
-.kds-stat-ready    { background: rgba(22,163,74,.15);   color: #22c55e; }
-.kds-stat-wait     { background: rgba(148,163,184,.12); color: #94a3b8; }
-.kds-stat-divider  { width: 1px; height: 18px; background: #1e293b; margin: 0 4px; }
+
+.kds-stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .2px;
+}
+
+.kds-stat-pending {
+  background: rgba(245, 158, 11, .15);
+  color: #f59e0b;
+}
+
+.kds-stat-preparing {
+  background: rgba(20, 184, 166, .15);
+  color: #14b8a6;
+}
+
+.kds-stat-ready {
+  background: rgba(22, 163, 74, .15);
+  color: #22c55e;
+}
+
+.kds-stat-wait {
+  background: rgba(148, 163, 184, .12);
+  color: #94a3b8;
+}
+
+.kds-stat-divider {
+  width: 1px;
+  height: 18px;
+  background: #1e293b;
+  margin: 0 4px;
+}
 
 /* ── Tabs ─────────────────────────────────────────────────────────────────── */
-.kds-tabs    { border: 1px solid #1e293b; border-radius: 10px; padding: 2px; background: #e2e8f0; }
-.kds-tab-btn { text-transform: none; font-size: 12px; font-weight: 600; color: #64748b !important; border-radius: 8px !important; }
-.kds-tab-btn.v-btn--active { background: #22c55e   !important; color: #f1f5f9 !important; }
+.kds-tabs {
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  padding: 2px;
+  background: #e2e8f0;
+}
+
+.kds-tab-btn {
+  text-transform: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b !important;
+  border-radius: 8px !important;
+}
+
+.kds-tab-btn.v-btn--active {
+  background: #22c55e !important;
+  color: #f1f5f9 !important;
+}
 
 /* ── Live chip ────────────────────────────────────────────────────────────── */
-.kds-live-chip     { font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 5px; }
-.kds-live-chip--on { background: rgba(22,163,74,.15) !important; color: #22c55e !important; }
-.kds-live-chip--off{ background: rgba(239,68,68,.15)  !important; color: #ef4444 !important; }
-.kds-live-dot   { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: currentColor; }
-.dot-pulse      { animation: pulse 1.8s ease-in-out infinite; }
-@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
+.kds-live-chip {
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.kds-live-chip--on {
+  background: rgba(22, 163, 74, .15) !important;
+  color: #22c55e !important;
+}
+
+.kds-live-chip--off {
+  background: rgba(239, 68, 68, .15) !important;
+  color: #ef4444 !important;
+}
+
+.kds-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: currentColor;
+}
+
+.dot-pulse {
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1)
+  }
+
+  50% {
+    opacity: .5;
+    transform: scale(.7)
+  }
+}
 
 /* ── Clock ────────────────────────────────────────────────────────────────── */
-.kds-clock { font-size: 12px; color: #475569; font-family: monospace; font-weight: 600; padding: 0 4px; }
+.kds-clock {
+  font-size: 12px;
+  color: #475569;
+  font-family: monospace;
+  font-weight: 600;
+  padding: 0 4px;
+}
 
 /* ── Logout button ────────────────────────────────────────────────────────── */
 .kds-logout-btn {
   color: #94a3b8 !important;
   transition: color .15s ease, background .15s ease;
 }
+
 .kds-logout-btn:hover {
   color: #ef4444 !important;
-  background: rgba(239,68,68,.08) !important;
+  background: rgba(239, 68, 68, .08) !important;
 }
 
 /* ── Logout dialog ────────────────────────────────────────────────────────── */
@@ -358,40 +472,67 @@ onUnmounted(cleanup)
   padding: 8px 4px 4px;
   text-align: center;
 }
+
 .kds-logout-dialog__icon-wrap {
-  display: flex; justify-content: center;
-  padding-top: 24px; padding-bottom: 4px;
+  display: flex;
+  justify-content: center;
+  padding-top: 24px;
+  padding-bottom: 4px;
 }
+
 .kds-logout-dialog__icon {
-  width: 56px; height: 56px; border-radius: 16px;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
   background: linear-gradient(135deg, #f87171, #ef4444);
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 8px 20px rgba(239,68,68,.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(239, 68, 68, .3);
 }
+
 .kds-logout-dialog__title {
-  font-size: 17px !important; font-weight: 800 !important;
-  color: #0f172a; text-align: center; padding-bottom: 4px !important;
+  font-size: 17px !important;
+  font-weight: 800 !important;
+  color: #0f172a;
+  text-align: center;
+  padding-bottom: 4px !important;
 }
+
 .kds-logout-dialog__body {
-  font-size: 13px; color: #64748b; text-align: center;
-  padding-top: 0 !important; padding-bottom: 20px !important;
+  font-size: 13px;
+  color: #64748b;
+  text-align: center;
+  padding-top: 0 !important;
+  padding-bottom: 20px !important;
   line-height: 1.5;
 }
+
 .kds-logout-dialog__actions {
-  display: flex; gap: 8px;
+  display: flex;
+  gap: 8px;
   padding: 0 16px 20px !important;
 }
+
 .kds-logout-dialog__cancel {
-  flex: 1; font-weight: 600; font-size: 13px;
-  text-transform: none; color: #64748b !important;
+  flex: 1;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: none;
+  color: #64748b !important;
 }
+
 .kds-logout-dialog__confirm {
-  flex: 1.4; font-weight: 700; font-size: 13px;
+  flex: 1.4;
+  font-weight: 700;
+  font-size: 13px;
   text-transform: none;
 }
 
 /* ── Body ─────────────────────────────────────────────────────────────────── */
-.kds-body { padding: 16px 20px; }
+.kds-body {
+  padding: 16px 20px;
+}
 
 /* ── Board (3-column kanban) ──────────────────────────────────────────────── */
 .kds-board {
@@ -413,79 +554,152 @@ onUnmounted(cleanup)
 }
 
 .kds-col__head {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 12px 16px;
-  background: rgba(255,255,255,.6);
+  background: rgba(255, 255, 255, .6);
   border-bottom: 1px solid var(--col-border);
   backdrop-filter: blur(6px);
 }
 
-.kds-col__head-left { display: flex; align-items: center; gap: 8px; }
+.kds-col__head-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
 .kds-col__icon-wrap {
-  width: 28px; height: 28px; border-radius: 8px;
-  background: rgba(255,255,255,.8);
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .8);
   border: 1px solid var(--col-border);
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
 .kds-col__label {
-  font-size: 12px; font-weight: 800; color: #1e293b;
-  letter-spacing: .5px; text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: .5px;
+  text-transform: uppercase;
 }
 
 .kds-col__badge {
-  min-width: 24px; height: 24px; padding: 0 6px;
-  background: var(--col-color); color: white;
-  font-size: 11px; font-weight: 800;
-  border-radius: 999px; display: flex; align-items: center; justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  background: var(--col-color);
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .kds-col__body {
   padding: 12px;
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   flex: 1;
 }
 
 .kds-col__empty {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 8px; padding: 32px 0;
-  color: #94a3b8; font-size: 12px; font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 32px 0;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 /* ── History header ───────────────────────────────────────────────────────── */
 .kds-history-header {
-  display: flex; align-items: center; gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 16px;
-  font-size: 11px; font-weight: 700; color: #6b7280;
-  letter-spacing: .6px; text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  letter-spacing: .6px;
+  text-transform: uppercase;
 }
-.kds-history-title { font-size: 11px; font-weight: 700; color: #6b7280; letter-spacing: .5px; text-transform: uppercase; }
-.kds-col__count { background: #eef2ff; color: #475569; }
+
+.kds-history-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+.kds-col__count {
+  background: #eef2ff;
+  color: #475569;
+}
 
 /* ── Empty / Center ───────────────────────────────────────────────────────── */
 .kds-center {
   min-height: calc(100vh - 120px);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
+
 .kds-empty-icon {
-  width: 72px; height: 72px; border-radius: 20px;
-  background: #f8fafc; border: 2px solid #e2e8f0;
-  display: flex; align-items: center; justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 4px;
 }
-.kds-empty-title { font-size: 17px; font-weight: 700; color: #1e293b; }
-.kds-hint        { font-size: 13px; color: #94a3b8; }
+
+.kds-empty-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.kds-hint {
+  font-size: 13px;
+  color: #94a3b8;
+}
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .kds-board   { grid-template-columns: 1fr; }
-  .kds-stats   { display: none; }
+  .kds-board {
+    grid-template-columns: 1fr;
+  }
+
+  .kds-stats {
+    display: none;
+  }
 }
+
 @media (max-width: 640px) {
-  .kds-brand__sub { display: none; }
-  .kds-clock      { display: none; }
+  .kds-brand__sub {
+    display: none;
+  }
+
+  .kds-clock {
+    display: none;
+  }
 }
 </style>

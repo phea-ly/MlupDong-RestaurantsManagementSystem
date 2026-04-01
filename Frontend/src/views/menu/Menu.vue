@@ -370,4 +370,18 @@ onMounted(init);
   background: rgba(20, 220, 139, 0.04) !important;
   transform: translateY(-3px);
 }
+
+.prep-time-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(122,140,118,.10);
+  border-radius: 999px;
+  padding: 3px 8px;
+}
+.prep-time-badge span {
+  font-size: 10px;
+  font-weight: 600;
+  color: #7a8c76;
+}
 </style>

@@ -196,6 +196,15 @@ function stopCountdown() {
   }
 }
 
+// Add helper in script
+function statusChipColor(status) {
+  const map = {
+    new: 'blue', received: 'indigo', confirmed: 'orange',
+    preparing: 'teal', ready: 'green', completed: 'grey',
+  }
+  return map[status] ?? 'grey'
+}
+
 watch(
   () => cartStore.items.length,
   (len) => {
@@ -217,30 +226,16 @@ watch(
     <template v-else>
       <!-- ── Sticky header ────────────────────────────────────────────────── -->
       <div class="sticky-header d-flex align-center px-4 py-3">
-        <v-btn
-          icon="mdi-arrow-left"
-          variant="text"
-          size="small"
-          color="#1c2e1a"
-          @click="goBackToMenu"
-        />
+        <v-btn icon="mdi-arrow-left" variant="text" size="small" color="#1c2e1a" @click="goBackToMenu" />
         <div class="d-flex flex-column ml-3 flex-grow-1">
           <div class="header-title" style="line-height: 1">Your Cart</div>
-          <div
-            class="font-weight-bold text-uppercase mt-1"
-            style="font-size: 9px; color: #2f6b3c; letter-spacing: 1.5px"
-          >
+          <div class="font-weight-bold text-uppercase mt-1"
+            style="font-size: 9px; color: #2f6b3c; letter-spacing: 1.5px">
             Mlup Dong • Table {{ displayTableNumber }}
           </div>
         </div>
         <!-- Item count badge -->
-        <v-chip
-          v-if="cartStore.cartCount > 0"
-          size="small"
-          color="#2f6b3c"
-          variant="tonal"
-          class="font-weight-black"
-        >
+        <v-chip v-if="cartStore.cartCount > 0" size="small" color="#2f6b3c" variant="tonal" class="font-weight-black">
           {{ cartStore.cartCount }} item{{
             cartStore.cartCount !== 1 ? "s" : ""
           }}
@@ -248,19 +243,14 @@ watch(
       </div>
 
       <!-- ── Empty cart ────────────────────────────────────────────────────── -->
-      <div
-        v-if="cartStore.items.length === 0 && !showSuccess"
-        class="empty-state d-flex flex-column align-center justify-center px-8"
-      >
-        <div
-          class="empty-blob mb-8 d-flex align-center justify-center"
-          style="
+      <div v-if="cartStore.items.length === 0 && !showSuccess"
+        class="empty-state d-flex flex-column align-center justify-center px-8">
+        <div class="empty-blob mb-8 d-flex align-center justify-center" style="
             width: 120px;
             height: 120px;
             background: rgba(47, 107, 60, 0.08);
             border-radius: 50%;
-          "
-        >
+          ">
           <v-icon size="64" color="#2f6b3c">mdi-cart-outline</v-icon>
         </div>
         <h3 class="header-title text-center mb-2" style="font-size: 24px">
@@ -269,18 +259,9 @@ watch(
         <p class="text-body-1 text-center mb-8" style="color: #7a8c76">
           Add something delicious to your tray!
         </p>
-        <v-btn
-          class="brand-btn text-white"
-          rounded="pill"
-          elevation="0"
-          @click="goBackToMenu"
-          height="54"
-          width="100%"
-          style="max-width: 280px"
-        >
-          <span style="letter-spacing: 1px; font-weight: 700; font-size: 14px"
-            >BROWSE MENU</span
-          >
+        <v-btn class="brand-btn text-white" rounded="pill" elevation="0" @click="goBackToMenu" height="54" width="100%"
+          style="max-width: 280px">
+          <span style="letter-spacing: 1px; font-weight: 700; font-size: 14px">BROWSE MENU</span>
         </v-btn>
       </div>
 
@@ -288,36 +269,21 @@ watch(
       <div v-else-if="!showSuccess" class="px-4 pt-4 pb-cart fade-in">
         <!-- Clear all -->
         <div class="d-flex align-center justify-space-between mb-4 px-1">
-          <span
-            class="text-caption font-weight-black text-uppercase text-medium-emphasis"
-            style="letter-spacing: 0.06em"
-          >
+          <span class="text-caption font-weight-black text-uppercase text-medium-emphasis"
+            style="letter-spacing: 0.06em">
             My Tray ({{ cartStore.cartCount }})
           </span>
-          <v-btn
-            variant="text"
-            size="x-small"
-            color="red-darken-1"
-            class="font-weight-bold"
-            @click="cartStore.clearCart"
-          >
+          <v-btn variant="text" size="x-small" color="red-darken-1" class="font-weight-bold"
+            @click="cartStore.clearCart">
             Clear All
           </v-btn>
         </div>
 
         <!-- Item cards -->
-        <div
-          v-for="item in cartStore.items"
-          :key="item.id"
-          class="cart-item-card mb-4"
-        >
+        <div v-for="item in cartStore.items" :key="item.id" class="cart-item-card mb-4">
           <!-- Image -->
           <div class="cart-item-img-wrap">
-            <v-img
-              :src="item.image || fallbackImg"
-              cover
-              class="cart-item-img"
-            />
+            <v-img :src="item.image || fallbackImg" cover class="cart-item-img" />
             <div class="cart-item-img-shine" />
           </div>
 
@@ -325,12 +291,8 @@ watch(
           <div class="cart-item-info">
             <div class="d-flex justify-space-between align-start mb-1">
               <div class="cart-item-title pr-2">{{ item.name }}</div>
-              <v-icon
-                size="20"
-                color="#a0b39c"
-                style="cursor: pointer; margin-top: 2px; flex-shrink: 0"
-                @click="cartStore.removeFromCart(item.id)"
-              >
+              <v-icon size="20" color="#a0b39c" style="cursor: pointer; margin-top: 2px; flex-shrink: 0"
+                @click="cartStore.removeFromCart(item.id)">
                 mdi-close-circle
               </v-icon>
             </div>
@@ -340,40 +302,25 @@ watch(
 
             <!-- Per-item chef note -->
             <div class="item-note-wrap mt-2">
-              <v-text-field
-                v-model="item.note"
-                :placeholder="`Note for ${item.name} (e.g. extra spicy)`"
-                variant="outlined"
-                density="compact"
-                hide-details
-                color="#2f6b3c"
-                class="item-note-field"
-                prepend-inner-icon="mdi-chef-hat"
-                @input="cartStore.updateItemNote(item.id, item.note)"
-              />
+              <v-text-field v-model="item.note" :placeholder="`Note for ${item.name} (e.g. extra spicy)`"
+                variant="outlined" density="compact" hide-details color="#2f6b3c" class="item-note-field"
+                prepend-inner-icon="mdi-chef-hat" @input="cartStore.updateItemNote(item.id, item.note)" />
             </div>
 
             <div class="d-flex justify-space-between align-end mt-auto">
               <!-- Price -->
               <div class="cart-item-price">
-                <span class="currency-symbol">$</span
-                >{{ item.price.toFixed(2) }}
+                <span class="currency-symbol">$</span>{{ item.price.toFixed(2) }}
               </div>
 
               <!-- Qty pill -->
               <div class="qty-pill">
-                <button
-                  class="qty-btn"
-                  :disabled="item.quantity <= 1"
-                  @click="cartStore.updateQuantity(item.id, item.quantity - 1)"
-                >
+                <button class="qty-btn" :disabled="item.quantity <= 1"
+                  @click="cartStore.updateQuantity(item.id, item.quantity - 1)">
                   <v-icon size="14">mdi-minus</v-icon>
                 </button>
                 <div class="qty-val">{{ item.quantity }}</div>
-                <button
-                  class="qty-btn qty-btn--plus"
-                  @click="cartStore.updateQuantity(item.id, item.quantity + 1)"
-                >
+                <button class="qty-btn qty-btn--plus" @click="cartStore.updateQuantity(item.id, item.quantity + 1)">
                   <v-icon size="14">mdi-plus</v-icon>
                 </button>
               </div>
@@ -383,27 +330,14 @@ watch(
 
         <!-- Chef note -->
         <div class="mt-6 mb-3 d-flex align-center px-1">
-          <v-icon color="#2f6b3c" size="20" class="mr-2"
-            >mdi-note-edit-outline</v-icon
-          >
-          <span
-            class="text-brand-dark font-weight-bold"
-            style="font-size: 13px"
-          >
+          <v-icon color="#2f6b3c" size="20" class="mr-2">mdi-note-edit-outline</v-icon>
+          <span class="text-brand-dark font-weight-bold" style="font-size: 13px">
             Special Instructions for the Chef
           </span>
         </div>
-        <v-textarea
-          v-model="cartStore.specialInstructions"
-          placeholder="Allergies, specific requests, or how you like your spice level..."
-          variant="outlined"
-          bg-color="white"
-          hide-details
-          auto-grow
-          rows="3"
-          color="#2f6b3c"
-          class="instruction-textarea mb-4"
-        />
+        <v-textarea v-model="cartStore.specialInstructions"
+          placeholder="Allergies, specific requests, or how you like your spice level..." variant="outlined"
+          bg-color="white" hide-details auto-grow rows="3" color="#2f6b3c" class="instruction-textarea mb-4" />
 
         <!-- Estimated wait -->
         <div class="wait-card d-flex align-center ga-3 mb-2">
@@ -417,25 +351,14 @@ watch(
             </div>
           </div>
           <v-spacer />
-          <div
-            class="text-caption text-right"
-            style="color: #9aab96; max-width: 80px; line-height: 1.3"
-          >
+          <div class="text-caption text-right" style="color: #9aab96; max-width: 80px; line-height: 1.3">
             {{ activeOrdersAhead }} orders ahead
           </div>
         </div>
 
         <!-- Error -->
-        <v-alert
-          v-if="orderError"
-          type="error"
-          variant="tonal"
-          rounded="xl"
-          closable
-          density="compact"
-          class="mb-3 text-body-2 font-weight-bold"
-          @click:close="orderError = ''"
-        >
+        <v-alert v-if="orderError" type="error" variant="tonal" rounded="xl" closable density="compact"
+          class="mb-3 text-body-2 font-weight-bold" @click:close="orderError = ''">
           {{ orderError }}
         </v-alert>
       </div>
@@ -443,10 +366,7 @@ watch(
 
       <!-- ── Checkout panel (fixed bottom) ──────────────────────────────────── -->
       <v-slide-y-reverse-transition>
-        <div
-          v-if="cartStore.items.length > 0 && !showSuccess"
-          class="checkout-panel px-6 pt-5 pb-6"
-        >
+        <div v-if="cartStore.items.length > 0 && !showSuccess" class="checkout-panel px-6 pt-5 pb-6">
           <div class="d-flex justify-space-between mb-2">
             <span class="text-caption" style="color: #7a8c76">Subtotal</span>
             <span class="text-caption font-weight-bold text-brand-dark">
@@ -463,83 +383,55 @@ watch(
           <div class="divider-dashed my-3" />
 
           <div class="d-flex justify-space-between align-center mb-5 mt-3">
-            <span class="header-title" style="font-size: 18px"
-              >Total Amount</span
-            >
+            <span class="header-title" style="font-size: 18px">Total Amount</span>
             <span class="price-text" style="font-size: 24px">
               ${{ cartStore.cartTotal.toFixed(2) }}
             </span>
           </div>
 
-          <v-btn
-            rounded="pill"
-            block
-            height="52"
-            class="brand-btn text-white elevation-0 checkout-btn mb-3"
-            :loading="isPlacingOrder"
-            :disabled="isPlacingOrder"
-            style="letter-spacing: 1px; font-weight: 600; font-size: 14px"
-            @click="placeOrder"
-          >
+          <v-btn rounded="pill" block height="52" class="brand-btn text-white elevation-0 checkout-btn mb-3"
+            :loading="isPlacingOrder" :disabled="isPlacingOrder"
+            style="letter-spacing: 1px; font-weight: 600; font-size: 14px" @click="placeOrder">
             <span>PLACE ORDER</span>
             <v-icon size="20" class="ml-3">mdi-rocket-launch-outline</v-icon>
           </v-btn>
 
-          <div
-            class="text-center text-uppercase"
-            style="
+          <div class="text-center text-uppercase" style="
               font-size: 9px;
               color: #9aab96;
               letter-spacing: 0.5px;
               font-weight: 600;
-            "
-          >
+            ">
             By placing order you agree to our terms of service
           </div>
         </div>
       </v-slide-y-reverse-transition>
 
       <!-- ── Success overlay ──────────────────────────────────────────────── -->
-      <v-overlay
-        v-model="showSuccess"
-        class="align-center justify-center px-5"
-        scrim="rgba(244,242,236,0.96)"
-        :persistent="true"
-        :z-index="200"
-      >
-        <v-card
-          class="pa-0 text-center overflow-hidden bg-white success-card"
-          elevation="16"
-        >
+      <v-overlay v-model="showSuccess" class="align-center justify-center px-5" scrim="rgba(244,242,236,0.96)"
+        :persistent="true" :z-index="200">
+        <v-card class="pa-0 text-center overflow-hidden bg-white success-card" elevation="16">
           <div class="pa-8 d-flex flex-column align-center">
             <!-- Check icon -->
             <div class="success-icon-box mb-5">
-              <v-icon color="#2f6b3c" size="56"
-                >mdi-check-circle-outline</v-icon
-              >
+              <v-icon color="#2f6b3c" size="56">mdi-check-circle-outline</v-icon>
             </div>
 
             <h2 class="header-title mb-2" style="font-size: 26px">
               Order Sent!
             </h2>
-            <p
-              class="text-body-2 mb-5"
-              style="color: #7a8c76; line-height: 1.6"
-            >
+            <p class="text-body-2 mb-5" style="color: #7a8c76; line-height: 1.6">
               Relax and sit tight while we prepare your meal.
             </p>
 
             <!-- Wait time -->
             <div class="wait-badge mb-5">
-              <div
-                class="text-caption font-weight-black text-uppercase"
-                style="
+              <div class="text-caption font-weight-black text-uppercase" style="
                   opacity: 0.6;
                   font-size: 10px;
                   color: #1c2e1a;
                   letter-spacing: 0.08em;
-                "
-              >
+                ">
                 Estimated Wait
               </div>
               <div class="price-text" style="font-size: 40px; line-height: 1.1">
@@ -552,25 +444,19 @@ watch(
             <div class="status-card mb-5 w-100">
               <div class="d-flex align-center justify-space-between mb-3">
                 <div class="text-left">
-                  <div
-                    class="text-caption font-weight-black text-uppercase"
-                    style="
+                  <div class="text-caption font-weight-black text-uppercase" style="
                       font-size: 9px;
                       letter-spacing: 0.08em;
                       color: #5a6e57;
                       opacity: 0.8;
-                    "
-                  >
+                    ">
                     Kitchen Status
                   </div>
                   <div class="text-body-2 font-weight-bold text-brand-dark">
                     {{ statusText }}
                   </div>
                 </div>
-                <div
-                  class="countdown-badge"
-                  :class="{ active: isCountingDown }"
-                >
+                <div class="countdown-badge" :class="{ active: isCountingDown }">
                   {{ isCountingDown ? countdownDisplay : "--:--" }}
                 </div>
               </div>
@@ -585,91 +471,73 @@ watch(
             </div>
 
             <!-- Order number -->
-            <div
-              v-if="cartStore.lastOrder"
-              class="text-caption mb-5"
-              style="color: #9aab96"
-            >
+            <div v-if="cartStore.lastOrder" class="text-caption mb-5" style="color: #9aab96">
               Order {{ cartStore.lastOrder.order_number }}
             </div>
 
-            <v-btn
-              block
-              rounded="pill"
-              size="large"
-              class="brand-btn text-white elevation-0 text-none"
-              style="font-weight: 700; letter-spacing: 0.5px"
-              @click="goBackToMenu"
-            >
+            <v-btn block rounded="pill" size="large" class="brand-btn text-white elevation-0 text-none"
+              style="font-weight: 700; letter-spacing: 0.5px" @click="goBackToMenu">
               Back to Menu
             </v-btn>
+
+            <!-- Status + countdown card -->
+            <div class="status-card mb-5 w-100">
+              <div class="d-flex align-center justify-space-between mb-3">
+                <div class="text-left">
+                  <div class="text-caption font-weight-black text-uppercase"
+                    style="font-size:9px;letter-spacing:.08em;color:#5a6e57;opacity:.8">
+                    Kitchen Status
+                  </div>
+                  <div class="text-body-2 font-weight-bold text-brand-dark">{{ statusText }}</div>
+                </div>
+                <div class="countdown-badge" :class="{ active: isCountingDown }">
+                  <template v-if="statusStep >= 2 && isCountingDown">
+                    {{ countdownDisplay }}
+                  </template>
+                  <template v-else-if="statusStep >= 4">
+                    Done ✓
+                  </template>
+                  <template v-else>
+                    Waiting...
+                  </template>
+                </div>
+              </div>
+
+              <!-- Hint shown before chef acts -->
+              <div v-if="statusStep === 1" class="text-caption mb-3" style="color:#9aab96;text-align:center">
+                Timer starts when chef confirms your order
+              </div>
+
+              <!-- 3 dots only -->
+              <div class="progress-dots">
+                <span class="dot" :class="{ active: statusStep >= 2 }" />
+                <span class="dot" :class="{ active: statusStep >= 3 }" />
+                <span class="dot" :class="{ active: statusStep >= 4 }" />
+              </div>
+              <div class="progress-labels">
+                <span>Confirmed</span>
+                <span>Cooking</span>
+                <span>Ready</span>
+              </div>
+            </div>
+            <!-- In success overlay — add a "My Orders" section below the main tracked order -->
+            <div v-if="cartStore.orders.length > 1" class="all-orders-section mt-4">
+              <div class="text-caption font-weight-black text-uppercase mb-2"
+                style="color:#5a6e57;letter-spacing:.08em">All Active
+                Orders</div>
+
+              <div v-for="ord in cartStore.orders" :key="ord.order_id" class="mini-order-row"
+                :class="{ 'mini-order-row--active': ord.order_id === trackedOrder?.order_id }"
+                @click="trackedOrder = ord">
+                <span class="mini-order-num">{{ ord.order_number }}</span>
+                <v-chip size="x-small" :color="statusChipColor(ord.order_status)" variant="tonal">
+                  {{ ord.order_status }}
+                </v-chip>
+              </div>
+            </div>
           </div>
         </v-card>
       </v-overlay>
-
-      <!-- In OrderCard.vue — inside the items list -->
-      <div
-        v-for="item in order.items"
-        :key="item.order_item_id"
-        class="kds-item"
-      >
-        <div class="kds-item__main">
-          <span class="kds-item__qty">×{{ item.quantity }}</span>
-          <span class="kds-item__name">{{ item.name }}</span>
-          <span class="kds-item__price">${{ item.subtotal?.toFixed(2) }}</span>
-        </div>
-
-        <!-- Per-item note — highlighted for chef -->
-        <div v-if="item.note" class="kds-item__note">
-          <v-icon size="12" color="#f59e0b">mdi-note-alert</v-icon>
-          <span>{{ item.note }}</span>
-        </div>
-      </div>
-
-      <!-- Special instructions for the whole order -->
-      <div v-if="order.special_instructions" class="kds-special-instructions">
-        <v-icon size="14" color="#f59e0b">mdi-note-text</v-icon>
-        <span>{{ order.special_instructions }}</span>
-      </div>
-
-      <!-- Action buttons — correct status flow -->
-      <div class="kds-actions">
-        <!-- Pending → Preparing -->
-        <v-btn
-          v-if="['new', 'received', 'confirmed'].includes(order.order_status)"
-          color="teal"
-          variant="flat"
-          size="small"
-          @click="$emit('prepare-food', order.id)"
-        >
-          <v-icon start size="14">mdi-fire</v-icon>
-          Start Cooking
-        </v-btn>
-
-        <!-- Preparing → Ready -->
-        <v-btn
-          v-if="order.order_status === 'preparing'"
-          color="success"
-          variant="flat"
-          size="small"
-          @click="$emit('mark-ready', order.id)"
-        >
-          <v-icon start size="14">mdi-check</v-icon>
-          Mark Ready
-        </v-btn>
-
-        <!-- Ready → Completed (waiter action) -->
-        <v-btn
-          v-if="order.order_status === 'ready'"
-          color="grey"
-          variant="outlined"
-          size="small"
-          @click="$emit('complete-order', order.id)"
-        >
-          <v-icon start size="14">mdi-silverware</v-icon>
-          Served
-        </v-btn>
-      </div>
     </template>
   </div>
 </template>
@@ -697,6 +565,17 @@ watch(
 }
 
 
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 9px;
+  color: #9aab96;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+
 .kds-item__note {
   display: flex;
   align-items: center;
@@ -706,7 +585,7 @@ watch(
   font-size: 11px;
   color: #f59e0b;
   font-weight: 600;
-  background: rgba(245,158,11,.08);
+  background: rgba(245, 158, 11, .08);
   border-radius: 6px;
   padding: 3px 8px;
 }
@@ -717,8 +596,8 @@ watch(
   gap: 6px;
   margin: 8px 0;
   padding: 8px 10px;
-  background: rgba(245,158,11,.10);
-  border: 1px dashed rgba(245,158,11,.3);
+  background: rgba(245, 158, 11, .10);
+  border: 1px dashed rgba(245, 158, 11, .3);
   border-radius: 8px;
   font-size: 12px;
   color: #b45309;
@@ -815,11 +694,9 @@ watch(
 .cart-item-img-shine {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.18) 0%,
-    transparent 60%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.18) 0%,
+      transparent 60%);
   pointer-events: none;
 }
 
