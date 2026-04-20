@@ -64,7 +64,7 @@ const TABLE_HEADERS = [
               <span class="stat-label">Status Distribution</span>
               <v-progress-circular
                 :model-value="stats.total ? (stats.active / stats.total) * 100 : 0"
-                color="var(--app-primary)" size="18" width="2"
+                color="primary" size="18" width="2"
               />
             </div>
             <div class="d-flex align-end ga-3">
@@ -103,7 +103,7 @@ const TABLE_HEADERS = [
             </div>
             <div class="d-flex flex-column ga-2 mt-1">
               <div class="d-flex align-center ga-2">
-                <v-avatar size="28" rounded="lg" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">
+                <v-avatar size="28" rounded="lg" style="background:linear-gradient(135deg,#2D5A27,#5a9e10)">
                   <span class="pending-initials">LC</span>
                 </v-avatar>
                 <div>
@@ -137,7 +137,7 @@ const TABLE_HEADERS = [
               style="max-width:150px; min-width:130px"
             />
             <div class="text-caption text-medium-emphasis ml-auto" style="white-space:nowrap">
-              Sorted by: <strong>Recently Created</strong>
+              Sorted by:
             </div>
           </div>
           <v-text-field
@@ -147,8 +147,8 @@ const TABLE_HEADERS = [
             variant="outlined" rounded="lg" density="compact" hide-details
             style="max-width:260px; min-width:200px"
           />
-          <v-btn color="var(--app-primary)" rounded="lg" elevation="0" prepend-icon="mdi-account-multiple-plus" @click="openAdd">
-            <span style="color:#063824; font-weight:800">Create Account</span>
+          <v-btn color="primary" rounded="lg" elevation="0" prepend-icon="mdi-account-multiple-plus" @click="openAdd">
+            <span style="color:white; font-weight:800">Create Account</span>
           </v-btn>
         </div>
       </v-card-text>
@@ -188,14 +188,14 @@ const TABLE_HEADERS = [
         <template #item.role="{ item }">
           <span
             class="role-chip"
-            :style="{ background: roleConfig[item.role]?.bg ?? '#f3f4f6', color: roleConfig[item.role]?.text ?? '#374151' }"
+            :style="{ background: roleConfig[item.role]?.bg ?? '#f3f4f6', color: roleConfig[item.role]?.text ?? '#2D5A27' }"
           >{{ item.role }}</span>
         </template>
 
         <template #item.active="{ item }">
           <v-switch
             :model-value="item.active"
-            color="var(--app-primary)"
+            color="primary"
             hide-details density="compact" inset
             @change="toggleActive(item)"
           />
@@ -302,7 +302,7 @@ const TABLE_HEADERS = [
         <v-card-actions class="px-6 pb-6 pt-0">
           <v-spacer />
           <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="showAddDialog = false">Cancel</v-btn>
-          <v-btn color="var(--app-primary)" rounded="lg" :loading="saving" @click="saveUser">
+          <v-btn color="primary" rounded="lg" :loading="saving" @click="saveUser">
             <span style="color:#063824; font-weight:800">Create Account</span>
           </v-btn>
         </v-card-actions>
@@ -439,3 +439,4 @@ const TABLE_HEADERS = [
   padding: 3px 10px; border-radius: 6px; letter-spacing: .04em;
 }
 </style>
+

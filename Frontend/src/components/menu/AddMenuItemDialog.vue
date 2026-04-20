@@ -211,7 +211,7 @@ function close() { emit('update:modelValue', false) }
       <!-- Header -->
       <v-card-title class="d-flex align-center justify-space-between pt-6 px-6">
         <div class="d-flex align-center ga-3">
-          <v-avatar color="var(--app-primary)" variant="tonal" size="40" rounded="lg">
+          <v-avatar color="primary" variant="tonal" size="40" rounded="lg">
             <v-icon size="20" color="var(--app-primary-600)">
               {{ isEdit ? 'mdi-pencil-outline' : 'mdi-silverware-fork-knife' }}
             </v-icon>
@@ -230,7 +230,7 @@ function close() { emit('update:modelValue', false) }
           <v-btn
             size="small" rounded="lg" prepend-icon="mdi-upload"
             :variant="imageSource === 'upload' ? 'flat' : 'outlined'"
-            color="var(--app-primary)"
+            color="primary"
             @click="selectUpload"
           >Upload (Local)</v-btn>
         </div>
@@ -309,7 +309,7 @@ function close() { emit('update:modelValue', false) }
                 {{ form.status ? 'Visible on menu' : 'Hidden from menu' }}
               </div>
             </div>
-            <v-switch v-model="form.status" color="var(--app-primary)" hide-details inset density="compact" />
+            <v-switch v-model="form.status" color="primary" hide-details inset density="compact" />
           </v-card-text>
         </v-card>
 
@@ -318,7 +318,7 @@ function close() { emit('update:modelValue', false) }
       <v-card-actions class="px-6 pb-6">
         <v-spacer />
         <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="close">Cancel</v-btn>
-        <v-btn color="var(--app-primary)" rounded="lg" :loading="saving" @click="handleSave">
+        <v-btn color="primary" rounded="lg" :loading="saving" @click="handleSave">
           <span style="color:#063824; font-weight:800">{{ isEdit ? 'Save Changes' : 'Add Item' }}</span>
         </v-btn>
       </v-card-actions>

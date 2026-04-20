@@ -34,12 +34,12 @@ onMounted(init)
       <div>
       </div>
       <v-btn
-        color="var(--app-primary)"
+        color="primary"
         rounded="lg"
         prepend-icon="mdi-plus"
         @click="openAdd"
       >
-        <span style="color:#063824; font-weight:800">Register New Table</span>
+        <span style="color:white; font-weight:800">Register New Table</span>
       </v-btn>
     </div>
 
@@ -281,7 +281,7 @@ onMounted(init)
           <v-spacer />
           <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="showAddDialog = false">Cancel</v-btn>
           <v-btn
-            color="var(--app-primary)" rounded="lg"
+            color="primary" rounded="lg"
             :loading="saving" @click="addTable"
           >
             <span style="color:#063824; font-weight:800">Register Table</span>
@@ -451,7 +451,7 @@ onMounted(init)
 
 .chip-ready {
   background: linear-gradient(135deg, #f0fdf4, #dcfce7) !important;
-  color: #166534 !important;
+  color: #2D5A27 !important;
   border: 1px solid rgba(22, 163, 74, .1) !important;
 }
 

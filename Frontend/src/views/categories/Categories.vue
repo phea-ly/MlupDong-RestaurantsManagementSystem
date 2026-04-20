@@ -43,7 +43,7 @@ function viewItems(categoryId) {
     <!-- ── Toolbar ──────────────────────────────────────────────────────────── -->
     <div class="d-flex align-center justify-end mb-6">
       <v-btn
-        color="var(--app-primary)" rounded="lg" height="40" elevation="0"
+        color="primary" rounded="lg" height="40" elevation="0"
         prepend-icon="mdi-plus"
         @click="openAdd"
       >

@@ -7,8 +7,8 @@
 
 :root {
   --app-font: 'Plus Jakarta Sans', 'Segoe UI', Inter, system-ui, sans-serif;
-  --app-primary: #407709;
-  --app-primary-600: #16B861;
+  --app-primary: #2D5A27;
+  --app-primary-600: #2D5A27;
   --app-primary-100: white;
   --page-horizontal-padding: 24px;
   --page-vertical-padding: 20px;
@@ -20,9 +20,9 @@
   --app-radius-2xl: 12px;
   --app-radius-3xl: 12px;
   /* Vuetify theme overrides (RGB values) */
-  --v-theme-primary: 31, 229, 122;
+  --v-theme-primary: 45, 90, 39;
   --v-theme-on-primary: 255, 255, 255;
-  --v-theme-secondary: 22, 184, 97;
+  --v-theme-secondary: 45, 90, 39;
   --v-theme-on-secondary: 255, 255, 255;
 }
 
@@ -59,13 +59,6 @@ body::-webkit-scrollbar,
   width: 100%;
   padding: var(--page-vertical-padding) var(--page-horizontal-padding);
   box-sizing: border-box;
-}
-
-/* Ensure primary buttons have readable text */
-.v-btn.bg-primary,
-.v-btn.v-btn--variant-flat,
-.v-btn.v-btn--variant-elevated {
-  color: #ffffff !important;
 }
 
 /* Global radius reduction */
@@ -106,3 +99,4 @@ body::-webkit-scrollbar,
 .v-autocomplete .v-field {
   border-radius: var(--app-radius-lg) !important;
 }
+

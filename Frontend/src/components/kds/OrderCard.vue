@@ -1,345 +1,411 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useKdsStore } from '@/stores/kds.store'
 
 const props = defineProps({
   order:       { type: Object, required: true },
   waitMinutes: { type: Number, default: null  },
+  accentColor: { type: String, default: '#64748b' },
 })
 
-defineEmits(['receive-order', 'confirm-cooking', 'prepare-food', 'mark-ready', 'complete-order'])
+const emit = defineEmits([
+  'prepare-food',
+  'mark-ready',
+  'complete-order',
+  'drag-start',
+  'drag-end',
+  'update-status',
+])
 
-const kdsStore = useKdsStore()
+const store = useKdsStore()
+const dragging = ref(false)
 
-const elapsed          = computed(() => kdsStore.getElapsedSeconds(props.order))
-const elapsedFormatted = computed(() => kdsStore.formatElapsed(elapsed.value))
-const timerClass       = computed(() => kdsStore.getTimerClass(elapsed.value))
-const statusLabel      = computed(() => kdsStore.getStatusLabel(props.order.order_status))
-
-const STATUS_CONFIG = {
-  new:       { accent: '#3b82f6', label: 'New'       },
-  received:  { accent: '#6366f1', label: 'Received'  },
-  confirmed: { accent: '#f59e0b', label: 'Confirmed' },
-  preparing: { accent: '#14b8a6', label: 'Preparing' },
-  ready:     { accent: '#22c55e', label: 'Ready'     },
-  completed: { accent: '#94a3b8', label: 'Done'      },
+function onDragStart(event) {
+  const id = props.order.id
+  event.dataTransfer?.setData('text/plain', String(id))
+  event.dataTransfer.effectAllowed = 'move'
+  emit('drag-start', { id, status: props.order.order_status })
+  dragging.value = true
 }
 
-const cfg = computed(() => STATUS_CONFIG[props.order.order_status] ?? STATUS_CONFIG.completed)
+function onDragEnd() {
+  dragging.value = false
+  emit('drag-end')
+}
+
+const elapsed          = computed(() => store.getElapsedSeconds(props.order))
+const elapsedFormatted = computed(() => store.formatElapsed(elapsed.value))
+const timerClass       = computed(() => store.getTimerClass(elapsed.value))
+
+const isPending   = computed(() => ['new', 'received', 'confirmed'].includes(props.order.order_status))
+const isPreparing = computed(() => props.order.order_status === 'preparing')
+const isReady     = computed(() => props.order.order_status === 'ready')
+const isCompleted = computed(() => props.order.order_status === 'completed')
+
+/** Total quantity across all items (shown in "Ready" card like screenshot) */
+const totalItems = computed(() =>
+  (props.order.items ?? []).reduce((sum, i) => sum + (i.quantity ?? 1), 0)
+)
 </script>
 
 <template>
-  <v-card
-    :class="['order-card', `order-card--${order.order_status}`, { 'order-card--flash': order._flash }]"
-    rounded="xl"
-    elevation="0"
+  <div
+    class="kds-card"
+    :class="{
+      'kds-card--flash':     order._flash,
+      'kds-card--completed': isCompleted,
+      'kds-card--dragging':  dragging,
+    }"
+    draggable="true"
+    @dragstart="onDragStart"
+    @dragend="onDragEnd"
   >
-    <!-- ── Accent line ────────────────────────────────────────────────── -->
-    <div class="order-card__accent" :style="{ background: cfg.accent }" />
+    <!-- Left accent stripe — matches screenshot color per column -->
+    <div class="kds-card__stripe" :style="{ background: accentColor }" />
 
-    <!-- ── Header ────────────────────────────────────────────────────── -->
-    <div class="order-card__header">
-      <div class="order-card__table-wrap">
-        <div class="order-card__table">{{ order.table_name || '—' }}</div>
-        <div class="order-card__num"># {{ order.order_number }}</div>
+    <div class="kds-card__body">
+
+      <!-- ── Row 1: table tag + timer ─────────────────────────────────────── -->
+      <div class="kds-card__top">
+        <span class="kds-card__table" :style="{ color: accentColor, borderColor: accentColor + '44', background: accentColor + '12' }">
+          {{ order.table_name || '—' }}
+        </span>
+        <span class="kds-card__timer" :class="timerClass">{{ elapsedFormatted }}</span>
       </div>
 
-      <div class="order-card__meta">
-        <!-- Status badge -->
-        <v-chip
-          size="x-small"
-          variant="tonal"
-          :style="{ background: cfg.accent + '22', color: cfg.accent }"
-          class="order-card__status-chip"
+      <!-- ── Items list ─────────────────────────────────────────────────── -->
+      <!--
+        For "Ready for Pickup" cards the screenshot shows a summary line
+        ("4 Items Total") instead of the full list.
+        We replicate that pattern: show items detail when pending/preparing,
+        show summary when ready/completed.
+      -->
+      <div v-if="!isReady && !isCompleted" class="kds-card__items">
+        <div
+          v-for="item in order.items"
+          :key="item.order_item_id ?? item.id"
+          class="kds-card__item"
         >
-          {{ statusLabel }}
-        </v-chip>
-
-        <!-- Timer -->
-        <div class="order-card__timer" :class="timerClass">
-          <v-icon size="13">mdi-timer-outline</v-icon>
-          {{ elapsedFormatted }}
-        </div>
-
-        <!-- Wait minutes chip -->
-        <div v-if="waitMinutes" class="order-card__wait">
-          <v-icon size="12">mdi-clock-fast</v-icon>
-          ~{{ waitMinutes }}m
-        </div>
-      </div>
-    </div>
-
-    <v-divider />
-
-    <!-- ── Items list ─────────────────────────────────────────────────── -->
-    <div class="order-card__items">
-      <div
-        v-for="item in order.items"
-        :key="item.order_item_id ?? item.id"
-        class="order-card__item"
-      >
-        <div class="order-card__qty">{{ item.quantity }}×</div>
-        <div class="order-card__item-body">
-          <div class="order-card__item-name">{{ item.name }}</div>
-          <!-- Per-item note visible to chef -->
-          <div v-if="item.note" class="order-card__item-note">
-            <v-icon size="11">mdi-note-text-outline</v-icon>
-            {{ item.note }}
+          <span class="kds-card__qty">{{ item.quantity }}×</span>
+          <div class="kds-card__item-info">
+            <span class="kds-card__item-name">{{ item.name }}</span>
+            <span v-if="item.note" class="kds-card__item-note">
+              <v-icon size="10">mdi-note-text-outline</v-icon>{{ item.note }}
+            </span>
           </div>
         </div>
       </div>
 
-      <!-- Special instructions for the whole order -->
+      <!-- Ready: show item count summary (matches screenshot) -->
+      <div v-else-if="isReady" class="kds-card__summary">
+        {{ totalItems }} Item{{ totalItems !== 1 ? 's' : '' }} Total
+      </div>
+
+      <!-- Completed: same summary style -->
+      <div v-else class="kds-card__summary kds-card__summary--done">
+        {{ totalItems }} Item{{ totalItems !== 1 ? 's' : '' }} Total
+      </div>
+
+      <!-- Special instructions -->
       <div
         v-if="order.special_instructions || order.notes"
-        class="order-card__instruction"
+        class="kds-card__note"
       >
-        <v-icon size="13" color="amber-darken-2">mdi-note-edit-outline</v-icon>
-        <span>{{ order.special_instructions || order.notes }}</span>
-      </div>
-    </div>
-
-    <!-- ── Action buttons — 3 explicit steps ─────────────────────────── -->
-    <div class="order-card__footer">
-
-      <!-- STEP 1: Pending → Start Cooking (new / received / confirmed) -->
-      <v-btn
-        v-if="['new', 'received', 'confirmed'].includes(order.order_status)"
-        color="teal"
-        variant="flat"
-        block
-        size="small"
-        rounded="lg"
-        class="order-card__btn"
-        @click="$emit('prepare-food', order.id)"
-      >
-        <v-icon start size="15">mdi-fire</v-icon>
-        Start Cooking
-      </v-btn>
-
-      <!-- STEP 2: Cooking → Mark Ready (preparing) -->
-      <v-btn
-        v-else-if="order.order_status === 'preparing'"
-        color="green"
-        variant="flat"
-        block
-        size="small"
-        rounded="lg"
-        class="order-card__btn"
-        @click="$emit('mark-ready', order.id)"
-      >
-        <v-icon start size="15">mdi-check-circle-outline</v-icon>
-        Mark Ready
-      </v-btn>
-
-      <!-- STEP 3: Ready → Complete Order (ready) -->
-      <v-btn
-        v-else-if="order.order_status === 'ready'"
-        color="grey-darken-3"
-        variant="flat"
-        block
-        size="small"
-        rounded="lg"
-        class="order-card__btn"
-        @click="$emit('complete-order', order.id)"
-      >
-        <v-icon start size="15">mdi-check-all</v-icon>
-        Complete Order
-      </v-btn>
-
-      <!-- Completed — done strip, no button -->
-      <div
-        v-else-if="order.order_status === 'completed'"
-        class="order-card__done order-card__done--done"
-      >
-        <v-icon size="15" color="grey">mdi-check-all</v-icon>
-        <span>Completed</span>
+        <v-icon size="11" color="#d97706">mdi-note-edit-outline</v-icon>
+        {{ order.special_instructions || order.notes }}
       </div>
 
-    </div>
+      <!-- ── Action row ────────────────────────────────────────────────── -->
+      <div class="kds-card__footer">
 
-  </v-card>
+        <!-- Pending → START PREP -->
+        <v-btn
+          v-if="isPending"
+          variant="tonal"
+          block
+          size="small"
+          rounded="0"
+          class="kds-card__btn kds-card__btn--pending"
+        >
+          <!-- custom style via CSS var -->
+          <span @click="emit('prepare-food', order.id)">START PREP</span>
+        </v-btn>
+
+        <!-- Preparing → READY -->
+        <v-btn
+          v-else-if="isPreparing"
+          variant="flat"
+          block
+          size="small"
+          rounded="0"
+          class="kds-card__btn kds-card__btn--preparing"
+          @click="emit('mark-ready', order.id)"
+        >
+          READY
+        </v-btn>
+
+        <!-- Ready → COLLECT (+ optional print icon) -->
+        <div v-else-if="isReady" class="kds-card__ready-row">
+          <v-btn
+            variant="flat"
+            block
+            size="small"
+            rounded="0"
+            class="kds-card__btn kds-card__btn--ready"
+            @click="emit('complete-order', order.id)"
+          >
+            COLLECT
+          </v-btn>
+          <v-btn
+            icon
+            variant="text"
+            size="small"
+            class="kds-card__print-btn"
+          >
+            <v-icon size="16" color="#64748b">mdi-printer-outline</v-icon>
+          </v-btn>
+        </div>
+
+        <!-- Status change buttons -->
+        <div class="kds-card__status-btns">
+          <v-btn v-if="isPreparing" variant="outlined" size="x-small" @click="emit('update-status', order.id, 'confirmed')">Back to Pending</v-btn>
+          <v-btn v-if="isReady" variant="outlined" size="x-small" @click="emit('update-status', order.id, 'preparing')">Back to Prep</v-btn>
+        </div>
+
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-/* ── Card shell ──────────────────────────────────────────────────────────── */
-.order-card {
-  position: relative;
+/* ── Shell ─────────────────────────────────────────────────────────────────── */
+.kds-card {
+  display: flex;
   background: #ffffff;
-  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
   overflow: hidden;
-  transition: transform .15s ease, box-shadow .15s ease;
+  box-shadow: 0 1px 4px rgba(15,23,42,.07);
+  transition: box-shadow .15s ease, transform .15s ease;
 }
 
-.order-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, .10) !important;
+.kds-card:hover {
+  box-shadow: 0 4px 16px rgba(15,23,42,.11);
+  transform: translateY(-1px);
 }
 
-/* ── Accent top bar ───────────────────────────────────────────────────────── */
-.order-card__accent {
-  height: 4px;
-  width: 100%;
+.kds-card--flash {
+  animation: flashCard 1.8s ease;
 }
 
-/* ── Flash animation (new order arrives) ─────────────────────────────────── */
-.order-card--flash {
-  animation: flashIn 1.5s ease;
+@keyframes flashCard {
+  0%   { box-shadow: 0 0 0 3px rgba(20,184,166,.45); }
+  100% { box-shadow: 0 1px 4px rgba(15,23,42,.07);   }
 }
 
-@keyframes flashIn {
-  0%   { box-shadow: 0 0 0 3px rgba(20, 184, 166, .5); }
-  100% { box-shadow: none; }
+.kds-card--completed {
+  opacity: .6;
 }
 
-/* ── Header ──────────────────────────────────────────────────────────────── */
-.order-card__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 11px 14px 9px;
-  gap: 8px;
+.kds-card--dragging {
+  opacity: 0.5;
 }
 
-.order-card__table {
-  font-size: 15px;
-  font-weight: 800;
-  color: #0f172a;
-  line-height: 1.1;
-}
-
-.order-card__num {
-  font-size: 10px;
-  color: #94a3b8;
-  font-family: monospace;
-  margin-top: 2px;
-}
-
-.order-card__meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+/* ── Left accent stripe ────────────────────────────────────────────────────── */
+.kds-card__stripe {
+  width: 5px;
   flex-shrink: 0;
 }
 
-.order-card__status-chip {
-  font-size: 10px;
-  font-weight: 700;
+/* ── Body ──────────────────────────────────────────────────────────────────── */
+.kds-card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px 0;
+  min-width: 0;
+}
+
+/* ── Top row: table tag + timer ────────────────────────────────────────────── */
+.kds-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.kds-card__table {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid;
   letter-spacing: .3px;
 }
 
-/* ── Timer ───────────────────────────────────────────────────────────────── */
-.order-card__timer {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 700;
-  font-family: monospace;
+.kds-card__timer {
+  font-size: 16px;
+  font-weight: 800;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: .5px;
 }
 
-.timer-ok       { color: #94a3b8; }
+/* Timer urgency classes (driven by store.getTimerClass) */
+.timer-ok       { color: #334155; }
 .timer-warn     { color: #f59e0b; }
 .timer-critical { color: #ef4444; animation: timerBlink 1s step-end infinite; }
 
-@keyframes timerBlink {
-  50% { opacity: .4; }
+@keyframes timerBlink { 50% { opacity: .3; } }
+
+/* ── Items list ────────────────────────────────────────────────────────────── */
+.kds-card__items {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 10px;
 }
 
-.order-card__wait {
+.kds-card__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.kds-card__qty {
+  font-size: 13px;
+  font-weight: 800;
+  color: #475569;
+  min-width: 24px;
+  font-family: 'DM Mono', monospace;
+}
+
+.kds-card__item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.kds-card__item-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.kds-card__item-note {
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: 10px;
-  font-weight: 700;
-  color: #10b981;
-}
-
-/* ── Items list ───────────────────────────────────────────────────────────── */
-.order-card__items {
-  padding: 10px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  min-height: 50px;
-}
-
-.order-card__item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.order-card__qty {
-  font-size: 12px;
-  font-weight: 800;
-  color: #0d9488;
-  font-family: monospace;
-  min-width: 26px;
-  padding-top: 1px;
-}
-
-.order-card__item-body {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.order-card__item-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-/* Per-item note — amber highlight for chef attention */
-.order-card__item-note {
-  display: flex;
-  align-items: center;
-  gap: 4px;
   font-size: 10.5px;
   color: #b45309;
   font-style: italic;
 }
 
-/* Order-level special instructions */
-.order-card__instruction {
+/* ── Summary (ready/completed) ─────────────────────────────────────────────── */
+.kds-card__summary {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 10px;
+}
+
+.kds-card__summary--done {
+  color: #94a3b8;
+}
+
+/* ── Special instructions note ─────────────────────────────────────────────── */
+.kds-card__note {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
-  margin-top: 4px;
-  padding: 7px 10px;
+  gap: 5px;
+  padding: 6px 8px;
+  margin-bottom: 10px;
   background: #fffbeb;
-  border: 1px solid #fde68a;
-  border-radius: 8px;
+  border: 1px dashed #fcd34d;
+  border-radius: 6px;
   font-size: 11px;
   color: #92400e;
   font-style: italic;
+  line-height: 1.4;
 }
 
-/* ── Footer / action buttons ──────────────────────────────────────────────── */
-.order-card__footer {
-  padding: 0 12px 12px;
+/* ── Footer / buttons ──────────────────────────────────────────────────────── */
+.kds-card__footer {
+  margin: 0 -14px;   /* bleed to card edges */
 }
 
-.order-card__btn {
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: .3px;
-  text-transform: none;
+/* Shared button base */
+.kds-card__btn {
+  text-transform: none !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: 1px !important;
+  height: 38px !important;
+  border-radius: 0 0 10px 0 !important;  /* bottom-right radius matches card */
 }
 
-/* ── Done strip ───────────────────────────────────────────────────────────── */
-.order-card__done {
+/* Pending — warm amber tonal */
+.kds-card__btn--pending {
+  color: #b45309 !important;
+  background: #fef3c7 !important;
+}
+
+.kds-card__btn--pending:hover {
+  background: #fde68a !important;
+}
+
+/* Preparing — navy blue flat (matches screenshot) */
+.kds-card__btn--preparing {
+  background: #1e3a8a !important;
+  color: #fff !important;
+}
+
+.kds-card__btn--preparing:hover {
+  background: #1e40af !important;
+}
+
+/* Ready — green flat (matches screenshot) */
+.kds-card__btn--ready {
+  background: #16a34a !important;
+  color: #fff !important;
+  flex: 1;
+  border-radius: 0 0 0 0 !important;
+}
+
+.kds-card__btn--ready:hover {
+  background: #15803d !important;
+}
+
+/* Ready row: COLLECT btn + print icon side-by-side */
+.kds-card__ready-row {
+  display: flex;
+  align-items: stretch;
+}
+
+.kds-card__print-btn {
+  width: 42px !important;
+  height: 38px !important;
+  border-left: 1px solid #e2e8f0 !important;
+  border-radius: 0 0 10px 0 !important;
+  flex-shrink: 0;
+}
+
+.kds-card__status-btns {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+/* Completed strip */
+.kds-card__done {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 8px 12px;
+  gap: 5px;
+  height: 36px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
+  color: #94a3b8;
+  background: #f8fafc;
+  border-radius: 0 0 10px 10px;
 }
-
-.order-card__done--ready { background: #f0fdf4; color: #16a34a; }
-.order-card__done--done  { background: #f8fafc; color: #94a3b8; }
 </style>

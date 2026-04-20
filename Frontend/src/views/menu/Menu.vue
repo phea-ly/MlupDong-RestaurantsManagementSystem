@@ -176,11 +176,11 @@ onMounted(init);
       <div />
       <div class="d-flex align-center ga-2">
         <v-btn
-          color="var(--app-primary)" rounded="lg" height="40" elevation="0"
+          color="primary" rounded="lg" height="40" elevation="0"
           prepend-icon="mdi-plus"
           @click="handleAddNew"
         >
-          <span style="color:#063824; font-weight:800">Add New Item</span>
+          <span style="color:white; font-weight:800">Add New Item</span>
         </v-btn>
       </div>
     </div>
@@ -204,7 +204,7 @@ onMounted(init);
         <v-card rounded="xl" border flat>
           <v-card-text class="d-flex align-center ga-3 pa-4">
             <v-avatar color="green-lighten-5" rounded="lg" size="40">
-              <v-icon color="var(--app-primary)" size="20">mdi-check-circle-outline</v-icon>
+              <v-icon color="primary" size="20">mdi-check-circle-outline</v-icon>
             </v-avatar>
             <div>
               <div class="text-h5 font-weight-black">{{ stats.active }}</div>
@@ -302,7 +302,7 @@ onMounted(init);
           class="d-flex flex-column align-center justify-center ga-3 add-new-card"
           @click="handleAddNew"
         >
-          <v-icon size="40" color="var(--app-primary)">mdi-plus-circle-outline</v-icon>
+          <v-icon size="40" color="primary">mdi-plus-circle-outline</v-icon>
           <span class="text-body-2 font-weight-bold" style="color:var(--app-primary)">Add New Item</span>
         </v-card>
       </v-col>
@@ -322,8 +322,8 @@ onMounted(init);
               : "Get started by adding your first menu item." }}
           </p>
         </div>
-        <v-btn color="var(--app-primary)" rounded="lg" elevation="0" prepend-icon="mdi-plus" @click="handleAddNew">
-          <span style="color:#063824; font-weight:800">Add New Item</span>
+        <v-btn color="primary" rounded="lg" elevation="0" prepend-icon="mdi-plus" @click="handleAddNew">
+          <span style="color:#2D5A27; font-weight:800">Add New Item</span>
         </v-btn>
       </v-card-text>
     </v-card>
@@ -382,6 +382,6 @@ onMounted(init);
 .prep-time-badge span {
   font-size: 10px;
   font-weight: 600;
-  color: #7a8c76;
+  color: #619b74;
 }
 </style>

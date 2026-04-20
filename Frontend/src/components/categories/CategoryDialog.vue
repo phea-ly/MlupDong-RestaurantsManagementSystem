@@ -65,7 +65,7 @@ defineEmits(['update:modelValue', 'save'])
             </div>
             <v-switch
               v-model="form.status"
-              color="var(--app-primary)"
+              color="primary"
               density="compact" hide-details inset
             />
           </v-card-text>
@@ -80,7 +80,7 @@ defineEmits(['update:modelValue', 'save'])
           @click="$emit('update:modelValue', false)"
         >Cancel</v-btn>
         <v-btn
-          color="var(--app-primary)" variant="flat" rounded="lg"
+          color="primary" variant="flat" rounded="lg"
           :loading="saving"
           :disabled="!form.category_name?.trim()"
           @click="$emit('save')"

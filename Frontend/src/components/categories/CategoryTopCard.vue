@@ -18,7 +18,7 @@ defineProps({
         <v-progress-linear
           :model-value="cat.pct"
           height="8" rounded
-          color="var(--app-primary)"
+          color="primary"
           bg-color="grey-lighten-3"
         />
       </div>

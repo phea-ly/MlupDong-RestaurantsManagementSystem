@@ -6,9 +6,9 @@
       <div>
       </div>
 
-      <v-btn color="var(--app-primary)" rounded="lg" prepend-icon="mdi-plus" :disabled="store.loading"
+      <v-btn color="primary" rounded="lg" prepend-icon="mdi-plus" :disabled="store.loading"
         @click="openCreate">
-        <span style="color:#063824; font-weight:800">New Role</span>
+        <span style="color:white; font-weight:800">New Role</span>
       </v-btn>
     </div>
 
@@ -88,7 +88,7 @@
               mdi-shield-account-outline
             </v-icon>
             <p class="text-body-1 text-medium-emphasis">No roles found.</p>
-            <v-btn class="mt-4" color="var(--app-primary)" variant="tonal" rounded="lg" prepend-icon="mdi-plus"
+            <v-btn class="mt-4" color="primary" variant="tonal" rounded="lg" prepend-icon="mdi-plus"
               @click="openCreate">
               <span style="color:#063824; font-weight:700">Create first role</span>
             </v-btn>
@@ -133,7 +133,7 @@
           <v-btn variant="outlined" rounded="lg" :disabled="store.saving" @click="closeDialog">
             Cancel
           </v-btn>
-          <v-btn color="var(--app-primary)" rounded="lg" :loading="store.saving" @click="submitForm">
+          <v-btn color="primary" rounded="lg" :loading="store.saving" @click="submitForm">
             <span style="color:#063824; font-weight:800">
               {{ isEditing ? 'Save Changes' : 'Create Role' }}
             </span>

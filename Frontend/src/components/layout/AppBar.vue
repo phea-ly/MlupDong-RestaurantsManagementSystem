@@ -90,7 +90,7 @@ function logout() {
               />
               <span
                 v-else
-                style="background:linear-gradient(135deg,#407709); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:white;"
+                style="background:linear-gradient(135deg,#2D5A27); width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:white;"
               >{{ profileInitials }}</span>
             </v-avatar>
           </template>
@@ -164,4 +164,5 @@ function logout() {
   color: var(--app-primary-600);
 }
 </style>
+
 

@@ -3,9 +3,9 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth.store';
 
-import LiveOrder from '../../components/waiter/liveOrder.vue';
-import QuickMenu from '../../components/waiter/quickMenu.vue';
-import FloorPlan from '../../components/waiter/floorPlan.vue';
+import LiveOrder from '@/components/waiter/liveOrder.vue';
+import QuickMenu from '@/components/waiter/quickMenu.vue';
+import FloorPlan from '@/components/waiter/floorPlan.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();

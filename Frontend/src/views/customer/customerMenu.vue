@@ -1,386 +1,288 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useMenuStore } from '@/stores/menu.store'
-import { useCartStore } from '@/stores/cart.store'
-import { tableApi } from '@/api/order.api'
+import { computed, onMounted, onUnmounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useMenuStore } from "@/stores/menu.store";
+import { useCartStore } from "@/stores/cart.store";
+import { tableApi } from "@/api/order.api";
 
-const menuStore = useMenuStore()
-const cartStore = useCartStore()
-const router = useRouter()
-const route = useRoute()
+/* ─── stores & routing ─── */
+const menuStore = useMenuStore();
+const cartStore = useCartStore();
+const route = useRoute();
+const router = useRouter();
 
-const searchQuery = ref('')
-const activeCategory = ref('All')
-const resolvingToken = ref(true)
-const tokenError = ref(false)
-const heroVisible = ref(false)
-const fallbackImg = 'https://images.unsplash.com/photo-1548943487-a2e4142f6ab3?q=80&w=600&auto=format&fit=crop'
+/* ─── state ─── */
+const searchQuery = ref("");
+const activeCategory = ref("All");
+const resolvingToken = ref(true);
+const tokenError = ref(false);
 
-onMounted(async () => {
-  const token = route.params.token
-  try {
-    const { data } = await tableApi.getByToken(token)
-    cartStore.setTableId(data.table_id, data.table_number)
-  } catch {
-    tokenError.value = true
-    resolvingToken.value = false
-    return
-  }
+const FALLBACK_IMG =
+  "https://images.unsplash.com/photo-1548943487-a2e4142f6ab3?q=80&w=600&auto=format&fit=crop";
 
-  resolvingToken.value = false
-  await menuStore.fetchCategories()
-  await menuStore.fetchMenuItems()
-  setTimeout(() => { heroVisible.value = true }, 80)
-})
+/* ─── category pills ─── */
+const CATEGORY_ICONS = ["mdi-silverware-fork-knife", "mdi-glass-cocktail"];
 
-onUnmounted(() => {
-  cartStore.leaveTableChannel()
-})
+const categories = computed(() => [
+  { category_id: "All", category_name: "All", icon: "mdi-fire-circle" },
+  ...menuStore.categories.slice(0, 2).map((cat, i) => ({
+    category_id: cat.category_id,
+    category_name: cat.category_name,
+    icon: CATEGORY_ICONS[i] ?? "mdi-food",
+  })),
+]);
 
-const categories = computed(() => {
-  const all = { category_id: 'All', category_name: 'All', icon: 'mdi-silverware-fork-knife' }
-  const mapped = menuStore.categories.map(c => ({ ...c, icon: 'mdi-tag-outline' }))
-  return [all, ...mapped]
-})
-
+/* ─── filtered menu items ─── */
 const filteredItems = computed(() => {
-  let list = menuStore.menuItems.filter(i => i.status)
-  if (activeCategory.value !== 'All') {
-    list = list.filter(i => String(i.category_id) === String(activeCategory.value))
-  }
-  if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase()
-    list = list.filter(i =>
-      i.name.toLowerCase().includes(q) ||
-      (i.description && i.description.toLowerCase().includes(q))
-    )
-  }
-  return list
-})
+  let items = menuStore.menuItems.filter((item) => item.status);
 
-const heroItem = computed(() => filteredItems.value[0] || null)
-const listItems = computed(() => filteredItems.value.slice(1))
+  if (activeCategory.value !== "All") {
+    items = items.filter(
+      (item) => String(item.category_id) === String(activeCategory.value),
+    );
+  }
+
+  if (searchQuery.value) {
+    const q = searchQuery.value.toLowerCase();
+    items = items.filter(
+      (item) =>
+        item.name.toLowerCase().includes(q) ||
+        item.description?.toLowerCase().includes(q),
+    );
+  }
+
+  return items;
+});
+
+const featuredItem = computed(() => filteredItems.value[0] ?? null);
+const popularItems = computed(() => filteredItems.value.slice(1, 6));
+
+/* ─── helpers ─── */
+function currency(value) {
+  return `$${Number(value ?? 0).toFixed(2)}`;
+}
 
 function addToCart(item, event) {
-  cartStore.addToCart(item)
-  if (event?.currentTarget) {
-    const el = event.currentTarget
-    el.classList.add('btn-pop')
-    setTimeout(() => el.classList.remove('btn-pop'), 400)
+  cartStore.addToCart(item);
+
+  const btn = event?.currentTarget;
+  if (btn) {
+    btn.classList.add("btn-pop");
+    setTimeout(() => btn.classList.remove("btn-pop"), 240);
   }
 }
 
 function goToOrder() {
-  router.push({ name: 'customer-order', params: { token: route.params.token } })
+  router.push({ name: "customer-order", params: { token: route.params.token } });
 }
+
+/* ─── lifecycle ─── */
+onMounted(async () => {
+  try {
+    const { data } = await tableApi.getByToken(route.params.token);
+    cartStore.setTableId(data.table_id, data.table_number);
+  } catch {
+    tokenError.value = true;
+    resolvingToken.value = false;
+    return;
+  }
+
+  await menuStore.fetchCategories();
+  await menuStore.fetchMenuItems();
+  resolvingToken.value = false;
+});
+
+onUnmounted(() => {
+  cartStore.leaveTableChannel();
+});
 </script>
 
 <template>
-  <div class="root-wrap">
-    <div class="mobile-shell">
+  <div class="menu-page">
 
-      <!-- ── Invalid QR ── -->
-      <div v-if="tokenError" class="err-screen">
-        <div class="err-blob" />
-        <v-icon size="56" color="#c8d8c4">mdi-qrcode-off</v-icon>
-        <p class="err-title">Invalid QR Code</p>
-        <p class="err-sub">Please scan the correct table QR to order.</p>
+    <!-- ── Invalid QR ── -->
+    <div v-if="tokenError" class="empty-state">
+      <v-icon size="56" color="#b7c6b2">mdi-qrcode-off</v-icon>
+      <h2>Invalid QR Code</h2>
+      <p>Please scan the correct table QR code.</p>
+    </div>
+
+    <template v-else>
+
+      <!-- ── Top Bar ── -->
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-icon">
+            <v-icon size="16" color="white">mdi-leaf</v-icon>
+          </div>
+          <div>
+            <div class="brand-name">Mlup Dong</div>
+            <div class="brand-sub">គណទំ</div>
+          </div>
+        </div>
+
+        <div class="table-chip">
+          <v-icon size="13">mdi-table-furniture</v-icon>
+          Table {{ cartStore.tableNumber ?? "--" }}
+        </div>
+      </header>
+
+      <!-- ── Search ── -->
+      <v-text-field
+        v-model="searchQuery"
+        placeholder="Search for food, drinks..."
+        prepend-inner-icon="mdi-magnify"
+        variant="outlined"
+        density="comfortable"
+        hide-details
+        rounded="xl"
+        class="search-field mb-5"
+      />
+
+      <!-- ── Category Pills ── -->
+      <div class="pill-row">
+        <button
+          v-for="cat in categories"
+          :key="cat.category_id"
+          class="pill"
+          :class="{ 'pill--active': activeCategory === cat.category_id }"
+          @click="activeCategory = cat.category_id"
+        >
+          <v-icon size="14">{{ cat.icon }}</v-icon>
+          {{ cat.category_name }}
+        </button>
       </div>
 
-      <template v-else>
+      <!-- ── Content ── -->
+      <main class="content">
 
-        <!-- ══════════ STICKY HEADER ══════════ -->
-        <header class="app-header">
-          <div class="header-top">
-            <!-- Brand -->
-            <div class="brand">
-              <div class="brand-mark">
-                <v-icon color="#fff" size="15">mdi-leaf</v-icon>
+        <!-- skeleton -->
+        <template v-if="resolvingToken || menuStore.loading">
+          <div class="skeleton hero-skeleton" />
+          <div v-for="n in 2" :key="n" class="skeleton row-skeleton" />
+        </template>
+
+        <template v-else>
+
+          <!-- Hero Card -->
+          <section v-if="featuredItem" class="hero-card">
+            <div class="hero-card__image-wrap">
+              <v-img
+                :src="featuredItem.image || FALLBACK_IMG"
+                height="200"
+                cover
+                class="hero-card__image"
+              />
+              <div class="hero-card__price-badge">
+                {{ currency(featuredItem.price) }}
               </div>
-              <div>
-                <div class="brand-name">Mlup Dong</div>
-                <div class="brand-sub">Garden Kitchen</div>
-              </div>
             </div>
 
-            <!-- Table chip -->
-            <div class="table-chip">
-              <v-icon size="13" color="#2f6b3c">mdi-table-furniture</v-icon>
-              <span v-if="resolvingToken">···</span>
-              <span v-else>Table&nbsp;{{ cartStore.tableNumber }}</span>
-            </div>
-          </div>
+            <div class="hero-card__body">
+              <p class="hero-card__title">{{ featuredItem.name }}</p>
+              <p class="hero-card__desc">
+                {{ featuredItem.description || "Fresh signature dish from our kitchen." }}
+              </p>
 
-          <!-- Search -->
-          <div class="search-wrap">
-            <v-text-field
-              v-model="searchQuery"
-              placeholder="Search dishes or drinks…"
-              prepend-inner-icon="mdi-magnify"
-              variant="solo"
-              density="comfortable"
-              hide-details
-              rounded="xl"
-              bg-color="#fff"
-              color="#2f6b3c"
-              class="search-field"
-              clearable
-            />
-          </div>
-
-          <!-- Categories -->
-          <div class="cat-strip">
-            <button
-              v-for="cat in categories"
-              :key="cat.category_id"
-              class="cat-pill"
-              :class="{ 'cat-pill--active': activeCategory === cat.category_id }"
-              @click="activeCategory = cat.category_id"
-            >
-              <v-icon size="13" class="cat-icon">{{ cat.icon }}</v-icon>
-              {{ cat.category_name }}
-            </button>
-          </div>
-        </header>
-
-        <div class="header-gap" />
-
-        <!-- ══════════ MAIN SCROLL ══════════ -->
-        <main class="scroll-body">
-
-          <!-- ── Skeletons ── -->
-          <template v-if="resolvingToken || menuStore.loading">
-            <div class="skeleton-hero" />
-            <div class="px-4 mt-5">
-              <div v-for="i in 3" :key="i" class="skeleton-row mb-4" />
-            </div>
-          </template>
-
-          <template v-else>
-
-            <!-- ── Hero Feature Card ── -->
-            <div v-if="heroItem" class="hero-section" :class="{ 'hero-visible': heroVisible }">
-              <div class="hero-card">
-                <div class="hero-img-wrap">
-                  <v-img :src="heroItem.image || fallbackImg" cover height="210" class="hero-img" />
-                  <!-- gradient overlay -->
-                  <div class="hero-overlay" />
-                  <!-- floating badge -->
-                  <div class="hero-badge">Chef's Pick</div>
-                  <!-- price pill -->
-                  <div class="hero-price">${{ parseFloat(heroItem.price || 0).toFixed(2) }}</div>
+              <div class="hero-card__footer">
+                <div class="rating">
+                  <v-icon size="12" color="#f7a928">mdi-star</v-icon>
+                  <span class="rating__value">4.9</span>
+                  <span class="rating__count">(120+ reviews)</span>
                 </div>
 
-                <div class="hero-body">
-                  <div class="hero-meta">
-                    <div class="star-row">
-                      <v-icon size="13" color="#f59e0b">mdi-star</v-icon>
-                      <v-icon size="13" color="#f59e0b">mdi-star</v-icon>
-                      <v-icon size="13" color="#f59e0b">mdi-star</v-icon>
-                      <v-icon size="13" color="#f59e0b">mdi-star</v-icon>
-                      <v-icon size="13" color="#f59e0b">mdi-star-half-full</v-icon>
-                      <span class="star-label">4.9 · 120+ reviews</span>
-                    </div>
-                  </div>
-                  <div class="prep-time-badge">
-                    <v-icon size="11" color="#7a8c76">mdi-clock-outline</v-icon>
-                    <span>~{{ heroItem.prep_time_minutes ?? 10 }}min</span>
-                  </div>
+                <button class="add-btn add-btn--circle" @click="addToCart(featuredItem, $event)">
+                  <v-icon size="22" color="white">mdi-plus</v-icon>
+                </button>
+              </div>
+            </div>
+          </section>
 
-                  <!-- ✅ Fixed: removed duplicate hero-name -->
-                  <div class="hero-name">{{ heroItem.name }}</div>
-                  <div class="hero-desc">{{ heroItem.description || 'A fresh, flavourful creation from our chef.' }}</div>
+          <!-- Popular Dishes -->
+          <section class="popular">
+            <h2 class="section-title">Popular Dishes</h2>
 
-                  <div class="hero-foot">
-                    <div class="hero-tags">
-                      <span class="tag">Fresh</span>
-                      <span class="tag">Chef Special</span>
-                    </div>
-                    <button class="add-btn add-btn--hero" @click="addToCart(heroItem, $event)">
-                      <v-icon color="#fff" size="20">mdi-plus</v-icon>
+            <div v-if="popularItems.length" class="popular-list">
+              <article v-for="item in popularItems" :key="item.id" class="popular-card">
+                <v-img
+                  :src="item.image || FALLBACK_IMG"
+                  width="84"
+                  height="84"
+                  cover
+                  class="popular-card__image"
+                />
+
+                <div class="popular-card__body">
+                  <p class="popular-card__title">{{ item.name }}</p>
+                  <p class="popular-card__desc">
+                    {{ item.description || "Chef recommendation from our menu." }}
+                  </p>
+
+                  <div class="popular-card__footer">
+                    <span class="popular-card__price">{{ currency(item.price) }}</span>
+                    <button class="add-btn add-btn--square" @click="addToCart(item, $event)">
+                      <v-icon size="18">mdi-plus</v-icon>
                     </button>
                   </div>
                 </div>
-              </div>
+              </article>
             </div>
 
-            <!-- ── Section heading ── -->
-            <div v-if="filteredItems.length" class="section-head px-4">
-              <span class="section-label">Popular Dishes</span>
-              <span class="section-count">{{ filteredItems.length }} items</span>
+            <div v-else class="empty-state empty-state--soft">
+              <v-icon size="40" color="#bfd0bc">mdi-food-off</v-icon>
+              <p>No dishes found.</p>
             </div>
+          </section>
 
-            <!-- ── Item List ── -->
-            <div v-if="listItems.length" class="item-list px-4 pb-36 fade-in">
-              <div
-                v-for="(item, idx) in listItems"
-                :key="item.id"
-                class="item-card"
-                :style="{ animationDelay: idx * 50 + 'ms' }"
-              >
-                <div class="item-img-wrap">
-                  <v-img :src="item.image || fallbackImg" cover width="104" height="104" class="item-img" />
-                  <div class="item-img-shine" />
-                </div>
+        </template>
+      </main>
 
-                <div class="item-info">
-                  <div class="item-name">{{ item.name }}</div>
-                  <div class="item-desc">{{ item.description || 'Taste the best from our chef.' }}</div>
-                  <div class="prep-time-badge">
-                    <v-icon size="11" color="#7a8c76">mdi-clock-outline</v-icon>
-                    <span>~{{ item.prep_time_minutes ?? 10 }}min</span>
-                  </div>
-
-                  <div class="item-foot">
-                    <div class="item-price">${{ parseFloat(item.price || 0).toFixed(2) }}</div>
-                    <button class="add-btn" @click="addToCart(item, $event)">
-                      <v-icon color="#fff" size="18">mdi-plus</v-icon>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- ✅ Fixed: closes item-list div -->
-
-            <!-- ── Empty state ── -->
-            <div v-if="!menuStore.loading && filteredItems.length === 0" class="empty-state">
-              <v-icon size="48" color="#c5d5c0">mdi-leaf-off</v-icon>
-              <p class="empty-title">Nothing found</p>
-              <p class="empty-sub">Try a different category or search term.</p>
-            </div>
-
-          </template>
-          <!-- ✅ Fixed: closes v-else template -->
-
-        </main>
-
-        <!-- ══════════ FLOATING CART ══════════ -->
-        <transition name="cart-slide">
-          <div v-if="cartStore.cartCount > 0" class="cart-bar" @click="goToOrder">
-            <div class="cart-left">
-              <div class="cart-icon-wrap">
-                <v-icon color="#fff" size="22">mdi-shopping-outline</v-icon>
-                <div :key="cartStore.cartCount" class="cart-count">{{ cartStore.cartCount }}</div>
-              </div>
-              <div>
-                <div class="cart-items-txt">{{ cartStore.cartCount }} item{{ cartStore.cartCount > 1 ? 's' : '' }}</div>
-                <div class="cart-view-txt">View Order</div>
-              </div>
-            </div>
-            <div class="cart-right">
-              <span class="cart-total">${{ cartStore.cartTotal.toFixed(2) }}</span>
-              <v-icon color="rgba(255,255,255,.7)" size="18">mdi-chevron-right</v-icon>
-            </div>
-          </div>
-        </transition>
-
-      </template>
-    </div>
+    </template>
   </div>
+
+  <!-- ── Floating Cart Bar ── -->
+  <transition name="cart-slide">
+    <button v-if="cartStore.cartCount > 0" class="cart-bar" @click="goToOrder">
+      <div class="cart-bar__left">
+        <div class="cart-bar__icon-wrap">
+          <v-icon size="20" color="white">mdi-cart-outline</v-icon>
+          <span class="cart-bar__badge">{{ cartStore.cartCount }}</span>
+        </div>
+
+        <div class="cart-bar__labels">
+          <div class="cart-bar__caption">{{ cartStore.cartCount }} Items Added</div>
+          <div class="cart-bar__cta">View Order</div>
+        </div>
+      </div>
+
+      <div class="cart-bar__right">
+        <div class="cart-bar__caption">Total</div>
+        <div class="cart-bar__total">{{ currency(cartStore.cartTotal) }}</div>
+      </div>
+    </button>
+  </transition>
 </template>
 
 <style scoped>
-/* ── Google Font ── */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
-
-/* ════════════════════════════════
-   ROOT / SHELL
-════════════════════════════════ */
-.root-wrap {
-  background: #eae8e0;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-}
-
-.mobile-shell {
-  position: relative;
+/* ─── Root ─── */
+.menu-page {
   width: 100%;
-  max-width: 480px;
+  max-width: 440px;
   min-height: 100vh;
-  background: #f4f2ec;
-  font-family: 'DM Sans', sans-serif;
-  overflow-x: hidden;
+  margin: 0 auto;
+  padding: 18px 16px 160px;
+  background: linear-gradient(180deg, #f8f7f2 0%, #f4f2eb 100%);
+  color: #263127;
+  font-family: inherit;
 }
 
-/* ── Prep time badge ── */
-.prep-time-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  background: rgba(122, 140, 118, .10);
-  border-radius: 999px;
-  padding: 3px 8px;
-  margin-bottom: 6px;
-}
-
-.prep-time-badge span {
-  font-size: 10px;
-  font-weight: 600;
-  color: #7a8c76;
-  letter-spacing: 0.02em;
-}
-
-/* ════════════════════════════════
-   ERROR SCREEN
-════════════════════════════════ */
-.err-screen {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 24px;
-  position: relative;
-}
-
-.err-blob {
-  position: absolute;
-  width: 280px;
-  height: 280px;
-  background: radial-gradient(circle, #d4e8d0 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.err-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 22px;
-  color: #2d3b29;
-  margin: 0;
-}
-
-.err-sub {
-  font-size: 13px;
-  color: #7a8c76;
-  margin: 0;
-  text-align: center;
-}
-
-/* ════════════════════════════════
-   HEADER
-════════════════════════════════ */
-.app-header {
-  position: fixed;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
-  z-index: 50;
-  background: #f4f2ec;
-  border-bottom: 1px solid rgba(47, 107, 60, .10);
-  box-shadow: 0 4px 24px rgba(30, 50, 25, .07);
-  padding: 16px 0 0;
-}
-
-.header-top {
+/* ─── Top Bar ─── */
+.topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 18px 12px;
+  gap: 12px;
+  margin-bottom: 18px;
 }
 
 .brand {
@@ -389,419 +291,279 @@ function goToOrder() {
   gap: 10px;
 }
 
-.brand-mark {
+.brand-icon {
   width: 34px;
   height: 34px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #2f6b3c 0%, #1a4526 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 6px 16px rgba(47, 107, 60, .30);
+  border-radius: 12px;
+  background: #356f31;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
 }
 
 .brand-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 17px;
-  font-weight: 700;
-  color: #1c2e1a;
+  font-size: 16px;
+  font-weight: 800;
   line-height: 1.1;
 }
 
 .brand-sub {
-  font-size: 10px;
-  color: #7a8c76;
+  margin-top: 2px;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: #a4ada2;
   font-weight: 500;
-  letter-spacing: .04em;
-  text-transform: uppercase;
 }
 
 .table-chip {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
-  background: #e4ede5;
-  color: #2f6b3c;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: #dfeccc;
+  color: #5a7b4e;
   font-size: 12px;
   font-weight: 700;
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(47, 107, 60, .15);
-  letter-spacing: .01em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-/* ── Search ── */
-.search-wrap {
-  padding: 0 14px 10px;
-}
-
+/* ─── Search ─── */
 .search-field :deep(.v-field) {
-  border-radius: 16px !important;
-  background: #fff !important;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, .06) !important;
-  border: 1.5px solid rgba(47, 107, 60, .10) !important;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
+  background: #fff;
+  border-radius: 20px !important;
+  border: 1px solid #e6ebe3;
+  box-shadow: inset 0 1px 3px rgba(16, 24, 18, 0.08);
 }
 
-.search-field :deep(.v-field__outline) {
-  display: none !important;
+.search-field :deep(input) {
+  min-height: 46px;
 }
 
-/* ── Category Pills ── */
-.cat-strip {
+/* ─── Category Pills ─── */
+.pill-row {
   display: flex;
+  align-items: center;
+  gap: 10px;
   overflow-x: auto;
-  gap: 8px;
-  padding: 0 14px 14px;
+  padding-bottom: 4px;
+  margin-bottom: 18px;
   scrollbar-width: none;
 }
 
-.cat-strip::-webkit-scrollbar {
+.pill-row::-webkit-scrollbar {
   display: none;
 }
 
-.cat-pill {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex-shrink: 0;
-  white-space: nowrap;
-  padding: 7px 14px;
+.pill {
+  min-height: 44px;
+  border: 1px solid #e2e5df;
   border-radius: 999px;
-  font-size: 12px;
+  background: #fff;
+  color: #374151 !important;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 13px;
   font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
-  border: 1.5px solid rgba(47, 107, 60, .18);
-  background: transparent;
-  color: #5a6e57;
+  box-shadow: 0 1px 3px rgba(16, 24, 18, 0.06);
   cursor: pointer;
-  transition: all .22s ease;
-  letter-spacing: .01em;
 }
 
-.cat-pill:hover {
-  background: rgba(47, 107, 60, .06);
+.pill :deep(.v-icon) {
+  color: #374151 !important;
 }
 
-.cat-pill--active {
-  background: #2f6b3c;
-  color: #fff;
-  border-color: #2f6b3c;
-  box-shadow: 0 4px 14px rgba(47, 107, 60, .30);
+.pill--active {
+  background: #356f31;
+  color: #fff !important;
+  border-color: #356f31;
+  box-shadow: 0 10px 18px rgba(53, 111, 49, 0.24);
 }
 
-.cat-icon {
-  opacity: .75;
+.pill--active :deep(.v-icon) {
+  color: #fff !important;
 }
 
-.cat-pill--active .cat-icon {
-  opacity: 1;
+.pill--icon {
+  width: 44px;
+  padding: 0;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.header-gap {
-  height: 210px;
+/* ─── Content ─── */
+.content {
+  display: grid;
+  gap: 18px;
 }
 
-/* ════════════════════════════════
-   SCROLL BODY
-════════════════════════════════ */
-.scroll-body {
-  position: relative;
-  z-index: 5;
-}
-
-/* ── Skeletons ── */
-.skeleton-hero {
-  margin: 0 16px 0;
-  height: 320px;
-  background: linear-gradient(90deg, #e2e0d8 25%, #ece9e1 50%, #e2e0d8 75%);
-  background-size: 400% 100%;
-  animation: shimmer 1.4s infinite;
-  border-radius: 22px;
-}
-
-.skeleton-row {
-  height: 108px;
-  background: linear-gradient(90deg, #e2e0d8 25%, #ece9e1 50%, #e2e0d8 75%);
-  background-size: 400% 100%;
-  animation: shimmer 1.4s infinite;
-  border-radius: 18px;
-}
-
-@keyframes shimmer {
-  0% { background-position: 100% 0 }
-  100% { background-position: -100% 0 }
-}
-
-/* ════════════════════════════════
-   HERO CARD
-════════════════════════════════ */
-.hero-section {
-  padding: 0 16px;
-  opacity: 0;
-  transform: translateY(18px);
-  transition: opacity .5s ease, transform .5s ease;
-}
-
-.hero-section.hero-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
+/* ─── Hero Card ─── */
 .hero-card {
   background: #fff;
+  border: 1px solid #e8e9e2;
   border-radius: 24px;
+  box-shadow: 0 10px 24px rgba(19, 31, 20, 0.08);
   overflow: hidden;
-  box-shadow: 0 12px 40px rgba(30, 50, 25, .13);
-  border: 1px solid rgba(47, 107, 60, .06);
 }
 
-.hero-img-wrap {
+.hero-card__image-wrap {
   position: relative;
 }
 
-.hero-img {
-  display: block;
+.hero-card__image {
+  border-radius: 0;
 }
 
-.hero-overlay {
+.hero-card__price-badge {
   position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(10, 20, 8, .45) 0%, transparent 55%);
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #222d24;
+  padding: 8px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: 0 6px 14px rgba(17, 24, 18, 0.08);
 }
 
-.hero-badge {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  background: rgba(255, 255, 255, .92);
-  backdrop-filter: blur(8px);
-  color: #2f6b3c;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 5px 12px;
-  border-radius: 999px;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, .12);
+.hero-card__body {
+  padding: 20px 20px 18px;
 }
 
-.hero-price {
-  position: absolute;
-  bottom: 14px;
-  left: 16px;
-  color: #fff;
-  font-family: 'Playfair Display', serif;
-  font-size: 28px;
-  font-weight: 700;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, .35);
+.hero-card__title {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
 }
 
-.hero-body {
-  padding: 16px 18px 20px;
+.hero-card__desc {
+  margin: 8px 0 0;
+  color: #849084;
+  font-size: 14px;
+  line-height: 1.45;
 }
 
-.hero-meta {
-  margin-bottom: 6px;
-}
-
-.star-row {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.star-label {
-  font-size: 11px;
-  color: #7a8c76;
-  font-weight: 500;
-  margin-left: 6px;
-}
-
-.hero-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 20px;
-  font-weight: 700;
-  color: #1c2e1a;
-  line-height: 1.25;
-  margin-bottom: 6px;
-}
-
-.hero-desc {
-  font-size: 13px;
-  color: #7a8c76;
-  line-height: 1.55;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  margin-bottom: 14px;
-}
-
-.hero-foot {
+.hero-card__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
+  margin-top: 16px;
 }
 
-.hero-tags {
-  display: flex;
-  gap: 6px;
-}
-
-.tag {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: #e8f0e8;
-  color: #2f6b3c;
-}
-
-/* ════════════════════════════════
-   ADD BUTTON
-════════════════════════════════ */
-.add-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #2f6b3c 0%, #1a4526 100%);
-  border: none;
-  display: flex;
+/* ─── Rating ─── */
+.rating {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 6px 18px rgba(47, 107, 60, .36);
-  transition: transform .18s ease, box-shadow .18s ease;
-  flex-shrink: 0;
-}
-
-.add-btn:hover {
-  transform: scale(1.08);
-}
-
-.add-btn:active {
-  transform: scale(.92);
-}
-
-.add-btn--hero {
-  width: 44px;
-  height: 44px;
-  box-shadow: 0 8px 22px rgba(47, 107, 60, .40);
-}
-
-.add-btn.btn-pop {
-  animation: btnPop .4s cubic-bezier(.175, .885, .32, 1.275);
-}
-
-@keyframes btnPop {
-  0%   { transform: scale(1) }
-  35%  { transform: scale(.65) }
-  70%  { transform: scale(1.18) }
-  100% { transform: scale(1) }
-}
-
-/* ════════════════════════════════
-   SECTION HEADER
-════════════════════════════════ */
-.section-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding-top: 24px;
-  padding-bottom: 12px;
-}
-
-.section-label {
-  font-family: 'Playfair Display', serif;
-  font-size: 19px;
-  font-weight: 700;
-  color: #1c2e1a;
-}
-
-.section-count {
-  font-size: 12px;
-  color: #9aab96;
-  font-weight: 500;
-}
-
-/* ════════════════════════════════
-   ITEM CARDS
-════════════════════════════════ */
-.item-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.item-card {
-  display: flex;
-  gap: 14px;
-  background: #fff;
-  border-radius: 20px;
-  padding: 12px;
-  align-items: center;
-  border: 1px solid rgba(47, 107, 60, .05);
-  box-shadow: 0 4px 18px rgba(30, 50, 25, .07);
-  animation: slideUp .35s ease both;
-  transition: transform .2s ease, box-shadow .2s ease;
-}
-
-.item-card:active {
-  transform: scale(.98);
-  box-shadow: 0 2px 8px rgba(30, 50, 25, .06);
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(14px) }
-  to   { opacity: 1; transform: translateY(0) }
-}
-
-.item-img-wrap {
-  position: relative;
-  flex-shrink: 0;
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-.item-img {
-  border-radius: 14px;
-  display: block;
-}
-
-.item-img-shine {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, .18) 0%, transparent 60%);
-  pointer-events: none;
-}
-
-.item-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
   gap: 4px;
 }
 
-.item-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 15px;
-  font-weight: 600;
-  color: #1c2e1a;
-  line-height: 1.25;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.rating__value {
+  font-size: 13px;
+  font-weight: 700;
 }
 
-.item-desc {
+.rating__count {
   font-size: 12px;
-  color: #9aab96;
+  color: #9da99f;
+}
+
+/* ─── Add buttons ─── */
+.add-btn {
+  border: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: transform 0.16s ease;
+  flex-shrink: 0;
+}
+
+.add-btn--circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #356f31;
+  box-shadow: 0 12px 24px rgba(53, 111, 49, 0.28);
+}
+
+.add-btn--square {
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  background: #356f31;
+  color: #fff;
+}
+
+.add-btn--square :deep(.v-icon) {
+  color: #fff !important;
+}
+
+.add-btn.btn-pop {
+  animation: pop 0.24s ease;
+}
+
+@keyframes pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(0.86); }
+  100% { transform: scale(1); }
+}
+
+/* ─── Popular Section ─── */
+.section-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 12px;
+}
+
+.popular {
+  display: grid;
+  gap: 12px;
+}
+
+.popular-list {
+  display: grid;
+  gap: 14px;
+}
+
+.popular-card {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 14px;
+  padding: 14px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e8e9e2;
+  border-radius: 20px;
+  box-shadow: 0 4px 14px rgba(19, 31, 20, 0.05);
+}
+
+.popular-card__image {
+  border-radius: 14px;
+  flex-shrink: 0;
+}
+
+.popular-card__body {
+  min-width: 0;
+}
+
+.popular-card__title {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.popular-card__desc {
+  margin: 4px 0 0;
+  color: #8b9790;
+  font-size: 13px;
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 1;
@@ -809,168 +571,155 @@ function goToOrder() {
   overflow: hidden;
 }
 
-.item-foot {
+.popular-card__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 6px;
-}
-
-.item-price {
-  font-family: 'Playfair Display', serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: #2f6b3c;
-}
-
-/* ════════════════════════════════
-   EMPTY STATE
-════════════════════════════════ */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   gap: 10px;
-  padding: 64px 24px;
-  text-align: center;
+  margin-top: 10px;
 }
 
-.empty-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 20px;
-  color: #2d3b29;
-  margin: 0;
+.popular-card__price {
+  font-size: 15px;
+  font-weight: 800;
+  color: #2d6c42;
 }
 
-.empty-sub {
-  font-size: 13px;
-  color: #9aab96;
-  margin: 0;
-}
-
-/* ════════════════════════════════
-   CART BAR
-════════════════════════════════ */
+/* ─── Floating Cart Bar ── */
 .cart-bar {
   position: fixed;
-  bottom: 20px;
   left: 50%;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
   transform: translateX(-50%);
-  width: calc(100% - 32px);
-  max-width: 448px;
-  background: linear-gradient(135deg, #2f6b3c 0%, #1a4526 100%);
-  border-radius: 20px;
-  padding: 14px 18px;
+  width: min(100% - 32px, 420px);
+  min-height: 70px;
+  border: none;
+  border-radius: 18px;
+  background: #2d5f29;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  box-shadow: 0 20px 42px rgba(19, 31, 20, 0.28);
+  z-index: 30;
   cursor: pointer;
-  z-index: 100;
-  box-shadow: 0 14px 48px rgba(47, 107, 60, .40);
-  transition: transform .2s ease;
+  margin-bottom: 32px;
 }
 
-.cart-bar:active {
-  transform: translateX(-50%) scale(.98);
-}
-
-.cart-left {
+.cart-bar__left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
 }
 
-.cart-icon-wrap {
+.cart-bar__icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  display: grid;
+  place-items: center;
   position: relative;
-  display: flex;
-  align-items: center;
+  flex-shrink: 0;
 }
 
-.cart-count {
+.cart-bar__badge {
   position: absolute;
-  top: -8px;
-  right: -10px;
-  background: #ffb300;
-  color: #fff;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  color: #356f31;
   font-size: 10px;
   font-weight: 800;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.cart-bar__labels {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: pop .4s cubic-bezier(.175, .885, .32, 1.275);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, .22);
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
 }
 
-@keyframes pop {
-  0%   { transform: scale(0) }
-  55%  { transform: scale(1.3) }
-  100% { transform: scale(1) }
+.cart-bar__caption {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.3;
 }
 
-.cart-items-txt {
-  font-size: 11px;
-  color: rgba(255, 255, 255, .75);
-  font-weight: 500;
+.cart-bar__cta {
+  font-size: 16px;
+  font-weight: 800;
   line-height: 1.2;
 }
 
-.cart-view-txt {
-  font-size: 15px;
-  color: #fff;
-  font-weight: 700;
-  line-height: 1.2;
-  font-family: 'Playfair Display', serif;
+.cart-bar__total {
+  font-size: 18px;
+  font-weight: 800;
 }
 
-.cart-right {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.cart-bar__right {
+  text-align: right;
+  flex-shrink: 0;
+  min-width: 84px;
 }
 
-.cart-total {
-  font-family: 'Playfair Display', serif;
-  font-size: 20px;
-  font-weight: 700;
-  color: #fff;
+/* ─── Empty / Skeleton ─── */
+.empty-state {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 24px;
+  color: #6b796d;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #e8e9e2;
+  border-radius: 24px;
+  box-shadow: 0 10px 24px rgba(19, 31, 20, 0.08);
 }
 
-/* ── Cart transition ── */
-.cart-slide-enter-active {
-  transition: opacity .3s ease, transform .3s cubic-bezier(.34, 1.56, .64, 1);
+.empty-state--soft {
+  min-height: 140px;
 }
 
+.skeleton {
+  border-radius: 22px;
+  background: linear-gradient(90deg, #ecefe7, #f7f7f3, #ecefe7);
+  background-size: 300% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+
+.hero-skeleton {
+  height: 340px;
+}
+
+.row-skeleton {
+  height: 106px;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* ─── Cart transition ─── */
+.cart-slide-enter-active,
 .cart-slide-leave-active {
-  transition: opacity .2s ease, transform .2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.cart-slide-enter-from {
-  opacity: 0;
-  transform: translateX(-50%) translateY(30px);
-}
-
+.cart-slide-enter-from,
 .cart-slide-leave-to {
   opacity: 0;
-  transform: translateX(-50%) translateY(30px);
-}
-
-/* ════════════════════════════════
-   UTILITIES
-════════════════════════════════ */
-.fade-in {
-  animation: fadeIn .4s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0 }
-  to   { opacity: 1 }
-}
-
-.pb-36 {
-  padding-bottom: 100px;
+  transform: translateX(-50%) translateY(14px);
 }
 </style>

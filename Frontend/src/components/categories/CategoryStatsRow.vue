@@ -24,7 +24,7 @@ defineProps({
       <v-card rounded="xl" border flat>
         <v-card-text class="d-flex align-center ga-3 pa-4">
           <v-avatar color="green-lighten-5" rounded="lg" size="40">
-            <v-icon color="var(--app-primary)" size="20">mdi-check-circle-outline</v-icon>
+            <v-icon color="primary" size="20">mdi-check-circle-outline</v-icon>
           </v-avatar>
           <div>
             <div class="text-h5 font-weight-black">{{ stats.active }}</div>

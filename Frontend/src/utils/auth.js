@@ -58,3 +58,4 @@ export function canAccessPath(role, path) {
       return ["admin"].includes(r);
   }
 }
+

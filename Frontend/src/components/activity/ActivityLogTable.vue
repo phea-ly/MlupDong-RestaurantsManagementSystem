@@ -162,15 +162,15 @@ const TABLE_HEADERS = [
 <style scoped>
 /* ── Brand tokens ──────────────────────────────────────────────────────────── */
 :root {
-  --brand:        #407709;
+  --brand:        #2D5A27;
   --brand-light:  #5a9e10;
-  --brand-dim:    rgba(64, 119, 9, 0.10);
-  --brand-dimmer: rgba(64, 119, 9, 0.06);
+  --brand-dim:    rgba(45, 90, 39, 0.10);
+  --brand-dimmer: rgba(45, 90, 39, 0.06);
 }
 
 /* ── Card shell ────────────────────────────────────────────────────────────── */
 .activity-card {
-  border-color: rgba(64, 119, 9, 0.18) !important;
+  border-color: rgba(45, 90, 39, 0.18) !important;
   overflow: hidden;
 }
 
@@ -180,9 +180,9 @@ const TABLE_HEADERS = [
   font-size: 0.70rem;
   letter-spacing: 0.06em;
   font-weight: 700;
-  color: #407709 !important;
-  border-bottom: 2px solid rgba(64, 119, 9, 0.20) !important;
-  background: rgba(64, 119, 9, 0.04) !important;
+  color: #2D5A27 !important;
+  border-bottom: 2px solid rgba(45, 90, 39, 0.20) !important;
+  background: rgba(45, 90, 39, 0.04) !important;
 }
 
 /* ── Table cells ───────────────────────────────────────────────────────────── */
@@ -190,20 +190,20 @@ const TABLE_HEADERS = [
   vertical-align: top;
   padding-top: 12px;
   padding-bottom: 12px;
-  border-bottom-color: rgba(64, 119, 9, 0.08) !important;
+  border-bottom-color: rgba(45, 90, 39, 0.08) !important;
 }
 
 /* ── Row hover ─────────────────────────────────────────────────────────────── */
 .activity-table :deep(tbody tr:hover td) {
-  background: rgba(64, 119, 9, 0.04) !important;
+  background: rgba(45, 90, 39, 0.04) !important;
 }
 
 /* ── ID badge ──────────────────────────────────────────────────────────────── */
 .id-badge {
   font-size: 0.80rem;
   font-weight: 600;
-  color: #407709;
-  background: rgba(64, 119, 9, 0.10);
+  color: #2D5A27;
+  background: rgba(45, 90, 39, 0.10);
   padding: 2px 7px;
   border-radius: 5px;
   letter-spacing: 0.02em;
@@ -216,15 +216,15 @@ const TABLE_HEADERS = [
 
 /* ── User avatar ───────────────────────────────────────────────────────────── */
 .user-avatar {
-  background: rgba(64, 119, 9, 0.14) !important;
+  background: rgba(45, 90, 39, 0.14) !important;
 }
 .avatar-initials {
   font-size: 10px;
   font-weight: 800;
-  color: #407709;
+  color: #2D5A27;
 }
 .user-name {
-  color: #407709;
+  color: #2D5A27;
 }
 .user-role {
   color: #888;
@@ -236,12 +236,12 @@ const TABLE_HEADERS = [
 
 /* ── Event chip ────────────────────────────────────────────────────────────── */
 .event-chip {
-  background: rgba(64, 119, 9, 0.12) !important;
-  color: #407709 !important;
+  background: rgba(45, 90, 39, 0.12) !important;
+  color: #2D5A27 !important;
   font-weight: 600;
 }
 .event-chip :deep(.v-icon) {
-  color: #407709 !important;
+  color: #2D5A27 !important;
 }
 
 /* ── Description ───────────────────────────────────────────────────────────── */
@@ -256,14 +256,14 @@ const TABLE_HEADERS = [
 
 /* ── Details button ────────────────────────────────────────────────────────── */
 .details-btn {
-  background: rgba(64, 119, 9, 0.10) !important;
-  color: #407709 !important;
+  background: rgba(45, 90, 39, 0.10) !important;
+  color: #2D5A27 !important;
   font-weight: 600;
   font-size: 0.78rem;
   transition: background 0.2s ease;
 }
 .details-btn:hover {
-  background: rgba(64, 119, 9, 0.18) !important;
+  background: rgba(45, 90, 39, 0.18) !important;
 }
 
 /* ── Delete button ─────────────────────────────────────────────────────────── */
@@ -277,29 +277,30 @@ const TABLE_HEADERS = [
 
 /* ── Selected row ──────────────────────────────────────────────────────────── */
 .activity-table :deep(tr.v-data-table__selected td) {
-  background: rgba(64, 119, 9, 0.06) !important;
+  background: rgba(45, 90, 39, 0.06) !important;
 }
 
 /* ── Expanded / detail row ─────────────────────────────────────────────────── */
 .detail-row td {
-  background: rgba(64, 119, 9, 0.03) !important;
-  border-top: 1px dashed rgba(64, 119, 9, 0.15) !important;
+  background: rgba(45, 90, 39, 0.03) !important;
+  border-top: 1px dashed rgba(45, 90, 39, 0.15) !important;
   padding-top: 0 !important;
 }
 
 /* ── Pagination area ───────────────────────────────────────────────────────── */
 .activity-table :deep(.v-data-table-footer) {
-  border-top: 1px solid rgba(64, 119, 9, 0.12);
-  background: rgba(64, 119, 9, 0.03);
+  border-top: 1px solid rgba(45, 90, 39, 0.12);
+  background: rgba(45, 90, 39, 0.03);
 }
 
 /* ── Vuetify override: loading bar ─────────────────────────────────────────── */
 .activity-table :deep(.v-progress-linear__background),
 .activity-table :deep(.v-progress-linear__buffer) {
-  background: rgba(64, 119, 9, 0.15) !important;
+  background: rgba(45, 90, 39, 0.15) !important;
 }
 .activity-table :deep(.v-progress-linear__determinate),
 .activity-table :deep(.v-progress-linear__indeterminate) {
-  background: #407709 !important;
+  background: #2D5A27 !important;
 }
 </style>
+

@@ -78,7 +78,7 @@ onMounted(init)
           <v-text-field v-model="search" placeholder="Search staff..." prepend-inner-icon="mdi-magnify"
             variant="outlined" density="compact" rounded="lg" hide-details style="min-width:220px; max-width:320px" />
           <v-spacer />
-          <!-- <v-btn color="var(--app-primary)" rounded="lg" prepend-icon="mdi-plus" @click="openAdd">
+          <!-- <v-btn color="primary" rounded="lg" prepend-icon="mdi-plus" @click="openAdd">
             <span style="color:#063824; font-weight:800">Add Staff</span>
           </v-btn> -->
         </div>
@@ -110,10 +110,10 @@ onMounted(init)
           </v-chip>
         </template>
 
-        <!-- Position -->
+        <!-- Position-->
         <template #item.position="{ item }">
           <span class="text-body-2 text-medium-emphasis">{{ item.position || '—' }}</span>
-        </template>
+        </template> 
 
         <!-- Date joined -->
         <template #item.dateJoined="{ item }">
@@ -195,7 +195,7 @@ onMounted(init)
           <v-btn variant="outlined" rounded="lg" :disabled="saving" @click="showAddDialog = false">
             Cancel
           </v-btn>
-          <v-btn color="var(--app-primary)" rounded="lg" :loading="saving" :disabled="!newStaff.user_id"
+          <v-btn color="primary" rounded="lg" :loading="saving" :disabled="!newStaff.user_id"
             @click="addStaff">
             <span style="color:#063824; font-weight:800">Add Staff</span>
           </v-btn>

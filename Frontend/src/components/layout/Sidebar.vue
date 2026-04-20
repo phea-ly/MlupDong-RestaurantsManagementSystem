@@ -41,8 +41,8 @@ const reportsMenu = [
         :prepend-icon="item.icon"
         :title="item.label"
         rounded="lg"
-        color="#2C4211"
-        base-color="#2C4211"
+        color="#2D5A27"
+        base-color="#2D5A27"
         class="nav-item mb-0.5"
       />
     </v-list>
@@ -57,8 +57,8 @@ const reportsMenu = [
         :prepend-icon="item.icon"
         :title="item.label"
         rounded="lg"
-        color="#2C4211"
-        base-color="#2C4211"
+        color="#2D5A27"
+        base-color="#2D5A27"
         class="nav-item mb-0.5"
       />
     </v-list>

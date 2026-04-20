@@ -34,3 +34,4 @@ export function connectKdsStream(onEvent, onError, onOpen) {
   }
   return es
 }
+

@@ -47,7 +47,7 @@ watch(searchQuery, () => fetchOrders(1))
           </v-col>
           <v-col cols="12" sm="4">
             <v-btn
-              color="var(--app-primary)" rounded="lg" elevation="0"
+              color="primary" rounded="lg" elevation="0"
               :disabled="!dateFrom || !dateTo"
               @click="fetchAll"
             >

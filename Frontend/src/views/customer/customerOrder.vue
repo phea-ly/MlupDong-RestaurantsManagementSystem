@@ -1,965 +1,803 @@
 <script setup>
-// src/views/customer/CartPage.vue — <script setup> section
-
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useMenuStore } from "@/stores/menu.store";
 import { useCartStore } from "@/stores/cart.store";
-import { tableApi, kdsApi } from "@/api/order.api";
+import { kdsApi, tableApi } from "@/api/order.api";
+import {
+  getCustomerProgressStep,
+  getCustomerStatusText,
+  PENDING_ORDER_STATUSES,
+} from "@/utils/orderStatus";
 
-const menuStore = useMenuStore();
-const cartStore = useCartStore();
+/* ─── stores & routing ─── */
 const route = useRoute();
 const router = useRouter();
+const cartStore = useCartStore();
 
+/* ─── state ─── */
 const resolvingToken = ref(true);
 const tokenError = ref(false);
 const isPlacingOrder = ref(false);
-const showSuccess = ref(false);
-const activeOrdersAhead = ref(0);
-const estimatedWait = ref(null);
-const confirmedWaitMinutes = ref(0);
-const countdownSeconds = ref(0);
 const orderError = ref("");
-let countdownTimer = null;
+const estimatedWait = ref(15);
+const activeOrdersAhead = ref(0);
+const trackedOrderId = ref(null);
+const now = ref(Date.now());
 
-const fallbackImg =
+let ticker = null;
+
+const FALLBACK_IMG =
   "https://images.unsplash.com/photo-1548943487-a2e4142f6ab3?q=80&w=600";
 
-// ── Track the order shown on success screen ──────────────────────────────
+/* ─── computed ─── */
+const hasCartItems = computed(() => cartStore.items.length > 0);
+const displayTableNumber = computed(() => cartStore.tableNumber ?? "--");
 
-const trackedOrder = ref(null);
-
-// Watch for status changes from WebSocket on the tracked order
-watch(
-  () => {
-    if (!trackedOrder.value) return null;
-    return cartStore.orders.find(
-      (o) => o.order_id === trackedOrder.value.order_id,
-    )?.order_status;
-  },
-  (newStatus) => {
-    if (!newStatus || !trackedOrder.value) return;
-    trackedOrder.value.order_status = newStatus;
-
-    // Only start countdown when chef starts preparing (not at order placement)
-    if (
-      (newStatus === "confirmed" || newStatus === "preparing") &&
-      !trackedOrder.value.prep_started
-    ) {
-      trackedOrder.value.prep_started = true;
-      startCountdown(confirmedWaitMinutes.value);
-    }
-
-    // Stop countdown when ready
-    if (newStatus === "ready" || newStatus === "completed") {
-      stopCountdown();
-    }
-  },
+const trackedOrder = computed(
+  () =>
+    cartStore.orders.find((o) => o.id === trackedOrderId.value) ??
+    cartStore.activeOrders[0] ??
+    cartStore.orderHistory[0] ??
+    null,
 );
 
-const displayTableNumber = computed(() => {
-  const num = String(cartStore.tableNumber || "??");
-  if (num.length > 8 && num !== "??")
-    return `${num.substring(0, 4)}...${num.slice(-4)}`;
-  return num;
+const trackedOrderStep = computed(() =>
+  getCustomerProgressStep(trackedOrder.value?.order_status),
+);
+
+const trackedOrderStatusText = computed(() =>
+  getCustomerStatusText(trackedOrder.value?.order_status),
+);
+
+const trackedOrderCountdown = computed(() => {
+  const order = trackedOrder.value;
+  if (!order || !["confirmed", "preparing"].includes(order.order_status)) return null;
+
+  const startTime = order.confirmed_at ?? order.created_at;
+  if (!startTime) return null;
+
+  const totalMs =
+    Number(order.estimated_wait_minutes ?? estimatedWait.value ?? 15) * 60 * 1000;
+  const seconds = Math.max(
+    0,
+    Math.floor((new Date(startTime).getTime() + totalMs - now.value) / 1000),
+  );
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 });
 
-const countdownDisplay = computed(() => {
-  const mins = Math.floor(countdownSeconds.value / 60);
-  const secs = countdownSeconds.value % 60;
-  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-});
-
-const isCountingDown = computed(() => countdownSeconds.value > 0);
-
-const statusStep = computed(() => {
-  const s = trackedOrder.value?.order_status;
-  if (s === "confirmed") return 2;
-  if (s === "preparing") return 3;
-  if (["ready", "served", "completed"].includes(s)) return 4;
-  return 1;
-});
-
-const statusText = computed(() => {
-  const s = trackedOrder.value?.order_status;
-  if (s === "new") return "Order received — waiting for chef";
-  if (s === "received") return "Kitchen received your order";
-  if (s === "confirmed") return "Chef confirmed — starting preparation";
-  if (s === "preparing") return "Chef is cooking now 🔥";
-  if (s === "ready") return "✅ Your food is ready!";
-  if (s === "completed") return "Served — enjoy your meal!";
-  if (s === "cancelled") return "Order was cancelled";
-  return "Sent to kitchen...";
-});
-
-// ── Lifecycle ─────────────────────────────────────────────────────────────
-onMounted(async () => {
-  const token = route.params.token;
-  if (cartStore.tableId) {
-    resolvingToken.value = false;
-    await fetchQueueDepth();
-    return;
-  }
-  if (token) {
-    try {
-      const { data } = await tableApi.getByToken(token);
-      cartStore.setTableId(data.table_id, data.table_number);
-    } catch {
-      tokenError.value = true;
-      resolvingToken.value = false;
-      return;
-    }
-  }
-  resolvingToken.value = false;
-  await fetchQueueDepth();
-});
-
-onUnmounted(() => {
-  cartStore.leaveTableChannel();
-  stopCountdown();
-});
-
-function goBackToMenu() {
-  showSuccess.value = false;
-  orderError.value = "";
-  stopCountdown();
-  router.back();
+/* ─── helpers ─── */
+function currency(value) {
+  return `$${Number(value ?? 0).toFixed(2)}`;
 }
 
-async function fetchQueueDepth() {
+function matchesCurrentTable(order) {
+  if (cartStore.tableId && order.table_id) {
+    return String(order.table_id) === String(cartStore.tableId);
+  }
+  const name = `${order.table_name ?? order.table_number ?? ""}`.toLowerCase();
+  return name.includes(`${cartStore.tableNumber ?? ""}`.toLowerCase());
+}
+
+/* ─── data loading ─── */
+async function resolveTable() {
+  if (cartStore.tableId && cartStore.tableNumber) {
+    cartStore.ensureTableChannel();
+    resolvingToken.value = false;
+    return true;
+  }
+
+  try {
+    const { data } = await tableApi.getByToken(route.params.token);
+    cartStore.setTableId(data.table_id, data.table_number);
+    resolvingToken.value = false;
+    return true;
+  } catch {
+    tokenError.value = true;
+    resolvingToken.value = false;
+    return false;
+  }
+}
+
+async function loadOwnOrders() {
   try {
     const { data } = await kdsApi.getActiveOrders();
-    activeOrdersAhead.value = data.filter((o) =>
-      ["new", "received", "confirmed", "preparing"].includes(o.order_status),
+    const allOrders = Array.isArray(data) ? data : [];
+    const existingIds = new Set(cartStore.orders.map((o) => o.id));
+
+    cartStore.mergeOrders(
+      allOrders.filter((o) => matchesCurrentTable(o) && existingIds.has(o.id ?? o.order_id)),
+    );
+
+    activeOrdersAhead.value = allOrders.filter((o) =>
+      PENDING_ORDER_STATUSES.concat("preparing").includes(o.order_status),
     ).length;
+
     estimatedWait.value = cartStore.calcEstimatedWait(activeOrdersAhead.value);
   } catch {
     estimatedWait.value = 15;
   }
+
+  trackedOrderId.value =
+    trackedOrderId.value ??
+    cartStore.activeOrders[0]?.id ??
+    cartStore.orderHistory[0]?.id ??
+    null;
 }
 
+/* ─── place order ─── */
 async function placeOrder() {
   if (!cartStore.items.length) return;
-  if (!cartStore.tableId) {
-    orderError.value =
-      "Table information is missing. Please scan the QR code again.";
-    return;
-  }
 
   isPlacingOrder.value = true;
   orderError.value = "";
-  confirmedWaitMinutes.value = estimatedWait.value ?? 15;
-  showSuccess.value = true; // Show overlay before await
 
-  try {
-    const result = await cartStore.placeOrder({
-      order_type: "dine_in",
-      table_id: cartStore.tableId,
-    });
+  const result = await cartStore.placeOrder({
+    order_type: "dine_in",
+    table_id: cartStore.tableId,
+  });
 
-    if (result.success) {
-      if (result.data?.estimated_wait_minutes) {
-        confirmedWaitMinutes.value = result.data.estimated_wait_minutes;
-      }
-      // Set trackedOrder to the newly placed order
-      trackedOrder.value = cartStore.lastOrder;
-      // NOTE: Do NOT start countdown here — it starts when chef confirms
-    } else {
-      showSuccess.value = false;
-      orderError.value =
-        result.message || "Something went wrong. Please try again.";
-    }
-  } catch (err) {
-    showSuccess.value = false;
-    orderError.value = err?.message || "Unexpected error. Please try again.";
-  } finally {
-    isPlacingOrder.value = false;
+  isPlacingOrder.value = false;
+
+  if (!result.success) {
+    orderError.value = result.message;
+    return;
   }
+
+  trackedOrderId.value = cartStore.lastOrder?.id ?? null;
+  await loadOwnOrders();
 }
 
-function startCountdown(minutes) {
-  stopCountdown();
-  const safe = Number.isFinite(minutes) ? minutes : 0;
-  countdownSeconds.value = Math.max(0, Math.round(safe * 60));
-  if (countdownSeconds.value <= 0) return;
-  countdownTimer = setInterval(() => {
-    if (countdownSeconds.value > 0) countdownSeconds.value--;
-    else stopCountdown();
-  }, 1000);
+function goToMenu() {
+  router.push({ name: "customer-menu", params: { token: route.params.token } });
 }
 
-function stopCountdown() {
-  if (countdownTimer) {
-    clearInterval(countdownTimer);
-    countdownTimer = null;
-  }
-}
+/* ─── lifecycle ─── */
+onMounted(async () => {
+  const resolved = await resolveTable();
+  if (!resolved) return;
 
-// Add helper in script
-function statusChipColor(status) {
-  const map = {
-    new: 'blue', received: 'indigo', confirmed: 'orange',
-    preparing: 'teal', ready: 'green', completed: 'grey',
-  }
-  return map[status] ?? 'grey'
-}
+  await loadOwnOrders();
+  ticker = setInterval(() => { now.value = Date.now(); }, 1000);
+});
 
-watch(
-  () => cartStore.items.length,
-  (len) => {
-    if (len === 0 && !showSuccess.value) goBackToMenu();
-  },
-);
+onUnmounted(() => {
+  cartStore.leaveTableChannel();
+  if (ticker) { clearInterval(ticker); ticker = null; }
+});
 </script>
 
 <template>
-  <div class="cart-layout">
-    <!-- ── Invalid token ─────────────────────────────────────────────────── -->
-    <div v-if="tokenError" class="error-center">
-      <v-icon size="64" color="grey">mdi-qrcode-off</v-icon>
-      <div class="text-h6 font-weight-bold text-grey-darken-3 mt-4">
-        Invalid QR Code
-      </div>
+  <div class="order-page">
+
+    <!-- ── Invalid QR ── -->
+    <div v-if="tokenError" class="center-state">
+      <v-icon size="56" color="#bcc8b5">mdi-qrcode-off</v-icon>
+      <h2>Invalid QR Code</h2>
+      <p>Please scan a valid table QR code to continue.</p>
     </div>
 
     <template v-else>
-      <!-- ── Sticky header ────────────────────────────────────────────────── -->
-      <div class="sticky-header d-flex align-center px-4 py-3">
-        <v-btn icon="mdi-arrow-left" variant="text" size="small" color="#1c2e1a" @click="goBackToMenu" />
-        <div class="d-flex flex-column ml-3 flex-grow-1">
-          <div class="header-title" style="line-height: 1">Your Cart</div>
-          <div class="font-weight-bold text-uppercase mt-1"
-            style="font-size: 9px; color: #2f6b3c; letter-spacing: 1.5px">
-            Mlup Dong • Table {{ displayTableNumber }}
-          </div>
+
+      <!-- ── Header ── -->
+      <header class="order-header">
+        <button class="back-btn" @click="goToMenu">
+          <v-icon size="20" color="#1a3d22">mdi-arrow-left</v-icon>
+          <span>Back</span>
+        </button>
+
+        <div class="table-chip">
+          <v-icon size="13">mdi-table-furniture</v-icon>
+          Table {{ displayTableNumber }}
         </div>
-        <!-- Item count badge -->
-        <v-chip v-if="cartStore.cartCount > 0" size="small" color="#2f6b3c" variant="tonal" class="font-weight-black">
-          {{ cartStore.cartCount }} item{{
-            cartStore.cartCount !== 1 ? "s" : ""
-          }}
-        </v-chip>
+      </header>
+
+      <!-- ── Loading ── -->
+      <div v-if="resolvingToken" class="center-state center-state--soft">
+        <v-progress-circular indeterminate color="#2f6b3c" />
+        <p>Loading your table...</p>
       </div>
 
-      <!-- ── Empty cart ────────────────────────────────────────────────────── -->
-      <div v-if="cartStore.items.length === 0 && !showSuccess"
-        class="empty-state d-flex flex-column align-center justify-center px-8">
-        <div class="empty-blob mb-8 d-flex align-center justify-center" style="
-            width: 120px;
-            height: 120px;
-            background: rgba(47, 107, 60, 0.08);
-            border-radius: 50%;
-          ">
-          <v-icon size="64" color="#2f6b3c">mdi-cart-outline</v-icon>
-        </div>
-        <h3 class="header-title text-center mb-2" style="font-size: 24px">
-          Your Cart is Empty
-        </h3>
-        <p class="text-body-1 text-center mb-8" style="color: #7a8c76">
-          Add something delicious to your tray!
-        </p>
-        <v-btn class="brand-btn text-white" rounded="pill" elevation="0" @click="goBackToMenu" height="54" width="100%"
-          style="max-width: 280px">
-          <span style="letter-spacing: 1px; font-weight: 700; font-size: 14px">BROWSE MENU</span>
-        </v-btn>
-      </div>
+      <template v-else>
 
-      <!-- ── Cart items ────────────────────────────────────────────────────── -->
-      <div v-else-if="!showSuccess" class="px-4 pt-4 pb-cart fade-in">
-        <!-- Clear all -->
-        <div class="d-flex align-center justify-space-between mb-4 px-1">
-          <span class="text-caption font-weight-black text-uppercase text-medium-emphasis"
-            style="letter-spacing: 0.06em">
-            My Tray ({{ cartStore.cartCount }})
-          </span>
-          <v-btn variant="text" size="x-small" color="red-darken-1" class="font-weight-bold"
-            @click="cartStore.clearCart">
-            Clear All
-          </v-btn>
-        </div>
+        <!-- ── CART VIEW ── -->
+        <main v-if="hasCartItems" class="cart-view">
 
-        <!-- Item cards -->
-        <div v-for="item in cartStore.items" :key="item.id" class="cart-item-card mb-4">
-          <!-- Image -->
-          <div class="cart-item-img-wrap">
-            <v-img :src="item.image || fallbackImg" cover class="cart-item-img" />
-            <div class="cart-item-img-shine" />
-          </div>
+          <!-- Cart Items -->
+          <section class="cart-list">
+            <article v-for="item in cartStore.items" :key="item.id" class="order-card">
+              <v-img :src="item.image || FALLBACK_IMG" width="86" height="86" cover class="order-card__image" />
 
-          <!-- Info -->
-          <div class="cart-item-info">
-            <div class="d-flex justify-space-between align-start mb-1">
-              <div class="cart-item-title pr-2">{{ item.name }}</div>
-              <v-icon size="20" color="#a0b39c" style="cursor: pointer; margin-top: 2px; flex-shrink: 0"
-                @click="cartStore.removeFromCart(item.id)">
-                mdi-close-circle
-              </v-icon>
-            </div>
-            <div class="cart-item-desc mb-3">
-              Fresh ingredients – Best quality
-            </div>
+              <div class="order-card__content">
+                <!-- Title + Remove -->
+                <div class="order-card__top">
+                  <span class="order-card__title">{{ item.name }}</span>
+                  <button class="remove-btn" @click="cartStore.removeFromCart(item.id)">
+                    <v-icon size="20" color="#e87070">mdi-close-circle-outline</v-icon>
+                  </button>
+                </div>
 
-            <!-- Per-item chef note -->
-            <div class="item-note-wrap mt-2">
-              <v-text-field v-model="item.note" :placeholder="`Note for ${item.name} (e.g. extra spicy)`"
-                variant="outlined" density="compact" hide-details color="#2f6b3c" class="item-note-field"
-                prepend-inner-icon="mdi-chef-hat" @input="cartStore.updateItemNote(item.id, item.note)" />
-            </div>
+                <!-- Note -->
+                <v-text-field
+                  :model-value="item.note"
+                  placeholder="add note"
+                  variant="solo-filled"
+                  flat
+                  hide-details
+                  density="comfortable"
+                  class="note-field"
+                  @update:model-value="cartStore.updateItemNote(item.id, $event)"
+                />
 
-            <div class="d-flex justify-space-between align-end mt-auto">
-              <!-- Price -->
-              <div class="cart-item-price">
-                <span class="currency-symbol">$</span>{{ item.price.toFixed(2) }}
-              </div>
+                <!-- Price + Qty -->
+                <div class="order-card__bottom">
+                  <span class="order-card__price">{{ currency(item.price) }}</span>
 
-              <!-- Qty pill -->
-              <div class="qty-pill">
-                <button class="qty-btn" :disabled="item.quantity <= 1"
-                  @click="cartStore.updateQuantity(item.id, item.quantity - 1)">
-                  <v-icon size="14">mdi-minus</v-icon>
-                </button>
-                <div class="qty-val">{{ item.quantity }}</div>
-                <button class="qty-btn qty-btn--plus" @click="cartStore.updateQuantity(item.id, item.quantity + 1)">
-                  <v-icon size="14">mdi-plus</v-icon>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Chef note -->
-        <div class="mt-6 mb-3 d-flex align-center px-1">
-          <v-icon color="#2f6b3c" size="20" class="mr-2">mdi-note-edit-outline</v-icon>
-          <span class="text-brand-dark font-weight-bold" style="font-size: 13px">
-            Special Instructions for the Chef
-          </span>
-        </div>
-        <v-textarea v-model="cartStore.specialInstructions"
-          placeholder="Allergies, specific requests, or how you like your spice level..." variant="outlined"
-          bg-color="white" hide-details auto-grow rows="3" color="#2f6b3c" class="instruction-textarea mb-4" />
-
-        <!-- Estimated wait -->
-        <div class="wait-card d-flex align-center ga-3 mb-2">
-          <v-icon color="#2f6b3c" size="22">mdi-clock-outline</v-icon>
-          <div>
-            <div class="text-caption font-weight-bold" style="color: #5a6e57">
-              Estimated wait
-            </div>
-            <div class="header-title" style="font-size: 16px; color: #2f6b3c">
-              {{ estimatedWait ? `~${estimatedWait} min` : "Calculating..." }}
-            </div>
-          </div>
-          <v-spacer />
-          <div class="text-caption text-right" style="color: #9aab96; max-width: 80px; line-height: 1.3">
-            {{ activeOrdersAhead }} orders ahead
-          </div>
-        </div>
-
-        <!-- Error -->
-        <v-alert v-if="orderError" type="error" variant="tonal" rounded="xl" closable density="compact"
-          class="mb-3 text-body-2 font-weight-bold" @click:close="orderError = ''">
-          {{ orderError }}
-        </v-alert>
-      </div>
-      <!-- /cart items -->
-
-      <!-- ── Checkout panel (fixed bottom) ──────────────────────────────────── -->
-      <v-slide-y-reverse-transition>
-        <div v-if="cartStore.items.length > 0 && !showSuccess" class="checkout-panel px-6 pt-5 pb-6">
-          <div class="d-flex justify-space-between mb-2">
-            <span class="text-caption" style="color: #7a8c76">Subtotal</span>
-            <span class="text-caption font-weight-bold text-brand-dark">
-              ${{ cartStore.cartSubtotal.toFixed(2) }}
-            </span>
-          </div>
-          <div class="d-flex justify-space-between mb-3">
-            <span class="text-caption" style="color: #7a8c76">Tax (10%)</span>
-            <span class="text-caption font-weight-bold text-brand-dark">
-              ${{ cartStore.cartTax.toFixed(2) }}
-            </span>
-          </div>
-
-          <div class="divider-dashed my-3" />
-
-          <div class="d-flex justify-space-between align-center mb-5 mt-3">
-            <span class="header-title" style="font-size: 18px">Total Amount</span>
-            <span class="price-text" style="font-size: 24px">
-              ${{ cartStore.cartTotal.toFixed(2) }}
-            </span>
-          </div>
-
-          <v-btn rounded="pill" block height="52" class="brand-btn text-white elevation-0 checkout-btn mb-3"
-            :loading="isPlacingOrder" :disabled="isPlacingOrder"
-            style="letter-spacing: 1px; font-weight: 600; font-size: 14px" @click="placeOrder">
-            <span>PLACE ORDER</span>
-            <v-icon size="20" class="ml-3">mdi-rocket-launch-outline</v-icon>
-          </v-btn>
-
-          <div class="text-center text-uppercase" style="
-              font-size: 9px;
-              color: #9aab96;
-              letter-spacing: 0.5px;
-              font-weight: 600;
-            ">
-            By placing order you agree to our terms of service
-          </div>
-        </div>
-      </v-slide-y-reverse-transition>
-
-      <!-- ── Success overlay ──────────────────────────────────────────────── -->
-      <v-overlay v-model="showSuccess" class="align-center justify-center px-5" scrim="rgba(244,242,236,0.96)"
-        :persistent="true" :z-index="200">
-        <v-card class="pa-0 text-center overflow-hidden bg-white success-card" elevation="16">
-          <div class="pa-8 d-flex flex-column align-center">
-            <!-- Check icon -->
-            <div class="success-icon-box mb-5">
-              <v-icon color="#2f6b3c" size="56">mdi-check-circle-outline</v-icon>
-            </div>
-
-            <h2 class="header-title mb-2" style="font-size: 26px">
-              Order Sent!
-            </h2>
-            <p class="text-body-2 mb-5" style="color: #7a8c76; line-height: 1.6">
-              Relax and sit tight while we prepare your meal.
-            </p>
-
-            <!-- Wait time -->
-            <div class="wait-badge mb-5">
-              <div class="text-caption font-weight-black text-uppercase" style="
-                  opacity: 0.6;
-                  font-size: 10px;
-                  color: #1c2e1a;
-                  letter-spacing: 0.08em;
-                ">
-                Estimated Wait
-              </div>
-              <div class="price-text" style="font-size: 40px; line-height: 1.1">
-                ~{{ confirmedWaitMinutes
-                }}<span style="font-size: 20px">m</span>
-              </div>
-            </div>
-
-            <!-- Status + countdown card -->
-            <div class="status-card mb-5 w-100">
-              <div class="d-flex align-center justify-space-between mb-3">
-                <div class="text-left">
-                  <div class="text-caption font-weight-black text-uppercase" style="
-                      font-size: 9px;
-                      letter-spacing: 0.08em;
-                      color: #5a6e57;
-                      opacity: 0.8;
-                    ">
-                    Kitchen Status
-                  </div>
-                  <div class="text-body-2 font-weight-bold text-brand-dark">
-                    {{ statusText }}
+                  <div class="qty-pill">
+                    <button class="qty-btn" @click="cartStore.updateQuantity(item.id, item.quantity - 1)">
+                      <v-icon size="14">mdi-minus</v-icon>
+                    </button>
+                    <span class="qty-value">{{ item.quantity }}</span>
+                    <button class="qty-btn" @click="cartStore.updateQuantity(item.id, item.quantity + 1)">
+                      <v-icon size="14">mdi-plus</v-icon>
+                    </button>
                   </div>
                 </div>
-                <div class="countdown-badge" :class="{ active: isCountingDown }">
-                  {{ isCountingDown ? countdownDisplay : "--:--" }}
-                </div>
               </div>
+            </article>
+          </section>
 
-              <!-- Progress dots -->
-              <div class="progress-dots">
-                <span class="dot" :class="{ active: statusStep >= 1 }" />
-                <span class="dot" :class="{ active: statusStep >= 2 }" />
-                <span class="dot" :class="{ active: statusStep >= 3 }" />
-                <span class="dot" :class="{ active: statusStep >= 4 }" />
-              </div>
+          <!-- Summary -->
+          <section class="summary-card">
+            <p class="summary-card__title">Order Summary</p>
+
+            <div class="summary-row">
+              <span>Subtotal</span>
+              <strong>{{ currency(cartStore.cartSubtotal) }}</strong>
+            </div>
+            <div class="summary-row">
+              <span>Delivery Fee</span>
+              <strong>{{ currency(cartStore.cartTax) }}</strong>
+            </div>
+            <div class="summary-divider" />
+            <div class="summary-row summary-row--total">
+              <span>Total</span>
+              <strong class="total-amount">{{ currency(cartStore.cartTotal) }}</strong>
+            </div>
+          </section>
+
+          <!-- Error -->
+          <v-alert v-if="orderError" type="error" variant="tonal" rounded="xl">
+            {{ orderError }}
+          </v-alert>
+
+        </main>
+
+        <!-- ── TRACKING VIEW ── -->
+        <main v-else class="tracking-view">
+
+          <section v-if="trackedOrder" class="tracking-card">
+            <p class="tracking-card__eyebrow">Your Order Status</p>
+            <p class="tracking-card__order-number">{{ trackedOrder.order_number }}</p>
+            <p class="tracking-card__subtitle">{{ trackedOrderStatusText }}</p>
+
+            <div class="tracking-status-row">
+              <v-chip :color="cartStore.getStatusColor(trackedOrder.order_status)" variant="flat" size="small">
+                {{ cartStore.getStatusLabel(trackedOrder.order_status) }}
+              </v-chip>
+
+              <span class="tracking-time">
+                {{ trackedOrderCountdown ?? `~${trackedOrder.estimated_wait_minutes ?? estimatedWait} min` }}
+              </span>
             </div>
 
-            <!-- Order number -->
-            <div v-if="cartStore.lastOrder" class="text-caption mb-5" style="color: #9aab96">
-              Order {{ cartStore.lastOrder.order_number }}
+            <!-- Progress Rail -->
+            <div class="progress-rail">
+              <div v-for="step in 3" :key="step" class="progress-step"
+                :class="{ 'progress-step--active': trackedOrderStep >= step }" />
             </div>
 
-            <v-btn block rounded="pill" size="large" class="brand-btn text-white elevation-0 text-none"
-              style="font-weight: 700; letter-spacing: 0.5px" @click="goBackToMenu">
-              Back to Menu
-            </v-btn>
+            <div class="progress-labels">
+              <span>Confirmed</span>
+              <span>Preparing</span>
+              <span>Ready</span>
+            </div>
 
-            <!-- Status + countdown card -->
-            <div class="status-card mb-5 w-100">
-              <div class="d-flex align-center justify-space-between mb-3">
-                <div class="text-left">
-                  <div class="text-caption font-weight-black text-uppercase"
-                    style="font-size:9px;letter-spacing:.08em;color:#5a6e57;opacity:.8">
-                    Kitchen Status
-                  </div>
-                  <div class="text-body-2 font-weight-bold text-brand-dark">{{ statusText }}</div>
-                </div>
-                <div class="countdown-badge" :class="{ active: isCountingDown }">
-                  <template v-if="statusStep >= 2 && isCountingDown">
-                    {{ countdownDisplay }}
-                  </template>
-                  <template v-else-if="statusStep >= 4">
-                    Done ✓
-                  </template>
-                  <template v-else>
-                    Waiting...
-                  </template>
-                </div>
-              </div>
-
-              <!-- Hint shown before chef acts -->
-              <div v-if="statusStep === 1" class="text-caption mb-3" style="color:#9aab96;text-align:center">
-                Timer starts when chef confirms your order
-              </div>
-
-              <!-- 3 dots only -->
-              <div class="progress-dots">
-                <span class="dot" :class="{ active: statusStep >= 2 }" />
-                <span class="dot" :class="{ active: statusStep >= 3 }" />
-                <span class="dot" :class="{ active: statusStep >= 4 }" />
-              </div>
-              <div class="progress-labels">
-                <span>Confirmed</span>
-                <span>Cooking</span>
-                <span>Ready</span>
+            <!-- Order Items -->
+            <div class="tracking-items">
+              <div v-for="item in trackedOrder.items ?? []" :key="item.order_item_id ?? item.id ?? item.name"
+                class="tracking-item">
+                <strong>{{ item.quantity }}x {{ item.name }}</strong>
+                <p v-if="item.note" class="tracking-item__note">{{ item.note }}</p>
               </div>
             </div>
-            <!-- In success overlay — add a "My Orders" section below the main tracked order -->
-            <div v-if="cartStore.orders.length > 1" class="all-orders-section mt-4">
-              <div class="text-caption font-weight-black text-uppercase mb-2"
-                style="color:#5a6e57;letter-spacing:.08em">All Active
-                Orders</div>
+          </section>
 
-              <div v-for="ord in cartStore.orders" :key="ord.order_id" class="mini-order-row"
-                :class="{ 'mini-order-row--active': ord.order_id === trackedOrder?.order_id }"
-                @click="trackedOrder = ord">
-                <span class="mini-order-num">{{ ord.order_number }}</span>
-                <v-chip size="x-small" :color="statusChipColor(ord.order_status)" variant="tonal">
-                  {{ ord.order_status }}
-                </v-chip>
-              </div>
-            </div>
+          <!-- Multi-order history -->
+          <section v-if="cartStore.orders.length > 1" class="history-card">
+            <p class="history-card__title">Your Orders</p>
+            <button v-for="order in cartStore.orders" :key="order.id" class="history-order"
+              :class="{ 'history-order--active': trackedOrderId === order.id }" @click="trackedOrderId = order.id">
+              <span>{{ order.order_number }}</span>
+              <v-chip size="x-small" :color="cartStore.getStatusColor(order.order_status)" variant="tonal">
+                {{ cartStore.getStatusLabel(order.order_status) }}
+              </v-chip>
+            </button>
+          </section>
+
+          <div v-if="!trackedOrder" class="center-state center-state--soft">
+            <v-icon size="44" color="#bcc8b5">mdi-clipboard-text-outline</v-icon>
+            <p>No order yet. Add menu items and place your order.</p>
           </div>
-        </v-card>
-      </v-overlay>
+        </main>
+
+      </template>
+
     </template>
   </div>
+
+  <!-- ── Place Order Bar ── -->
+  <transition name="bar-slide">
+    <button v-if="hasCartItems" class="place-order-bar" :disabled="isPlacingOrder" @click="placeOrder">
+      <div class="place-order-bar__icon-wrap">
+        <v-icon size="22" color="white">mdi-cart-outline</v-icon>
+        <span class="place-order-bar__badge">{{ cartStore.cartCount }}</span>
+      </div>
+      <span class="place-order-bar__label">
+        <template v-if="isPlacingOrder">Placing…</template>
+        <template v-else>Place Order</template>
+      </span>
+      <!-- spacer to visually center the label -->
+      <div class="place-order-bar__spacer" />
+    </button>
+  </transition>
 </template>
 
 <style scoped>
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap");
-
-/* ── Shell ─────────────────────────────────────────────────────────────── */
-.cart-layout {
-  font-family: "DM Sans", sans-serif;
-  background: #f4f2ec;
-  max-width: 480px;
+/* ─── Root ─── */
+.order-page {
+  width: 100%;
+  max-width: 440px;
   margin: 0 auto;
   min-height: 100vh;
-  position: relative;
-  overflow-x: hidden;
+  background: #f8f7f2;
+  color: #263328;
+  padding: 18px 16px 140px;
+  font-family: inherit;
 }
 
-.error-center {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-
-.progress-labels {
+/* ─── Header ─── */
+.order-header {
   display: flex;
   justify-content: space-between;
-  margin-top: 4px;
-  font-size: 9px;
-  color: #9aab96;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-}
-
-
-.kds-item__note {
-  display: flex;
   align-items: center;
-  gap: 4px;
-  margin-left: 28px;
-  margin-top: 2px;
-  font-size: 11px;
-  color: #f59e0b;
-  font-weight: 600;
-  background: rgba(245, 158, 11, .08);
-  border-radius: 6px;
-  padding: 3px 8px;
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
-.kds-special-instructions {
-  display: flex;
-  align-items: flex-start;
+.back-btn {
+  border: none;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
-  margin: 8px 0;
-  padding: 8px 10px;
-  background: rgba(245, 158, 11, .10);
-  border: 1px dashed rgba(245, 158, 11, .3);
-  border-radius: 8px;
-  font-size: 12px;
-  color: #b45309;
-  font-weight: 500;
-  line-height: 1.4;
-}
-
-
-/* ── Typography ─────────────────────────────────────────────────────────── */
-.header-title {
-  font-family: "Playfair Display", serif;
-  font-weight: 700;
-  color: #1c2e1a;
-  font-size: 20px;
-}
-
-.price-text {
-  font-family: "Playfair Display", serif;
-  font-weight: 700;
-  color: #2f6b3c;
-  font-size: 18px;
-}
-
-.text-brand-dark {
-  color: #1c2e1a !important;
-}
-
-.progress-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 4px;
-  font-size: 9px;
-  color: #9aab96;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-}
-
-/* ── Brand button ───────────────────────────────────────────────────────── */
-.brand-btn {
-  background: linear-gradient(135deg, #2f6b3c 0%, #1a4526 100%) !important;
-  box-shadow: 0 4px 16px rgba(47, 107, 60, 0.25) !important;
-}
-
-/* ── Sticky header ──────────────────────────────────────────────────────── */
-.sticky-header {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: #f4f2ec;
-  border-bottom: 1px solid rgba(47, 107, 60, 0.1);
-  box-shadow: 0 4px 24px rgba(30, 50, 25, 0.04);
-}
-
-/* ── Empty state ────────────────────────────────────────────────────────── */
-.empty-state {
-  height: calc(100vh - 64px);
-}
-
-/* ── Cart item card ─────────────────────────────────────────────────────── */
-.cart-item-card {
-  display: flex;
-  gap: 14px;
-  background: #fff;
-  border-radius: 20px;
-  padding: 12px;
-  align-items: stretch;
-  border: 1px solid rgba(47, 107, 60, 0.06);
-  box-shadow: 0 4px 18px rgba(30, 50, 25, 0.05);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.cart-item-card:active {
-  transform: scale(0.98);
-  box-shadow: 0 2px 8px rgba(30, 50, 25, 0.06);
-}
-
-.cart-item-img-wrap {
-  position: relative;
-  flex-shrink: 0;
-  width: 96px;
-  height: 96px;
-  border-radius: 14px;
-  overflow: hidden;
-  background: #f4f2ec;
-}
-
-.cart-item-img {
-  width: 100%;
-  height: 100%;
-}
-
-.cart-item-img-shine {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.18) 0%,
-      transparent 60%);
-  pointer-events: none;
-}
-
-.cart-item-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.cart-item-title {
-  font-family: "Playfair Display", serif;
+  color: #1a3d22;
   font-size: 16px;
-  font-weight: 700;
-  color: #1c2e1a;
-  line-height: 1.25;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0;
 }
 
-.cart-item-desc {
-  font-size: 11px;
-  color: #7a8c76;
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.back-btn span {
+  color: #1a3d22 !important;
 }
 
-.cart-item-price {
-  font-family: "Playfair Display", serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: #2f6b3c;
-  display: flex;
-  align-items: baseline;
-  gap: 2px;
-}
-
-.currency-symbol {
-  font-family: "DM Sans", sans-serif;
-  font-size: 13px;
-  color: #5a6e57;
-  font-weight: 600;
-}
-
-/* ── Qty pill ───────────────────────────────────────────────────────────── */
-.qty-pill {
-  display: flex;
+.table-chip {
+  display: inline-flex;
   align-items: center;
-  background: #f9f8f4;
-  border: 1px solid rgba(47, 107, 60, 0.08);
-  border-radius: 999px;
-  padding: 3px;
   gap: 6px;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #e6f0dc;
+  color: #466640;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ─── Views ─── */
+.cart-view,
+.tracking-view {
+  display: grid;
+  gap: 16px;
+}
+
+/* ─── Cart List ─── */
+.cart-list {
+  display: grid;
+  gap: 14px;
+}
+
+/* ─── Order Card ─── */
+.order-card {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  gap: 14px;
+  padding: 14px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #ebebeb;
+  border-radius: 22px;
+  box-shadow: 0 2px 12px rgba(16, 24, 18, 0.06);
+}
+
+.order-card__image {
+  border-radius: 16px;
+  flex-shrink: 0;
+}
+
+.order-card__content {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.order-card__top,
+.order-card__bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.order-card__title {
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #1e2820;
+}
+
+.remove-btn {
+  border: none;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+/* Note field */
+.note-field :deep(.v-field) {
+  background: #f0f0ee;
+  border-radius: 14px !important;
+}
+
+.note-field :deep(.v-field__outline) {
+  display: none;
+}
+
+.note-field :deep(input) {
+  font-size: 13px;
+  color: #8b9790;
+  text-align: center;
+}
+
+.note-field :deep(input::placeholder) {
+  color: #a8b0ab;
+  text-align: center;
+}
+
+.order-card__price {
+  color: #2e6d40;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* ─── Qty Pill ─── */
+.qty-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #f2f3ef;
+  border-radius: 999px;
+  padding: 6px 10px;
 }
 
 .qty-btn {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fff;
-  border: 1px solid rgba(47, 107, 60, 0.1);
-  color: #5a6e57;
+  border: none;
+  background: transparent;
+  color: #4a5e4e;
+  display: grid;
+  place-items: center;
   cursor: pointer;
-  transition: all 0.2s;
-  flex-shrink: 0;
+  padding: 0;
+  width: 18px;
+  height: 18px;
 }
 
-.qty-btn:disabled {
-  opacity: 0.5;
+.qty-value {
+  min-width: 16px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 14px;
+  color: #1e2820;
+}
+
+/* ─── Summary Card ─── */
+.summary-card {
+  padding: 20px;
+  background: #f5f5f3;
+  border: 1px solid #eaeae6;
+  border-radius: 22px;
+}
+
+.summary-card__title {
+  font-size: 17px;
+  font-weight: 800;
+  margin: 0 0 16px;
+  color: #1e2820;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  color: #6b7870;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.summary-row strong {
+  color: #2a352d;
+  font-weight: 600;
+}
+
+.summary-divider {
+  border-top: 1px solid #dcddd8;
+  margin: 14px 0;
+}
+
+.summary-row--total {
+  color: #1e2820;
+  font-size: 16px;
+  font-weight: 800;
+  margin-bottom: 0;
+}
+
+.total-amount {
+  color: #2e6d40;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* ─── Tracking Card ─── */
+.tracking-card {
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e7e8e1;
+  border-radius: 22px;
+  box-shadow: 0 6px 18px rgba(16, 24, 18, 0.08);
+}
+
+.tracking-card__eyebrow {
+  color: #92a08f;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.tracking-card__order-number {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.tracking-card__subtitle {
+  margin: 6px 0 0;
+  color: #6e7c73;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.tracking-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.tracking-time {
+  color: #2e6d40;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* ─── Progress Rail ─── */
+.progress-rail {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 18px 0 8px;
+}
+
+.progress-step {
+  height: 8px;
+  border-radius: 999px;
+  background: #dfe9d9;
+  transition: background 0.3s;
+}
+
+.progress-step--active {
+  background: #2e6d40;
+}
+
+.progress-labels {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  color: #738076;
+  font-size: 11px;
+  margin-bottom: 18px;
+  text-align: center;
+}
+
+/* ─── Tracking Items ─── */
+.tracking-items {
+  display: grid;
+  gap: 10px;
+}
+
+.tracking-item {
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: #f6f7f3;
+  border: 1px solid #ebeee7;
+  font-size: 14px;
+}
+
+.tracking-item__note {
+  margin: 4px 0 0;
+  color: #8a6a38;
+  font-size: 12px;
+}
+
+/* ─── History Card ─── */
+.history-card {
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e7e8e1;
+  border-radius: 22px;
+  box-shadow: 0 6px 18px rgba(16, 24, 18, 0.08);
+}
+
+.history-card__title {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0 0 14px;
+}
+
+.history-order {
+  width: 100%;
+  border: 1px solid #e5e8e1;
+  background: #fff;
+  border-radius: 18px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.history-order + .history-order {
+  margin-top: 10px;
+}
+
+.history-order--active {
+  background: #eff6ea;
+  border-color: #cfe2c5;
+}
+
+/* ─── Center State ─── */
+.center-state {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 48px 24px;
+  color: #6b796d;
+}
+
+.center-state--soft {
+  min-height: 200px;
+}
+
+/* ─── Place Order Bar ── */
+.place-order-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  width: min(100% - 32px, 408px);
+  height: 64px;
+  border: none;
+  border-radius: 20px;
+  background: #2d5f29;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  box-shadow: 0 16px 36px rgba(30, 80, 28, 0.32);
+  z-index: 30;
+  cursor: pointer;
+}
+
+.place-order-bar:disabled {
+  opacity: 0.7;
   cursor: not-allowed;
 }
 
-.qty-btn--plus {
-  background: linear-gradient(135deg, #2f6b3c 0%, #1a4526 100%);
-  color: #fff;
-  border: none;
-  box-shadow: 0 4px 12px rgba(47, 107, 60, 0.2);
+.place-order-bar__icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  display: grid;
+  place-items: center;
+  position: relative;
+  flex-shrink: 0;
 }
 
-.qty-val {
-  font-weight: 700;
-  font-size: 13px;
-  color: #1c2e1a;
-  min-width: 14px;
-  text-align: center;
-}
-
-/* ── Chef note textarea ─────────────────────────────────────────────────── */
-.instruction-textarea :deep(.v-field__outline) {
-  --v-field-border-opacity: 0.1 !important;
-}
-
-.instruction-textarea :deep(.v-field) {
-  border-radius: 12px !important;
-  border: 1.5px solid rgba(47, 107, 60, 0.08) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02) !important;
-  font-family: "DM Sans", sans-serif;
-  font-size: 14px;
-}
-
-.instruction-textarea :deep(.v-field__outline::before),
-.instruction-textarea :deep(.v-field__outline::after) {
-  display: none !important;
-}
-
-/* ── Estimated wait card ────────────────────────────────────────────────── */
-.wait-card {
-  background: #f0f7f2;
-  border: 1px solid #c6e9d3;
-  border-radius: 14px;
-  padding: 14px 16px;
-}
-
-/* ── Checkout panel ─────────────────────────────────────────────────────── */
-.checkout-panel {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  max-width: 480px;
-  margin: 0 auto;
-  background: white;
-  z-index: 100;
-  border-top-left-radius: 20px;
-  border-top-right-radius: 20px;
-  box-shadow: 0 -4px 30px rgba(30, 50, 25, 0.08);
-}
-
-.divider-dashed {
-  border-bottom: 1px dashed rgba(47, 107, 60, 0.15);
-  height: 1px;
-}
-
-.checkout-btn {
-  transition: transform 0.2s;
-}
-
-.checkout-btn:active {
-  transform: scale(0.98);
-}
-
-/* ── Scroll padding so items aren't hidden behind checkout panel ─────────── */
-.pb-cart {
-  padding-bottom: 220px;
-}
-
-/* ── Success overlay card ───────────────────────────────────────────────── */
-.success-card {
-  border-radius: 28px !important;
-  border: 1px solid rgba(47, 107, 60, 0.08);
-  width: 100%;
-  max-width: 360px;
-}
-
-.success-icon-box {
-  width: 100px;
-  height: 100px;
-  background: rgba(47, 107, 60, 0.06);
+.place-order-bar__badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(47, 107, 60, 0.12);
-}
-
-.wait-badge {
-  background: #f0f7f2;
-  border-radius: 16px;
-  padding: 14px 28px;
-  border: 1px solid #c6e9d3;
-  width: 100%;
-  text-align: center;
-}
-
-/* ── Status card inside success ─────────────────────────────────────────── */
-.status-card {
-  background: #f9f8f4;
-  border-radius: 16px;
-  padding: 16px;
-  border: 1px solid rgba(47, 107, 60, 0.08);
-}
-
-/* ── Countdown badge ────────────────────────────────────────────────────── */
-.countdown-badge {
-  min-width: 68px;
-  text-align: center;
-  padding: 6px 10px;
-  border-radius: 999px;
+  background: #fff;
+  color: #2d5f29;
+  font-size: 10px;
   font-weight: 800;
-  font-size: 14px;
-  background: rgba(47, 107, 60, 0.08);
-  color: #2f6b3c;
-  border: 1px solid rgba(47, 107, 60, 0.15);
-  font-family: "DM Sans", monospace;
-  transition: all 0.3s ease;
+  display: grid;
+  place-items: center;
 }
 
-.countdown-badge.active {
-  background: rgba(47, 107, 60, 0.14);
-  color: #1a4526;
-  border-color: rgba(47, 107, 60, 0.3);
+.place-order-bar__label {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
-/* ── Progress dots ──────────────────────────────────────────────────────── */
-.progress-dots {
-  display: flex;
-  gap: 6px;
+.place-order-bar__spacer {
+  width: 40px;
+  flex-shrink: 0;
 }
 
-.dot {
-  flex: 1;
-  height: 5px;
-  border-radius: 999px;
-  background: rgba(47, 107, 60, 0.12);
-  transition: all 0.3s ease;
+/* ─── Bar transition ─── */
+.bar-slide-enter-active,
+.bar-slide-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.dot.active {
-  background: #2f6b3c;
-  box-shadow: 0 0 8px rgba(47, 107, 60, 0.4);
-}
-
-/* ── Animations ─────────────────────────────────────────────────────────── */
-.fade-in {
-  animation: fadeIn 0.4s ease-out forwards;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.item-note-field :deep(.v-field) {
-  border-radius: 10px !important;
-  font-size: 12px;
-  border: 1px dashed rgba(47, 107, 60, 0.25) !important;
-}
-
-.item-note-field :deep(.v-field__outline) {
-  display: none !important;
-}
-
-.item-note-wrap {
-  opacity: 0.85;
-}
-
-/* ── Utility ────────────────────────────────────────────────────────────── */
-.w-100 {
-  width: 100%;
+.bar-slide-enter-from,
+.bar-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(16px);
 }
 </style>

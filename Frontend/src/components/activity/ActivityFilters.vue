@@ -59,13 +59,13 @@ defineEmits(['apply', 'reset'])
         </v-col>
         <v-col cols="12" md="4" class="d-flex align-center justify-end ga-2">
           <v-btn
-            color="var(--app-primary)" rounded="lg" elevation="0" size="small"
+            color="primary" rounded="lg" elevation="0" size="small"
             :loading="loading"
             @click="$emit('apply')"
           >
             <span style="color:white; font-weight:800">Apply Filters</span>
           </v-btn>
-          <v-btn variant="outlined" rounded="lg" size="small" @click="$emit('reset')">
+          <v-btn variant="outlined" rounded="lg" size="small" style="color: black;" @click="$emit('reset')">
             Reset
           </v-btn>
         </v-col>

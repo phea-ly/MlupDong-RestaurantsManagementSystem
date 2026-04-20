@@ -1,31 +1,18 @@
-// src/stores/kds.store.js
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { echo } from "@/echo";
 import { kdsApi } from "@/api/order.api";
-
-const STATUS_LABEL = {
-  new: "Incoming",
-  received: "Received",
-  confirmed: "Confirmed",
-  preparing: "Preparing",
-  ready: "Ready",
-  completed: "Completed",
-  cancelled: "Cancelled",
-};
-
-const STATUS_COLOR = {
-  new: "blue",
-  received: "indigo",
-  confirmed: "orange",
-  preparing: "teal",
-  ready: "success",
-  completed: "grey",
-  cancelled: "error",
-};
+import {
+  ACTIVE_ORDER_STATUSES,
+  PENDING_ORDER_STATUSES,
+  getOrderStatusColor,
+  getOrderStatusLabel,
+  normalizeOrder,
+  normalizeOrderStatus,
+  sortOrdersByNewest,
+} from "@/utils/orderStatus";
 
 export const useKdsStore = defineStore("kds", () => {
-  // ── State ──────────────────────────────────────────────────────────────────
   const orders = ref([]);
   const loading = ref(false);
   const connected = ref(false);
@@ -33,92 +20,83 @@ export const useKdsStore = defineStore("kds", () => {
   const tab = ref("active");
   const snackbar = ref({ show: false, message: "", color: "success" });
   const currentTime = ref(new Date().toLocaleTimeString());
+
   let clockTimer = null;
+  let channel = null;
 
   const recentOrders = computed(() => {
-    currentTime.value; // Reactive dependency
+    currentTime.value;
     const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
-    return orders.value.filter((o) => {
-      const ts = new Date(o.updated_at || o.created_at).getTime();
-      return ts > dayAgo;
-    });
+
+    return [...orders.value]
+      .filter((order) => {
+        const timestamp = new Date(order.updated_at ?? order.created_at ?? 0).getTime();
+        return timestamp > dayAgo;
+      })
+      .sort(sortOrdersByNewest);
   });
 
-  // ── Computed ───────────────────────────────────────────────────────────────
-  const incomingOrders = computed(() =>
-    recentOrders.value.filter((o) => o.order_status === "new"),
-  );
-  const receivedOrders = computed(() =>
-    recentOrders.value.filter((o) => o.order_status === "received"),
-  );
-  const confirmedOrders = computed(() =>
-    recentOrders.value.filter((o) => o.order_status === "confirmed"),
-  );
-  const preparingOrders = computed(() =>
-    recentOrders.value.filter((o) => o.order_status === "preparing"),
-  );
-  const readyOrders = computed(() =>
-    recentOrders.value.filter((o) => o.order_status === "ready"),
-  );
-  const completedOrders = computed(() =>
-    recentOrders.value.filter((o) => o.order_status === "completed"),
+  const pendingOrders = computed(() =>
+    recentOrders.value.filter((order) =>
+      PENDING_ORDER_STATUSES.includes(order.order_status),
+    ),
   );
 
-  const pendingOrders = computed(() =>
-    recentOrders.value.filter((o) =>
-      ["new", "received", "confirmed"].includes(o.order_status),
+  const preparingOrders = computed(() =>
+    recentOrders.value.filter((order) => order.order_status === "preparing"),
+  );
+
+  const readyOrders = computed(() =>
+    recentOrders.value.filter((order) => order.order_status === "ready"),
+  );
+
+  const completedOrders = computed(() =>
+    recentOrders.value.filter((order) =>
+      ["completed", "served"].includes(order.order_status),
     ),
   );
 
   const activeCount = computed(
     () =>
-      incomingOrders.value.length +
-      receivedOrders.value.length +
-      confirmedOrders.value.length +
-      preparingOrders.value.length,
+      pendingOrders.value.length +
+      preparingOrders.value.length +
+      readyOrders.value.length,
   );
 
-  const estimatedWaitMinutes = computed(() =>
-    Math.max(5, activeCount.value * 5),
-  );
+  const estimatedWaitMinutes = computed(() => Math.max(5, activeCount.value * 5));
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
   function notify(message, color = "success") {
     snackbar.value = { show: true, message, color };
   }
 
-  // Normalise: backend may send 'id' or 'order_id'
-  function normalise(payload) {
-    return { ...payload, id: payload.id ?? payload.order_id };
-  }
+  function upsertOrder(rawOrder, flash = false) {
+    const order = { ...normalizeOrder(rawOrder), _flash: flash };
+    const index = orders.value.findIndex((entry) => entry.id === order.id);
 
-  function upsertOrder(raw, flash = false) {
-    const payload = normalise(raw);
-    const idx = orders.value.findIndex((o) => o.id === payload.id);
-    const order = { ...payload, _flash: flash };
-    if (idx !== -1) {
-      orders.value[idx] = order;
-    } else {
+    if (index === -1) {
       orders.value.unshift(order);
+      return;
     }
+
+    orders.value[index] = {
+      ...orders.value[index],
+      ...order,
+    };
   }
 
-  function removeOrder(id) {
-    orders.value = orders.value.filter((o) => o.id !== id);
+  function removeOrder(orderId) {
+    orders.value = orders.value.filter((order) => order.id !== orderId);
   }
 
-  // ── Time helpers ───────────────────────────────────────────────────────────
   function getElapsedSeconds(order) {
-    if (!order.created_at) return 0;
-    return Math.floor(
-      (Date.now() - new Date(order.created_at).getTime()) / 1000,
-    );
+    if (!order?.created_at) return 0;
+    return Math.floor((Date.now() - new Date(order.created_at).getTime()) / 1000);
   }
 
   function formatElapsed(seconds) {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
   }
 
   function getTimerClass(seconds) {
@@ -128,28 +106,38 @@ export const useKdsStore = defineStore("kds", () => {
   }
 
   function getOrderWaitMinutes(order) {
-    const active = ["new", "received", "confirmed", "preparing"];
-    if (!active.includes(order.order_status)) return null;
-    const ahead = recentOrders.value.filter(
-      (o) => active.includes(o.order_status) && o.id < order.id,
-    ).length;
-    return Math.max(5, ahead * 5);
+    if (!ACTIVE_ORDER_STATUSES.includes(order.order_status)) return null;
+
+    const ordersAhead = recentOrders.value.filter((candidate) => {
+      if (!ACTIVE_ORDER_STATUSES.includes(candidate.order_status)) return false;
+
+      const candidateTime = new Date(candidate.created_at ?? 0).getTime();
+      const orderTime = new Date(order.created_at ?? 0).getTime();
+
+      if (candidateTime === orderTime) return candidate.id < order.id;
+      return candidateTime < orderTime;
+    }).length;
+
+    return Math.max(5, 5 + ordersAhead * 5);
   }
 
   function getStatusLabel(status) {
-    return STATUS_LABEL[status] ?? status;
-  }
-  function getStatusColor(status) {
-    return STATUS_COLOR[status] ?? "grey";
+    return getOrderStatusLabel(status);
   }
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
+  function getStatusColor(status) {
+    return getOrderStatusColor(status);
+  }
+
   async function fetchOrders() {
     loading.value = true;
     error.value = null;
+
     try {
       const { data } = await kdsApi.getActiveOrders();
-      orders.value = (Array.isArray(data) ? data : []).map(normalise);
+      orders.value = (Array.isArray(data) ? data : [])
+        .map(normalizeOrder)
+        .sort(sortOrdersByNewest);
     } catch (err) {
       error.value = err.message ?? "Failed to load orders.";
     } finally {
@@ -157,103 +145,94 @@ export const useKdsStore = defineStore("kds", () => {
     }
   }
 
-  // ── Status actions ─────────────────────────────────────────────────────────
   async function updateStatus(orderId, status, label) {
     try {
       const { data } = await kdsApi.updateStatus(orderId, status);
       upsertOrder(data);
-      notify(`Order ${data.order_number} → ${label}`);
+      notify(`Order ${data.order_number} -> ${label}`);
     } catch (err) {
       notify(err.message ?? "Failed to update status.", "error");
     }
   }
 
-  const receiveOrder = (id) => updateStatus(id, "received", "Received");
-  const confirmCooking = (id) => updateStatus(id, "confirmed", "Confirmed");
-  const prepareFood = (id) => updateStatus(id, "preparing", "Preparing");
-  const markReady = (id) => updateStatus(id, "ready", "Ready ✓");
-  const completeOrder = (id) => updateStatus(id, "completed", "Completed");
-
-  // ── Echo WebSocket ─────────────────────────────────────────────────────────
-  let channel = null;
+  const receiveOrder = (orderId) => updateStatus(orderId, "received", "Received");
+  const confirmCooking = (orderId) =>
+    updateStatus(orderId, "confirmed", "Confirmed");
+  const prepareFood = (orderId) =>
+    updateStatus(orderId, "preparing", "Preparing");
+  const markReady = (orderId) => updateStatus(orderId, "ready", "Ready");
+  const completeOrder = (orderId) =>
+    updateStatus(orderId, "completed", "Completed");
 
   function subscribeEcho() {
-    // Subscribes to the 'kitchen' public channel defined in routes/channels.php
     channel = echo.channel("kitchen");
 
     channel.subscribed(() => {
       connected.value = true;
     });
 
-    // In kds.store.js — update the listen handlers:
-
     channel.listen(".order.created", (payload) => {
       upsertOrder(payload, true);
-      notify(
-        `🆕 New order: ${payload.order_number} — ${payload.table_name}`,
-        "success",
-      );
+      notify(`New order: ${payload.order_number}`, "success");
     });
 
     channel.listen(".order.status.updated", (payload) => {
-      // Normalize: backend sends order_status, not status
-      const normalized = {
-        ...payload,
-        id: payload.id ?? payload.order_id,
-        order_status: payload.order_status ?? payload.status,
-      };
+      const normalized = normalizeOrder(payload);
 
-      if (normalized.order_status === "cancelled") {
+      if (normalizeOrderStatus(normalized.order_status) === "cancelled") {
         removeOrder(normalized.id);
         notify(`Order ${normalized.order_number} cancelled`, "error");
-      } else {
-        upsertOrder(normalized);
-        // Flash notification for status changes
-        const labels = {
-          preparing: "🔥 Cooking",
-          ready: "✅ Ready",
-          completed: "✓ Completed",
-        };
-        if (labels[normalized.order_status]) {
-          notify(
-            `${labels[normalized.order_status]}: ${normalized.order_number}`,
-          );
-        }
+        return;
+      }
+
+      upsertOrder(normalized);
+
+      const statusMessages = {
+        preparing: "Cooking started",
+        ready: "Ready for delivery",
+        completed: "Order delivered",
+        served: "Order delivered",
+      };
+
+      const message = statusMessages[normalized.order_status];
+      if (message) {
+        notify(`${message}: ${normalized.order_number}`);
       }
     });
 
-    // Items changed (from back-office order edit)
     channel.listen(".order.items.updated", (payload) => {
       upsertOrder(payload);
     });
 
-    // Track WebSocket connection state
     echo.connector.pusher.connection.bind("disconnected", () => {
       connected.value = false;
     });
+
     echo.connector.pusher.connection.bind("connected", () => {
       connected.value = true;
     });
   }
 
   function unsubscribeEcho() {
-    if (channel) {
-      echo.leaveChannel("kitchen");
-      channel = null;
-    }
+    if (!channel) return;
+    echo.leaveChannel("kitchen");
+    channel = null;
   }
 
-  // ── Lifecycle ──────────────────────────────────────────────────────────────
   async function init() {
     await fetchOrders();
     subscribeEcho();
-    clockTimer = setInterval(() => {
-      currentTime.value = new Date().toLocaleTimeString();
-    }, 1000);
+
+    if (!clockTimer) {
+      clockTimer = setInterval(() => {
+        currentTime.value = new Date().toLocaleTimeString();
+      }, 1000);
+    }
   }
 
   function cleanup() {
     unsubscribeEcho();
+
     if (clockTimer) {
       clearInterval(clockTimer);
       clockTimer = null;
@@ -261,7 +240,6 @@ export const useKdsStore = defineStore("kds", () => {
   }
 
   return {
-    // state
     orders,
     loading,
     connected,
@@ -269,31 +247,24 @@ export const useKdsStore = defineStore("kds", () => {
     tab,
     snackbar,
     currentTime,
-    // computed
-    incomingOrders,
-    receivedOrders,
-    confirmedOrders,
-    preparingOrders,
     pendingOrders,
+    preparingOrders,
     readyOrders,
     completedOrders,
     activeCount,
     estimatedWaitMinutes,
-    // helpers
     getElapsedSeconds,
     formatElapsed,
     getTimerClass,
     getOrderWaitMinutes,
     getStatusLabel,
     getStatusColor,
-    // actions
     fetchOrders,
     receiveOrder,
     confirmCooking,
     prepareFood,
     markReady,
     completeOrder,
-    // lifecycle
     init,
     cleanup,
   };

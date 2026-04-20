@@ -224,7 +224,7 @@ function handleSave() {
       <v-card-actions class="px-6 pb-6 pt-0">
         <v-spacer />
         <v-btn variant="outlined" rounded="lg" @click="close">Cancel</v-btn>
-        <v-btn color="var(--app-primary)" variant="flat" rounded="lg" @click="handleSave">
+        <v-btn color="primary" variant="flat" rounded="lg" @click="handleSave">
           <span style="color:#063824;font-weight:800">Save Profile</span>
         </v-btn>
       </v-card-actions>
@@ -248,3 +248,4 @@ function handleSave() {
 .avatar-drop:hover .avatar-overlay,
 .avatar-drop.dragging .avatar-overlay { opacity: 1; }
 </style>
+
