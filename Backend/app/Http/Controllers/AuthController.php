@@ -64,19 +64,10 @@ class AuthController extends Controller
         $cookieSameSite = config('jwt.cookie.same_site', 'lax');
 
         return response()->json([
+            'token'      => $token,
             'user'       => $this->formatUser($user),
             'expires_in' => $cookieTtl * 60,
-        ])->cookie(
-            $cookieName,
-            $token,
-            $cookieTtl,
-            $cookiePath,
-            $cookieDomain,
-            $cookieSecure,
-            true,   // httpOnly — JS can never read the raw token
-            false,
-            $cookieSameSite
-        );
+        ]);
     }
 
     public function logout()
@@ -100,17 +91,7 @@ class AuthController extends Controller
         $cookieSameSite = config('jwt.cookie.same_site', 'lax');
 
         // Set TTL to -1 so the browser expires the cookie immediately
-        return response()->json(['message' => 'Successfully logged out'])->cookie(
-            $cookieName,
-            '',
-            -1,
-            $cookiePath,
-            $cookieDomain,
-            $cookieSecure,
-            true,
-            false,
-            $cookieSameSite
-        );
+        return response()->json(['message' => 'Successfully logged out']);
     }
 
     public function getUser()
@@ -141,9 +122,27 @@ class AuthController extends Controller
         }
     }
 
+    public function refresh()
+    {
+        try {
+            $token = JWTAuth::parseToken()->refresh();
+        } catch (JWTException $e) {
+            return response()->json(['message' => 'Unable to refresh token. Please login again.'], 401);
+        }
+
+        $cookieName     = config('jwt.cookie.name', 'auth_token');
+        $cookieTtl      = (int) config('jwt.ttl', 60);
+        $cookiePath     = config('jwt.cookie.path', '/');
+        $cookieDomain   = config('jwt.cookie.domain');
+        $cookieSecure   = (bool) config('jwt.cookie.secure', false);
+        $cookieSameSite = config('jwt.cookie.same_site', 'lax');
+
+        return response()->json(['token' => $token, 'expires_in' => $cookieTtl * 60]);
+    }
+
     public function updateUser(Request $request)
     {
-        $user = Auth::user();
+        $user = auth('api')->user();
 
         $request->validate([
             'first_name'       => 'sometimes|string|max:100',

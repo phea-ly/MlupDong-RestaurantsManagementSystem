@@ -5,6 +5,9 @@ import {
   clearSession,
   getSessionUser,
   hasUser,
+  saveToken,
+  getToken,
+  clearToken,
   getDashboardPathByRole,
 } from "@/utils/auth";
 
@@ -66,6 +69,7 @@ export const useAuthStore = defineStore("auth", {
       this.errors = {};
       this.hasChecked = true;
       clearSession();
+      clearToken();
     },
 
     _setError(err) {
@@ -82,6 +86,7 @@ export const useAuthStore = defineStore("auth", {
       this.user = null;
       this.hasChecked = true;
       clearSession();
+      clearToken();
     },
 
     // ✅ Fixed — duplicate logout removed, only one remains
@@ -103,6 +108,7 @@ export const useAuthStore = defineStore("auth", {
         }
 
         this._persist(user);
+        saveToken(data.token);
         this.hasChecked = true;
         return data;
       } catch (err) {

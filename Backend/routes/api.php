@@ -71,11 +71,13 @@ Route::get('/', function () {
 });
 
 Route::post('/login',    [AuthController::class, 'login']);
+Route::post('/refresh',  [AuthController::class, 'refresh']);
 
 Route::middleware('jwt')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    Route::get('/user',  [AuthController::class, 'getUser']);
+    Route::get('/user', [AuthController::class, 'getUser']);
+    Route::get('/me',   [AuthController::class, 'getUser']);
     Route::put('/user',  [AuthController::class, 'updateUser']);
-    Route::post('/user', [AuthController::class, 'updateUser']); 
+    Route::post('/user', [AuthController::class, 'updateUser']);
 });

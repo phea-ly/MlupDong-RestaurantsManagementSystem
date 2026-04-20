@@ -1,4 +1,5 @@
 const SESSION_KEY = "auth_session";
+const TOKEN_KEY = "auth_token";
 
 export function saveSession(user) {
   try {
@@ -22,6 +23,26 @@ export function hasUser() {
 export function clearSession() {
   try {
     localStorage.removeItem(SESSION_KEY);
+  } catch {}
+}
+
+export function saveToken(token) {
+  try {
+    localStorage.setItem(TOKEN_KEY, token);
+  } catch {}
+}
+
+export function getToken() {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function clearToken() {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
   } catch {}
 }
 

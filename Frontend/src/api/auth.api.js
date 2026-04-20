@@ -4,7 +4,8 @@ import api from './api'
 // ── Auth ───────────────────────────────────────────────────────────────────
 export const loginApi          = (credentials) => api.post('/login',        credentials)
 export const logoutApi         = ()             => api.post('/logout')
-export const fetchApi          = ()             => api.get('/user')
+export const refreshApi        = ()             => api.post('/refresh')
+export const fetchApi          = ()             => api.get('/me')
 export const updateApi         = (data)         => api.post('/user',         data)
 export const updatePasswordApi = (data)         => api.put('/user/password', data)
 
@@ -16,6 +17,6 @@ export const patchApi  = (url, data)  => api.patch(url, data)
 export const deleteApi = (url)        => api.delete(url)
 
 export default {
-  loginApi, logoutApi, fetchApi, updateApi, updatePasswordApi,
+  loginApi, logoutApi, refreshApi, fetchApi, updateApi, updatePasswordApi,
   getApi, postApi, putApi, patchApi, deleteApi,
 }

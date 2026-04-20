@@ -1,25 +1,30 @@
 import axios from 'axios'
-import { clearSession } from '@/utils/auth'
+import { clearSession, clearToken, getToken, saveToken } from '@/utils/auth'
 
 /**
  * Endpoints that should trigger a full logout + redirect on 401.
  * Public endpoints (KDS, customer menu) must NOT redirect on 401.
  */
-const PROTECTED_ENDPOINTS = ['/user', '/logout']
+const PROTECTED_ENDPOINTS = ['/user', '/me', '/logout']
 
 const api = axios.create({
   baseURL:         import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/api',
-  withCredentials: true,   // ← sends the HttpOnly JWT cookie on every request
   headers: {
     Accept: 'application/json',
   },
 })
 
-/**
- * No request interceptor needed.
- * The browser automatically attaches the HttpOnly cookie set by the server.
- * We never read or write the token in JavaScript.
- */
+// ── REQUEST: add auth token ────────────────────────────────────────────────
+api.interceptors.request.use(
+  (config) => {
+    const token = getToken()
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
 
 // ── RESPONSE: normalize errors ─────────────────────────────────────────────
 api.interceptors.response.use(
@@ -47,7 +52,28 @@ api.interceptors.response.use(
         requestUrl.includes(ep)
       )
 
+      if (isProtected && !config?._retry) {
+        config._retry = true
+        return api.post('/refresh')
+          .then((res) => {
+            const newToken = res.data.token
+            if (newToken) {
+              saveToken(newToken)
+            }
+            return api(config)
+          })
+          .catch(() => {
+            clearToken()
+            clearSession()
+            if (window.location.pathname !== '/login') {
+              window.location.replace('/login')
+            }
+            return Promise.reject({ message: 'Unauthenticated.', errors: {} })
+          })
+      }
+
       if (isProtected) {
+        clearToken()
         clearSession()
         if (window.location.pathname !== '/login') {
           window.location.replace('/login')
