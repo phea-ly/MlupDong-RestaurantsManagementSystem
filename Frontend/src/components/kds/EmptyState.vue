@@ -1,7 +1,7 @@
 <template>
   <div class="kds-empty">
     <div class="kds-empty__icon">
-      <v-icon size="38" color="green-lighten-2">mdi-check-all</v-icon>
+      <v-icon size="36" color="#86efac">mdi-check-all</v-icon>
     </div>
     <p class="kds-empty__title">Kitchen is clear!</p>
     <p class="kds-empty__sub">No active orders on the board right now.</p>
@@ -15,7 +15,8 @@
   align-items: center;
   justify-content: center;
   flex: 1;
-  gap: 10px;
+  gap: 12px;
+  height: 100%;
 }
 
 .kds-empty__icon {
@@ -30,7 +31,7 @@
 }
 
 .kds-empty__title {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   color: #1e293b;
   margin: 0;

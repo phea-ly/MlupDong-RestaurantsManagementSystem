@@ -139,13 +139,26 @@ router.beforeEach(async (to) => {
   );
 
   if (to.meta.guestOnly) {
-    if (isAuthed) return auth.dashboardPath;
+    if (isAuthed) {
+      // Prevent infinite redirect: if dashboardPath is /login (no valid role), clear session and stay on login
+      if (auth.dashboardPath === "/login") {
+        auth.clearSession();
+        return true;
+      }
+      return auth.dashboardPath;
+    }
     return true;
   }
 
   if (to.meta.requiresAuth) {
     if (!isAuthed) {
       return { name: "login", query: { redirect: to.fullPath } };
+    }
+
+    // If user is authenticated but has no valid role, redirect to login
+    if (!auth.role || auth.dashboardPath === "/login") {
+      auth.clearSession();
+      return { name: "login" };
     }
 
     const section = to.meta.section;

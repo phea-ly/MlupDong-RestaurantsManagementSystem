@@ -32,6 +32,12 @@ const reportsMenu = [
       </div>
     </template>
 
+    <!-- Custom Active Sidebar Item Example -->
+    <div v-if="$route.path === '/home/live-orders'" class="sidebar-item-active mb-1">
+      <span>Live Orders</span>
+      <div class="sidebar-item-line"></div>
+    </div>
+
     <!-- Main nav -->
     <v-list nav density="compact" class="px-4 pt-3">
       <v-list-item
@@ -133,5 +139,31 @@ const reportsMenu = [
   min-height: 36px !important;
   padding-top: 2px !important;
   padding-bottom: 2px !important;
+}
+
+/* Custom Active Sidebar Item */
+.sidebar-item-active {
+  display: flex;
+  align-items: center;
+  background: #bfe3ce;
+  border-top-right-radius: 32px;
+  border-bottom-right-radius: 32px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  padding: 16px 24px 16px 16px;
+  position: relative;
+  font-weight: 600;
+  color: #13795b;
+  font-size: 20px;
+  min-width: 180px;
+  min-height: 60px;
+  margin-bottom: 8px;
+}
+.sidebar-item-line {
+  width: 8px;
+  height: 44px;
+  background: #11916c;
+  border-radius: 6px;
+  margin-left: auto;
 }
 </style>

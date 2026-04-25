@@ -134,7 +134,14 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async ensureAuthChecked() {
-      if (this.hasChecked) return; // ← login sets hasChecked = true, so this returns immediately
+      if (this.hasChecked) return;
+      
+      // If user exists in session but has no role_name, fetch fresh data
+      if (hasUser() && !getSessionUser()?.user?.role_name) {
+        await this.fetchUser();
+        return;
+      }
+      
       if (!hasUser()) {
         this.hasChecked = true;
         return;

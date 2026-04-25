@@ -3,7 +3,6 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useKdsStore }  from '@/stores/kds.store'
 import { useAuthStore } from '@/stores/auth.store'
-import { PENDING_ORDER_STATUSES } from '@/utils/orderStatus'
 import KdsAppBar      from '@/components/kds/AppBar.vue'
 import KdsColumn      from '@/components/kds/Column.vue'
 import KdsOrderCard   from '@/components/kds/OrderCard.vue'
@@ -21,58 +20,48 @@ const {
 
 const { prepareFood, markReady, completeOrder, fetchOrders, init, cleanup, getOrderWaitMinutes, updateStatus } = store
 
-const draggingOrder = ref(null)
+const draggingOrder  = ref(null)
 const dragOverColumn = ref(null)
 
-function handleDragStart(order) {
-  draggingOrder.value = order
-}
-
-function handleDragEnd() {
-  draggingOrder.value = null
-  dragOverColumn.value = null
-}
-
-function handleDragEnter(columnKey) {
-  dragOverColumn.value = columnKey
-}
-
-function handleDragLeave(columnKey) {
-  if (dragOverColumn.value === columnKey) {
-    dragOverColumn.value = null
-  }
-}
+function handleDragStart(order) { draggingOrder.value = order }
+function handleDragEnd()        { draggingOrder.value = null; dragOverColumn.value = null }
+function handleDragEnter(col)   { dragOverColumn.value = col }
+function handleDragLeave(col)   { if (dragOverColumn.value === col) dragOverColumn.value = null }
 
 function handleDrop(columnKey) {
   if (!draggingOrder.value) return
-
-  const status = draggingOrder.value.status
-  const id = draggingOrder.value.id
-
-  // Map column to status
-  const statusMap = {
-    'pending': 'confirmed',
-    'preparing': 'preparing',
-    'ready': 'ready'
-  }
-
+  const statusMap = { pending: 'confirmed', preparing: 'preparing', ready: 'ready' }
   const newStatus = statusMap[columnKey]
-  if (newStatus && newStatus !== status) {
-    updateStatus(id, newStatus, newStatus.charAt(0).toUpperCase() + newStatus.slice(1))
+  if (newStatus && newStatus !== draggingOrder.value.status) {
+    updateStatus(
+      draggingOrder.value.id,
+      newStatus,
+      newStatus.charAt(0).toUpperCase() + newStatus.slice(1),
+    )
   }
-
   handleDragEnd()
+}
+
+// Called by OrderCard's @update-status — receives (id, status)
+// Maps back-status strings to the correct API status label
+function handleUpdateStatus(id, status) {
+  const labelMap = {
+    confirmed:  'Confirmed',
+    preparing:  'Preparing',
+    ready:      'Ready',
+    completed:  'Completed',
+  }
+  updateStatus(id, status, labelMap[status] ?? status)
 }
 
 const boardCount = computed(() =>
   pendingOrders.value.length + preparingOrders.value.length + readyOrders.value.length
 )
 
-/** Each column definition drives KdsColumn + which orders it renders */
 const columns = computed(() => [
-  { key: 'pending',   label: 'Pending',           accentColor: '#f59e0b', orders: pendingOrders.value   },
-  { key: 'preparing', label: 'Preparation',        accentColor: '#1e3a8a', orders: preparingOrders.value },
-  { key: 'ready',     label: 'Ready',   accentColor: '#16a34a', orders: readyOrders.value     },
+  { key: 'pending',   label: 'Pending',      accentColor: '#f59e0b', orders: pendingOrders.value   },
+  { key: 'preparing', label: 'Preparation',  accentColor: '#1e3a8a', orders: preparingOrders.value },
+  { key: 'ready',     label: 'Ready',        accentColor: '#16a34a', orders: readyOrders.value     },
 ])
 
 onMounted(init)
@@ -110,7 +99,7 @@ onUnmounted(cleanup)
           </v-btn>
         </div>
 
-        <!-- Board (3 columns) -->
+        <!-- Board -->
         <template v-else-if="tab === 'active'">
           <KdsEmptyState v-if="!boardCount" />
 
@@ -121,11 +110,11 @@ onUnmounted(cleanup)
               :label="col.label"
               :accent-color="col.accentColor"
               :count="col.orders.length"
+              :class="{ 'kds-col--drag-over': dragOverColumn === col.key }"
               @dragover.prevent
               @dragenter.prevent="handleDragEnter(col.key)"
               @dragleave="handleDragLeave(col.key)"
               @drop.prevent="handleDrop(col.key)"
-              :class="{ 'kds-col--drag-over': dragOverColumn === col.key }"
             >
               <KdsOrderCard
                 v-for="order in col.orders"
@@ -138,7 +127,7 @@ onUnmounted(cleanup)
                 @complete-order="completeOrder"
                 @drag-start="handleDragStart"
                 @drag-end="handleDragEnd"
-                @update-status="(id, status) => updateStatus(id, status, status.charAt(0).toUpperCase() + status.slice(1))"
+                @update-status="handleUpdateStatus"
               />
             </KdsColumn>
           </div>
@@ -178,8 +167,8 @@ onUnmounted(cleanup)
 </template>
 
 <style scoped>
-.kds-root  { background: #ebebeb !important; }
-.kds-main  { background: #ebebeb; }
+.kds-root { background: #e8eaed !important; }
+.kds-main { background: #e8eaed; }
 
 .kds-layout {
   padding: 20px;
@@ -188,13 +177,12 @@ onUnmounted(cleanup)
   flex-direction: column;
 }
 
-/* 3-column board fills remaining height */
 .kds-board {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   flex: 1;
-  min-height: 0;          /* crucial for flex children */
+  min-height: 0;
 }
 
 @media (max-width: 960px) {

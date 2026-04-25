@@ -2,8 +2,8 @@
 import KdsOrderCard from '@/components/kds/OrderCard.vue'
 
 defineProps({
-  orders:        { type: Array,    default: () => [] },
-  getWaitMinutes:{ type: Function, default: () => null },
+  orders:         { type: Array,    default: () => [] },
+  getWaitMinutes: { type: Function, default: () => null },
 })
 </script>
 
@@ -12,18 +12,22 @@ defineProps({
 
     <!-- Empty -->
     <div v-if="!orders.length" class="kds-hist__empty">
-      <v-icon size="40" color="grey-lighten-2">mdi-history</v-icon>
+      <div class="kds-hist__empty-icon">
+        <v-icon size="32" color="#c0cdd9">mdi-history</v-icon>
+      </div>
       <p class="kds-hist__empty-title">No history yet</p>
       <p class="kds-hist__empty-sub">Completed orders will appear here.</p>
     </div>
 
     <template v-else>
+      <!-- Header -->
       <div class="kds-hist__header">
-        <v-icon size="14" color="grey-darken-1">mdi-history</v-icon>
+        <v-icon size="13" color="#6b7280">mdi-history</v-icon>
         <span class="kds-hist__title">Completed Orders</span>
         <span class="kds-hist__chip">{{ orders.length }}</span>
       </div>
 
+      <!-- Grid -->
       <v-row dense>
         <v-col
           v-for="order in orders"
@@ -45,19 +49,33 @@ defineProps({
 <style scoped>
 .kds-hist {
   padding-top: 4px;
+  height: 100%;
+  overflow-y: auto;
 }
 
+/* ── Empty ───────────────────────────────────────────────────────────── */
 .kds-hist__empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: calc(100dvh - 140px);
-  gap: 8px;
+  gap: 10px;
+}
+
+.kds-hist__empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .kds-hist__empty-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: #1e293b;
   margin: 0;
@@ -69,6 +87,7 @@ defineProps({
   margin: 0;
 }
 
+/* ── Header ──────────────────────────────────────────────────────────── */
 .kds-hist__header {
   display: flex;
   align-items: center;
@@ -89,7 +108,7 @@ defineProps({
   color: #475569;
   font-size: 10px;
   font-weight: 700;
-  padding: 1px 7px;
+  padding: 1px 8px;
   border-radius: 99px;
 }
 </style>

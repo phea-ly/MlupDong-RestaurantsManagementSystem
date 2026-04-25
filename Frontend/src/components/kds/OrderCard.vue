@@ -17,17 +17,15 @@ const emit = defineEmits([
   'update-status',
 ])
 
-const store = useKdsStore()
+const store    = useKdsStore()
 const dragging = ref(false)
 
 function onDragStart(event) {
-  const id = props.order.id
-  event.dataTransfer?.setData('text/plain', String(id))
-  event.dataTransfer.effectAllowed = 'move'
-  emit('drag-start', { id, status: props.order.order_status })
+  event.dataTransfer?.setData('text/plain', String(props.order.id))
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
+  emit('drag-start', { id: props.order.id, status: props.order.order_status })
   dragging.value = true
 }
-
 function onDragEnd() {
   dragging.value = false
   emit('drag-end')
@@ -42,255 +40,237 @@ const isPreparing = computed(() => props.order.order_status === 'preparing')
 const isReady     = computed(() => props.order.order_status === 'ready')
 const isCompleted = computed(() => props.order.order_status === 'completed')
 
-/** Total quantity across all items (shown in "Ready" card like screenshot) */
 const totalItems = computed(() =>
-  (props.order.items ?? []).reduce((sum, i) => sum + (i.quantity ?? 1), 0)
+  (props.order.items ?? []).reduce((sum, i) => sum + (Number(i.quantity) || 1), 0)
 )
+
+function goBackToPending()   { emit('update-status', props.order.id, 'confirmed')  }
+function goBackToPreparing() { emit('update-status', props.order.id, 'preparing')  }
 </script>
 
 <template>
   <div
-    class="kds-card"
+    class="kc"
     :class="{
-      'kds-card--flash':     order._flash,
-      'kds-card--completed': isCompleted,
-      'kds-card--dragging':  dragging,
+      'kc--flash':     order._flash,
+      'kc--completed': isCompleted,
+      'kc--dragging':  dragging,
     }"
     draggable="true"
     @dragstart="onDragStart"
     @dragend="onDragEnd"
   >
-    <!-- Left accent stripe — matches screenshot color per column -->
-    <div class="kds-card__stripe" :style="{ background: accentColor }" />
+    <!-- Left accent stripe -->
+    <div class="kc__stripe" :style="{ background: accentColor }" />
 
-    <div class="kds-card__body">
+    <!-- Card content -->
+    <div class="kc__body">
 
-      <!-- ── Row 1: table tag + timer ─────────────────────────────────────── -->
-      <div class="kds-card__top">
-        <span class="kds-card__table" :style="{ color: accentColor, borderColor: accentColor + '44', background: accentColor + '12' }">
-          {{ order.table_name || '—' }}
-        </span>
-        <span class="kds-card__timer" :class="timerClass">{{ elapsedFormatted }}</span>
+      <!-- ── Head: table tag | order num | timer ──────────────────────── -->
+      <div class="kc__head">
+        <span class="kc__table-tag">{{ order.table_name || '—' }}</span>
+        <div class="kc__head-right">
+          <span v-if="order.order_number" class="kc__order-num">#{{ order.order_number }}</span>
+          <span class="kc__timer" :class="timerClass">{{ elapsedFormatted }}</span>
+        </div>
       </div>
 
-      <!-- ── Items list ─────────────────────────────────────────────────── -->
-      <!--
-        For "Ready for Pickup" cards the screenshot shows a summary line
-        ("4 Items Total") instead of the full list.
-        We replicate that pattern: show items detail when pending/preparing,
-        show summary when ready/completed.
-      -->
-      <div v-if="!isReady && !isCompleted" class="kds-card__items">
+      <!-- ── Items (pending / preparing) ──────────────────────────────── -->
+      <div v-if="!isReady && !isCompleted" class="kc__items">
         <div
           v-for="item in order.items"
           :key="item.order_item_id ?? item.id"
-          class="kds-card__item"
+          class="kc__item"
         >
-          <span class="kds-card__qty">{{ item.quantity }}×</span>
-          <div class="kds-card__item-info">
-            <span class="kds-card__item-name">{{ item.name }}</span>
-            <span v-if="item.note" class="kds-card__item-note">
-              <v-icon size="10">mdi-note-text-outline</v-icon>{{ item.note }}
+          <span class="kc__qty">{{ item.quantity }}×</span>
+          <div class="kc__item-detail">
+            <span class="kc__item-name">{{ item.name }}</span>
+            <span v-if="item.note" class="kc__item-note">
+              <v-icon size="10" color="#d97706">mdi-note-text-outline</v-icon>
+              {{ item.note }}
             </span>
           </div>
         </div>
       </div>
 
-      <!-- Ready: show item count summary (matches screenshot) -->
-      <div v-else-if="isReady" class="kds-card__summary">
+      <!-- ── Summary (ready / completed) ──────────────────────────────── -->
+      <div v-else class="kc__summary" :class="{ 'kc__summary--done': isCompleted }">
         {{ totalItems }} Item{{ totalItems !== 1 ? 's' : '' }} Total
       </div>
 
-      <!-- Completed: same summary style -->
-      <div v-else class="kds-card__summary kds-card__summary--done">
-        {{ totalItems }} Item{{ totalItems !== 1 ? 's' : '' }} Total
-      </div>
-
-      <!-- Special instructions -->
-      <div
-        v-if="order.special_instructions || order.notes"
-        class="kds-card__note"
-      >
+      <!-- ── Special instructions ──────────────────────────────────────── -->
+      <div v-if="order.special_instructions || order.notes" class="kc__note">
         <v-icon size="11" color="#d97706">mdi-note-edit-outline</v-icon>
         {{ order.special_instructions || order.notes }}
       </div>
 
-      <!-- ── Action row ────────────────────────────────────────────────── -->
-      <div class="kds-card__footer">
-
-        <!-- Pending → START PREP -->
-        <v-btn
-          v-if="isPending"
-          variant="tonal"
-          block
-          size="small"
-          rounded="0"
-          class="kds-card__btn kds-card__btn--pending"
-        >
-          <!-- custom style via CSS var -->
-          <span @click="emit('prepare-food', order.id)">START PREP</span>
-        </v-btn>
-
-        <!-- Preparing → READY -->
-        <v-btn
-          v-else-if="isPreparing"
-          variant="flat"
-          block
-          size="small"
-          rounded="0"
-          class="kds-card__btn kds-card__btn--preparing"
-          @click="emit('mark-ready', order.id)"
-        >
-          READY
-        </v-btn>
-
-        <!-- Ready → COLLECT (+ optional print icon) -->
-        <div v-else-if="isReady" class="kds-card__ready-row">
-          <v-btn
-            variant="flat"
-            block
-            size="small"
-            rounded="0"
-            class="kds-card__btn kds-card__btn--ready"
-            @click="emit('complete-order', order.id)"
-          >
-            COLLECT
-          </v-btn>
-          <v-btn
-            icon
-            variant="text"
-            size="small"
-            class="kds-card__print-btn"
-          >
-            <v-icon size="16" color="#64748b">mdi-printer-outline</v-icon>
-          </v-btn>
-        </div>
-
-        <!-- Status change buttons -->
-        <div class="kds-card__status-btns">
-          <v-btn v-if="isPreparing" variant="outlined" size="x-small" @click="emit('update-status', order.id, 'confirmed')">Back to Pending</v-btn>
-          <v-btn v-if="isReady" variant="outlined" size="x-small" @click="emit('update-status', order.id, 'preparing')">Back to Prep</v-btn>
-        </div>
-
+      <!-- ── Order type ─────────────────────────────────────────────────── -->
+      <div v-if="order.order_type" class="kc__type-row">
+        <span class="kc__type-chip">{{ order.order_type.replace('_', ' ').toUpperCase() }}</span>
       </div>
+
     </div>
+
+    <!-- ── Action button (full-width, no side padding) ──────────────────── -->
+
+    <!-- Pending → START PREP -->
+    <button
+      v-if="isPending"
+      class="kc__btn kc__btn--pending"
+      @click.stop="emit('prepare-food', order.id)"
+    >
+      <v-icon size="13" color="#92400e">mdi-fire</v-icon>
+      START PREP
+    </button>
+
+    <!-- Preparing → MARK READY -->
+    <button
+      v-else-if="isPreparing"
+      class="kc__btn kc__btn--preparing"
+      @click.stop="emit('mark-ready', order.id)"
+    >
+      <v-icon size="13" color="white">mdi-check</v-icon>
+      MARK READY
+    </button>
+
+    <!-- Ready → COLLECT -->
+    <div v-else-if="isReady" class="kc__collect-row">
+      <button class="kc__btn kc__btn--ready" @click.stop="emit('complete-order', order.id)">
+        <v-icon size="13" color="white">mdi-package-up</v-icon>
+        COLLECT
+      </button>
+      <button class="kc__print-btn" @click.stop>
+        <v-icon size="15" color="#94a3b8">mdi-printer-outline</v-icon>
+      </button>
+    </div>
+
+    <!-- Completed -->
+    <div v-else class="kc__done-strip">
+      <v-icon size="13" color="#94a3b8">mdi-check-circle-outline</v-icon>
+      Completed
+    </div>
+
   </div>
 </template>
 
 <style scoped>
-/* ── Shell ─────────────────────────────────────────────────────────────────── */
-.kds-card {
+/* ── Shell ─────────────────────────────────────────────────────────────── */
+.kc {
   display: flex;
+  flex-direction: column;
   background: #ffffff;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(15,23,42,.07);
-  transition: box-shadow .15s ease, transform .15s ease;
+  box-shadow: 0 1px 4px rgba(15,23,42,.08), 0 0 0 1px rgba(15,23,42,.05);
+  transition: box-shadow .15s, transform .15s, opacity .15s;
+  cursor: grab;
+  position: relative;
 }
-
-.kds-card:hover {
-  box-shadow: 0 4px 16px rgba(15,23,42,.11);
-  transform: translateY(-1px);
-}
-
-.kds-card--flash {
-  animation: flashCard 1.8s ease;
-}
+.kc:hover      { box-shadow: 0 5px 18px rgba(15,23,42,.13), 0 0 0 1px rgba(15,23,42,.07); transform: translateY(-1px); }
+.kc--dragging  { opacity: .4; cursor: grabbing; }
+.kc--completed { opacity: .55; }
+.kc--flash     { animation: flashCard 1.8s ease; }
 
 @keyframes flashCard {
-  0%   { box-shadow: 0 0 0 3px rgba(20,184,166,.45); }
-  100% { box-shadow: 0 1px 4px rgba(15,23,42,.07);   }
+  0%   { box-shadow: 0 0 0 3px rgba(20,184,166,.5); }
+  100% { box-shadow: 0 1px 4px rgba(15,23,42,.08);  }
 }
 
-.kds-card--completed {
-  opacity: .6;
+/* ── Left stripe ───────────────────────────────────────────────────────── */
+.kc__stripe {
+  position: absolute;
+  top: 0; left: 0;
+  width: 4px;
+  height: 100%;
 }
 
-.kds-card--dragging {
-  opacity: 0.5;
+/* ── Body ──────────────────────────────────────────────────────────────── */
+.kc__body {
+  padding: 13px 14px 10px 18px; /* 18px clears the stripe */
 }
 
-/* ── Left accent stripe ────────────────────────────────────────────────────── */
-.kds-card__stripe {
-  width: 5px;
-  flex-shrink: 0;
-}
-
-/* ── Body ──────────────────────────────────────────────────────────────────── */
-.kds-card__body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 12px 14px 0;
-  min-width: 0;
-}
-
-/* ── Top row: table tag + timer ────────────────────────────────────────────── */
-.kds-card__top {
+/* ── Head ──────────────────────────────────────────────────────────────── */
+.kc__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 11px;
 }
 
-.kds-card__table {
+/* Table tag — border only, no fill (matches screenshot) */
+.kc__table-tag {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 7px;
+  border: 1.5px solid #c7d2e7;
+  color: #334155;
+  background: transparent;
+  letter-spacing: .2px;
+  flex-shrink: 0;
+}
+
+.kc__head-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kc__order-num {
   font-size: 11px;
-  font-weight: 800;
-  padding: 3px 8px;
-  border-radius: 6px;
-  border: 1px solid;
-  letter-spacing: .3px;
+  font-weight: 500;
+  color: #94a3b8;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  letter-spacing: .2px;
 }
 
-.kds-card__timer {
-  font-size: 16px;
+/* Timer — bold mono with letter-spacing to match "05 : 48" */
+.kc__timer {
+  font-size: 17px;
   font-weight: 800;
-  font-family: 'DM Mono', monospace;
-  letter-spacing: .5px;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  letter-spacing: 3px;
 }
 
-/* Timer urgency classes (driven by store.getTimerClass) */
-.timer-ok       { color: #334155; }
+.timer-ok       { color: #1e293b; }
 .timer-warn     { color: #f59e0b; }
-.timer-critical { color: #ef4444; animation: timerBlink 1s step-end infinite; }
+.timer-critical { color: #ef4444; animation: blink 1s step-end infinite; }
+@keyframes blink { 50% { opacity: .2; } }
 
-@keyframes timerBlink { 50% { opacity: .3; } }
-
-/* ── Items list ────────────────────────────────────────────────────────────── */
-.kds-card__items {
+/* ── Items ─────────────────────────────────────────────────────────────── */
+.kc__items {
   display: flex;
   flex-direction: column;
   gap: 5px;
   margin-bottom: 10px;
 }
 
-.kds-card__item {
+.kc__item {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
+  gap: 8px;
 }
 
-.kds-card__qty {
+.kc__qty {
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   color: #475569;
-  min-width: 24px;
-  font-family: 'DM Mono', monospace;
+  min-width: 26px;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  flex-shrink: 0;
 }
 
-.kds-card__item-info {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
+.kc__item-detail { display: flex; flex-direction: column; gap: 1px; }
 
-.kds-card__item-name {
+.kc__item-name {
   font-size: 14px;
   font-weight: 600;
-  color: #1e293b;
+  color: #0f172a;
+  line-height: 1.3;
 }
 
-.kds-card__item-note {
+.kc__item-note {
   display: flex;
   align-items: center;
   gap: 3px;
@@ -299,25 +279,22 @@ const totalItems = computed(() =>
   font-style: italic;
 }
 
-/* ── Summary (ready/completed) ─────────────────────────────────────────────── */
-.kds-card__summary {
-  font-size: 14px;
+/* ── Summary ───────────────────────────────────────────────────────────── */
+.kc__summary {
+  font-size: 13.5px;
   font-weight: 600;
-  color: #1e293b;
+  color: #0f172a;
   margin-bottom: 10px;
 }
+.kc__summary--done { color: #94a3b8; }
 
-.kds-card__summary--done {
-  color: #94a3b8;
-}
-
-/* ── Special instructions note ─────────────────────────────────────────────── */
-.kds-card__note {
+/* ── Note ──────────────────────────────────────────────────────────────── */
+.kc__note {
   display: flex;
   align-items: flex-start;
   gap: 5px;
-  padding: 6px 8px;
-  margin-bottom: 10px;
+  padding: 6px 9px;
+  margin-bottom: 8px;
   background: #fffbeb;
   border: 1px dashed #fcd34d;
   border-radius: 6px;
@@ -327,85 +304,91 @@ const totalItems = computed(() =>
   line-height: 1.4;
 }
 
-/* ── Footer / buttons ──────────────────────────────────────────────────────── */
-.kds-card__footer {
-  margin: 0 -14px;   /* bleed to card edges */
+/* ── Order type chip ───────────────────────────────────────────────────── */
+.kc__type-row { margin-bottom: 4px; }
+
+.kc__type-chip {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  color: #64748b;
+  background: #f1f5f9;
+  border-radius: 4px;
+  padding: 2px 7px;
 }
 
-/* Shared button base */
-.kds-card__btn {
-  text-transform: none !important;
-  font-size: 12px !important;
-  font-weight: 800 !important;
-  letter-spacing: 1px !important;
-  height: 38px !important;
-  border-radius: 0 0 10px 0 !important;  /* bottom-right radius matches card */
-}
-
-/* Pending — warm amber tonal */
-.kds-card__btn--pending {
-  color: #b45309 !important;
-  background: #fef3c7 !important;
-}
-
-.kds-card__btn--pending:hover {
-  background: #fde68a !important;
-}
-
-/* Preparing — navy blue flat (matches screenshot) */
-.kds-card__btn--preparing {
-  background: #1e3a8a !important;
-  color: #fff !important;
-}
-
-.kds-card__btn--preparing:hover {
-  background: #1e40af !important;
-}
-
-/* Ready — green flat (matches screenshot) */
-.kds-card__btn--ready {
-  background: #16a34a !important;
-  color: #fff !important;
-  flex: 1;
-  border-radius: 0 0 0 0 !important;
-}
-
-.kds-card__btn--ready:hover {
-  background: #15803d !important;
-}
-
-/* Ready row: COLLECT btn + print icon side-by-side */
-.kds-card__ready-row {
-  display: flex;
-  align-items: stretch;
-}
-
-.kds-card__print-btn {
-  width: 42px !important;
-  height: 38px !important;
-  border-left: 1px solid #e2e8f0 !important;
-  border-radius: 0 0 10px 0 !important;
-  flex-shrink: 0;
-}
-
-.kds-card__status-btns {
-  display: flex;
-  gap: 4px;
-  margin-top: 8px;
-  justify-content: flex-end;
-}
-
-/* Completed strip */
-.kds-card__done {
+/* ── Action buttons ────────────────────────────────────────────────────── */
+.kc__btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  height: 36px;
-  font-size: 11px;
+  gap: 7px;
+  width: 100%;
+  height: 42px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  border-radius: 0;
+  transition: filter .12s;
+}
+.kc__btn:hover  { filter: brightness(1.07); }
+.kc__btn:active { filter: brightness(.92); }
+
+.kc__btn--pending    { background: #fef3c7; color: #92400e; }
+.kc__btn--preparing  { background: #1e3a8a; color: #ffffff; }
+.kc__btn--ready      { background: #16a34a; color: #ffffff; flex: 1; height: 42px; border-radius: 0; }
+
+/* ── Collect row ───────────────────────────────────────────────────────── */
+.kc__collect-row { display: flex; align-items: stretch; }
+
+.kc__print-btn {
+  width: 44px;
+  flex-shrink: 0;
+  background: #f8fafc;
+  border: none;
+  border-left: 1px solid #e2e8f0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .12s;
+}
+.kc__print-btn:hover { background: #f1f5f9; }
+
+/* ── Done strip ────────────────────────────────────────────────────────── */
+.kc__done-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  font-size: 11.5px;
   font-weight: 700;
   color: #94a3b8;
   background: #f8fafc;
-  border-radius: 0 0 10px 10px;
 }
-</style>
+
+/* ── Back row ──────────────────────────────────────────────────────────── */
+.kc__back-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 5px 10px 6px;
+  background: #ffffff;
+}
+
+.kc__back-link {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: 4px;
+  transition: color .12s, background .12s;
+}
+.kc__back-link:hover { color: #475569; background: #f1f5f9; }
+</style> 

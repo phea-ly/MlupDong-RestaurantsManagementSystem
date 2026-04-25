@@ -117,7 +117,7 @@ onUnmounted(() => {
           </div>
           <div>
             <div class="brand-name">Mlup Dong</div>
-            <div class="brand-sub">គណទំ</div>
+            <div class="brand-sub">Restaurant</div>
           </div>
         </div>
 
