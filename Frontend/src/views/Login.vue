@@ -141,7 +141,7 @@ async function login() {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: url("https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1400&q=90") center / cover no-repeat;
+  background: url("https://images.unsplash.com/photo-1599302592205-d7d683c83eea?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDE0fHx8ZW58MHx8fHx8") center / cover no-repeat;
   animation: slow-zoom 20s ease-in-out infinite alternate;
 }
 @keyframes slow-zoom {
