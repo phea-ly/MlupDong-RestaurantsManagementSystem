@@ -9,6 +9,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -30,7 +31,19 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $validated = $request->validated();
+
+        if (isset($validated['name'])) {
+            $name = trim($validated['name']);
+            $firstName = Str::of($name)->before(' ')->value();
+            $lastName = trim(Str::of($name)->after(' ')->value());
+
+            $validated['first_name'] = $firstName;
+            $validated['last_name'] = $lastName !== '' ? $lastName : $firstName;
+            unset($validated['name']);
+        }
+
+        $request->user()->fill($validated);
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;

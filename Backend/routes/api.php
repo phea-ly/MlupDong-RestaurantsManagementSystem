@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DiscountController;
+use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\KdsController;
 use App\Http\Controllers\MenuItemController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderItemController;
@@ -12,12 +14,22 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\TableController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\SalesReportController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CustomerOrderController;
 use Illuminate\Support\Facades\Route;
 
+
+Route::patch('/menu/{id}/availability', [MenuItemController::class, 'updateAvailability']);
 Route::apiResource('restaurants', RestaurantController::class);
 Route::apiResource('roles', RoleController::class);
 Route::apiResource('users', UserController::class);
 Route::apiResource('staffs', StaffController::class);
+Route::post('tables/generate-all', [TableController::class, 'generateAll']);
+Route::post('tables/{id}/generate-qr', [TableController::class, 'generateQr']);
+Route::get('tables/{id}/download-qr', [TableController::class, 'downloadQrFile']);
+Route::get('tables/by-token/{token}', [TableController::class, 'getTableByToken']);
 Route::apiResource('tables', TableController::class);
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('menu-items', MenuItemController::class);
@@ -26,3 +38,46 @@ Route::apiResource('order-items', OrderItemController::class);
 Route::apiResource('payments', PaymentController::class);
 Route::apiResource('discounts', DiscountController::class);
 Route::apiResource('order-status-logs', OrderStastusLogController::class);
+
+Route::get('activity-logs/summary', [ActivityLogController::class, 'summary']);
+Route::get('activity-logs/{id}',    [ActivityLogController::class, 'show']);
+Route::delete('activity-logs',      [ActivityLogController::class, 'clear']);
+Route::apiResource('activity-logs', ActivityLogController::class)->only(['index', 'destroy']);
+
+Route::prefix('sales-report')->group(function () {
+    Route::get('summary',    [SalesReportController::class, 'summary']);
+    Route::get('chart',      [SalesReportController::class, 'chart']);
+    Route::get('categories', [SalesReportController::class, 'categories']);
+    Route::get('orders',     [SalesReportController::class, 'orders']);
+});
+
+Route::prefix('dashboard')->group(function () {
+    Route::get('kpi',           [DashboardController::class, 'kpi']);
+    Route::get('best-selling',  [DashboardController::class, 'bestSelling']);
+    Route::get('peak-hours',    [DashboardController::class, 'peakHours']);
+    Route::get('order-summary', [DashboardController::class, 'orderSummary']);
+});
+
+
+Route::prefix('customer')->group(function () {
+    Route::post('orders', [CustomerOrderController::class, 'store']);
+});
+
+Route::get('kds/orders',                  [KdsController::class, 'orders']);
+Route::patch('kds/orders/{id}/status',    [KdsController::class, 'updateStatus']);
+
+Route::get('/', function () {
+    return response()->json(['message' => 'Hello world!']);
+});
+
+Route::post('/login',    [AuthController::class, 'login']);
+Route::post('/refresh',  [AuthController::class, 'refresh']);
+
+Route::middleware('jwt')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::get('/user', [AuthController::class, 'getUser']);
+    Route::get('/me',   [AuthController::class, 'getUser']);
+    Route::put('/user',  [AuthController::class, 'updateUser']);
+    Route::post('/user', [AuthController::class, 'updateUser']);
+});

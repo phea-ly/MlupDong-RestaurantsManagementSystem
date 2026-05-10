@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use App\Models\OrderItem;
+use App\Support\KdsPayload;
+use App\Events\KdsOrderEvent;
 use Illuminate\Http\Request;
 
 class OrderItemController extends Controller
@@ -24,6 +27,8 @@ class OrderItemController extends Controller
         ]);
 
         $orderItem = OrderItem::query()->create($validated);
+
+        $this->publishOrderItemsUpdated($orderItem->order_id);
 
         return response()->json($orderItem->load(['order', 'menuItem']), 201);
     }
@@ -48,14 +53,30 @@ class OrderItemController extends Controller
 
         $orderItem->update($validated);
 
+        $this->publishOrderItemsUpdated($orderItem->order_id);
+
         return response()->json($orderItem->load(['order', 'menuItem']));
     }
 
     public function destroy(string $id)
     {
         $orderItem = OrderItem::query()->findOrFail($id);
+        $orderId = $orderItem->order_id;
         $orderItem->delete();
 
+        $this->publishOrderItemsUpdated($orderId);
+
         return response()->noContent();
+    }
+
+    private function publishOrderItemsUpdated(int $orderId): void
+    {
+        $order = Order::query()->with(['table', 'orderItems.menuItem'])->find($orderId);
+        if (!$order) {
+            return;
+        }
+
+        $payload = KdsPayload::fromOrder($order);
+        event(new KdsOrderEvent('order.items.updated', $payload));
     }
 }

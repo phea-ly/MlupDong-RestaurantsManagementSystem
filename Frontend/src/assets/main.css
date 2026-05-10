@@ -1,35 +1,102 @@
-@import './base.css';
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --app-font: 'Plus Jakarta Sans', 'Segoe UI', Inter, system-ui, sans-serif;
+  --app-primary: #2D5A27;
+  --app-primary-600: #2D5A27;
+  --app-primary-100: white;
+  --page-horizontal-padding: 24px;
+  --page-vertical-padding: 20px;
+  --app-radius-xs: 12px;
+  --app-radius-sm: 12px;
+  --app-radius-md: 12px;
+  --app-radius-lg: 12px;
+  --app-radius-xl: 12px;
+  --app-radius-2xl: 12px;
+  --app-radius-3xl: 12px;
+  /* Vuetify theme overrides (RGB values) */
+  --v-theme-primary: 45, 90, 39;
+  --v-theme-on-primary: 255, 255, 255;
+  --v-theme-secondary: 45, 90, 39;
+  --v-theme-on-secondary: 255, 255, 255;
+}
+
+html,
+body,
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+  margin: 0;
+  padding: 0;
+  font-family: var(--app-font);
+  font-size: 15px;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge legacy */
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+/* Force Vuetify components to use the same font */
+.v-application,
+.v-overlay__content {
+  font-family: var(--app-font) !important;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+/* Hide scrollbars but keep scroll */
+body::-webkit-scrollbar,
+.v-main::-webkit-scrollbar,
+.v-application::-webkit-scrollbar,
+.v-overlay__content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+.page-shell {
+  width: 100%;
+  padding: var(--page-vertical-padding) var(--page-horizontal-padding);
+  box-sizing: border-box;
 }
+
+/* Global radius reduction */
+.rounded-0 { border-radius: 0 !important; }
+.rounded-sm { border-radius: var(--app-radius-sm) !important; }
+.rounded { border-radius: var(--app-radius-md) !important; }
+.rounded-lg { border-radius: var(--app-radius-lg) !important; }
+.rounded-xl { border-radius: var(--app-radius-xl) !important; }
+.rounded-2xl { border-radius: var(--app-radius-2xl) !important; }
+.rounded-3xl { border-radius: var(--app-radius-3xl) !important; }
+.rounded-t-3xl { border-top-left-radius: var(--app-radius-3xl) !important; border-top-right-radius: var(--app-radius-3xl) !important; }
+
+/* Keep circles/pills intact */
+.rounded-circle { border-radius: 50% !important; }
+.rounded-pill { border-radius: 999px !important; }
+
+/* Common components (fallbacks) */
+.v-card,
+.v-sheet,
+.v-alert,
+.v-chip,
+.v-list,
+.v-menu .v-overlay__content,
+.v-dialog .v-overlay__content,
+.v-snackbar .v-snackbar__wrapper {
+  border-radius: var(--app-radius-xl) !important;
+}
+
+.v-btn,
+.v-field,
+.v-input,
+.v-toolbar {
+  border-radius: 0px;
+}
+
+.v-text-field .v-field,
+.v-select .v-field,
+.v-autocomplete .v-field {
+  border-radius: var(--app-radius-lg) !important;
+}
+

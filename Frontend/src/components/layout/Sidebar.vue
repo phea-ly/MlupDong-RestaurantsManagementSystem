@@ -1,224 +1,169 @@
 <script setup>
-import { computed } from 'vue'
-import SvgIcon from '@jamescoyle/vue-icon';
-import {
-  mdiViewDashboard,
-  mdiSilverware,
-  mdiAccountGroup,
-  mdiTablePicnic,
-  mdiChartBoxOutline,
-  mdiCogOutline,
-} from '@mdi/js'
-import { getSessionUser } from '@/utils/auth'
-
-const props = defineProps({
-  activeSection: {
-    type: String,
-    required: true
-  }
-})
-
-const emit = defineEmits(['update:active-section', 'logout'])
-
-const sessionUser = computed(() => getSessionUser())
-const profileName = computed(() => sessionUser.value?.name || 'Sophal K.')
-const profileRole = computed(() => {
-  const role = sessionUser.value?.role || 'manager'
-  return role.charAt(0).toUpperCase() + role.slice(1)
-})
-const profileInitials = computed(() => {
-  const name = profileName.value.trim()
-
-  if (!name) {
-    return 'SK'
-  }
-
-  const parts = name.split(/\s+/).filter(Boolean)
-  const initials = parts.slice(0, 2).map((part) => part[0].toUpperCase()).join('')
-  return initials || 'SK'
-})
-
+// src/components/layout/Sidebar.vue (or wherever your sidebar lives)
 const menu = [
-  { id: 'dashboard', label: 'Dashboard', icon: mdiViewDashboard },
-  { id: 'menu', label: 'Menu', icon: mdiSilverware },
-  { id: 'staff', label: 'Staff', icon: mdiAccountGroup },
-  { id: 'tables', label: 'Tables', icon: mdiTablePicnic }
+  { to: '/home/admin-dashboard', label: 'Dashboard',  icon: 'mdi-view-dashboard-outline' },
+  { to: '/home/categories',      label: 'Categories', icon: 'mdi-tag-multiple-outline'   },
+  { to: '/home/menu',            label: 'Menus',      icon: 'mdi-silverware-fork-knife'  },
+  { to: '/home/roles',           label: 'Roles',      icon: 'mdi-account-edit'           },
+  { to: '/home/user',            label: 'Users',      icon: 'mdi-account-group-outline'  },
+  { to: '/home/staff',           label: 'Staffs',     icon: 'mdi-account-circle-outline' },
+  { to: '/home/table',           label: 'Tables',     icon: 'mdi-table-chair'            },
 ]
 
 const reportsMenu = [
-  { id: 'sales-report', label: 'Sales Report', icon: mdiChartBoxOutline },
-  { id: 'settings', label: 'Settings', icon: mdiCogOutline }
+  { to: '/home/sales-report',  label: 'Sales Report', icon: 'mdi-chart-box-outline'      },
+  { to: '/home/activity-log',  label: 'Activity Log', icon: 'mdi-clipboard-text-outline' },
 ]
-
-function selectSection(sectionId) {
-  emit('update:active-section', sectionId)
-}
 </script>
 
 <template>
-  <v-navigation-drawer permanent width="278" class="sidebar" elevation="0">
-    <div class="brand px-4 pt-6 pb-3">
-      <div class="brand-icon">M</div>
-      <div>
-        <p class="brand-title">Mlup Dong Admin</p>
-        <p class="brand-subtitle">Management</p>
-      </div>
-    </div>
+  <v-navigation-drawer color="#ffffff" class="sidebar-drawer">
 
-    <v-list nav density="comfortable" class="px-3 mt-1 mb-1">
-      <v-list-item
-        v-for="item in menu"
-        :key="item.id"
-        :title="item.label"
-        rounded="lg"
-        :active="props.activeSection === item.id"
-        class="nav-item ga-3"
-        @click="selectSection(item.id)"
-      >
-        <template #prepend>
-          <svg-icon type="mdi" :path="item.icon"></svg-icon>
-        </template>
-      </v-list-item>
-    </v-list>
-
-    <p class="menu-heading px-5 mt-5 mb-2">Reports</p>
-    <v-list nav density="comfortable" class="px-3">
-      <v-list-item
-        v-for="item in reportsMenu"
-        :key="item.id"
-        :title="item.label"
-        rounded="lg"
-        :active="props.activeSection === item.id"
-        class="nav-item ga-3"
-        @click="selectSection(item.id)"
-      >
-        <template #prepend>
-          <svg-icon type="mdi" :path="item.icon"></svg-icon>
-        </template>
-      </v-list-item>
-    </v-list>
-
-    <v-spacer />
-    <v-card flat rounded="lg" class="mx-3 mb-4 pa-3 user-card" @click="emit('logout')">
-      <div class="d-flex align-center ga-2">
-        <v-avatar color="#0fd582" size="30" class="user-avatar">{{ profileInitials }}</v-avatar>
-        <div>
-          <p class="user-name">{{ profileName }}</p>
-          <p class="user-role">{{ profileRole }}</p>
+    <!-- Brand -->
+    <template #prepend>
+      <div class="brand-wrap px-3 pt-5">
+        <v-avatar size="48" class="brand-avatar">
+          <v-img src="/logo.png" cover />
+        </v-avatar>
+        <div class="brand-text">
+          <div class="brand-title">MLUP DONG</div>
+          <div class="brand-subtitle">Restaurant</div>
         </div>
       </div>
-    </v-card>
+    </template>
+
+    <!-- Custom Active Sidebar Item Example -->
+    <div v-if="$route.path === '/home/live-orders'" class="sidebar-item-active mb-1">
+      <span>Live Orders</span>
+      <div class="sidebar-item-line"></div>
+    </div>
+
+    <!-- Main nav -->
+    <v-list nav density="compact" class="px-4 pt-3">
+      <v-list-item
+        v-for="item in menu"
+        :key="item.to"
+        :to="item.to"
+        :prepend-icon="item.icon"
+        :title="item.label"
+        rounded="lg"
+        color="#2D5A27"
+        base-color="#2D5A27"
+        class="nav-item mb-0.5"
+      />
+    </v-list>
+
+    <!-- Reports section -->
+    <div class="section-label px-4 mt-4 mb-1">Reports</div>
+    <v-list nav density="compact" class="px-4 pb-0">
+      <v-list-item
+        v-for="item in reportsMenu"
+        :key="item.to"
+        :to="item.to"
+        :prepend-icon="item.icon"
+        :title="item.label"
+        rounded="lg"
+        color="#2D5A27"
+        base-color="#2D5A27"
+        class="nav-item mb-0.5"
+      />
+    </v-list>
+
   </v-navigation-drawer>
 </template>
 
 <style scoped>
-.sidebar {
-  border-right: 1px solid #dde5e8;
-  background: #f7faf9;
-}
-
-.brand {
+/* Brand */
+.brand-wrap {
   display: flex;
-  gap: 10px;
   align-items: center;
+  gap: 10px;
 }
-
-.brand-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #19e092 0%, #0fcb7e 100%);
-  color: #063824;
-  font-weight: 900;
-  display: grid;
-  place-items: center;
-  box-shadow: 0 6px 14px rgba(16, 210, 131, 0.22);
+.brand-avatar {
+  flex-shrink: 0;
+  background: #e8f5ee;
+  border: 1px solid #c6e8d4;
 }
-
-.brand-title {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 900;
+.brand-text {
+  display: flex;
+  flex-direction: column;
   line-height: 1.2;
-  color: #1a2e48;
+  overflow: hidden;
 }
-
-.brand-subtitle {
-  margin: 1px 0 0;
-  color: #7f90a4;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 700;
-  font-size: 10px;
-}
-
-.menu-heading {
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  color: #9aabbd;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.nav-item {
-  margin-bottom: 3px;
-  min-height: 40px;
-}
-
-.nav-item :deep(.v-list-item-title) {
+.brand-title {
   font-size: 13px;
   font-weight: 700;
-  color: #4b5d74;
+  letter-spacing: 0.04em;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-
-.nav-item :deep(.v-list-item__prepend) {
-  width: 22px;
-  min-width: 22px;
-  margin-inline-end: 10px;
-}
-
-.nav-item :deep(.v-icon),
-.nav-item :deep(svg) {
-  color: #6f8199;
-  opacity: 0.95;
-}
-
-.nav-item:hover {
-  background: #ecf3f0;
-}
-
-.nav-item.v-list-item--active {
-  background: #def4e8;
-}
-
-.nav-item.v-list-item--active :deep(.v-list-item-title),
-.nav-item.v-list-item--active :deep(.v-icon),
-.nav-item.v-list-item--active :deep(svg) {
-  color: #0f9e5f;
-}
-
-.user-card {
-  background: #f2f6f8;
-  border: 1px solid #d9e2e7;
-  cursor: pointer;
-}
-
-.user-avatar {
-  color: #083723;
+.brand-subtitle {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 500;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
-.user-name {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 800;
-  color: #1b2f4a;
-}
-
-.user-role {
-  margin: 0;
+/* Section label */
+.section-label {
   font-size: 11px;
-  color: #7a899f;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #9ca3af;
+}
+
+/* Nav item overrides */
+:deep(.v-list-item-title) {
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  color: inherit;
+}
+:deep(.v-list-item__prepend .v-icon) {
+  font-size: 18px !important;
+  opacity: 0.85;
+}
+:deep(.v-list-item--active) {
+  background-color: #f0faf4 !important;
+}
+:deep(.v-list-item--active .v-list-item-title) {
+  font-weight: 600 !important;
+}
+:deep(.v-list-item:not(.v-list-item--active):hover) {
+  background-color: #f3f4f6 !important;
+}
+:deep(.v-list-item) {
+  min-height: 36px !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+}
+
+/* Custom Active Sidebar Item */
+.sidebar-item-active {
+  display: flex;
+  align-items: center;
+  background: #bfe3ce;
+  border-top-right-radius: 32px;
+  border-bottom-right-radius: 32px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  padding: 16px 24px 16px 16px;
+  position: relative;
+  font-weight: 600;
+  color: #13795b;
+  font-size: 20px;
+  min-width: 180px;
+  min-height: 60px;
+  margin-bottom: 8px;
+}
+.sidebar-item-line {
+  width: 8px;
+  height: 44px;
+  background: #11916c;
+  border-radius: 6px;
+  margin-left: auto;
 }
 </style>

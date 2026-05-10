@@ -17,7 +17,7 @@ class OrderStastusLogController extends Controller
     {
         $validated = $request->validate([
             'order_id' => ['required', 'exists:orders,order_id'],
-            'status' => ['required', Rule::in(['new', 'preparing', 'completed', 'cancelled'])],
+            'status' => ['required', Rule::in(['new', 'received', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'])],
             'changed_at' => ['nullable', 'date'],
             'note' => ['nullable', 'string', 'max:255'],
         ]);
@@ -38,7 +38,7 @@ class OrderStastusLogController extends Controller
 
         $validated = $request->validate([
             'order_id' => ['sometimes', 'required', 'exists:orders,order_id'],
-            'status' => ['sometimes', 'required', Rule::in(['new', 'preparing', 'completed', 'cancelled'])],
+            'status' => ['sometimes', 'required', Rule::in(['new', 'received', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'])],
             'changed_at' => ['nullable', 'date'],
             'note' => ['nullable', 'string', 'max:255'],
         ]);

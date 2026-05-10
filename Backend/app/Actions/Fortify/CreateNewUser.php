@@ -5,6 +5,7 @@ namespace App\Actions\Fortify;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Models\User;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
@@ -24,8 +25,13 @@ class CreateNewUser implements CreatesNewUsers
             'password' => $this->passwordRules(),
         ])->validate();
 
+        $name = trim($input['name']);
+        $firstName = Str::of($name)->before(' ')->value();
+        $lastName = trim(Str::of($name)->after(' ')->value());
+
         return User::create([
-            'name' => $input['name'],
+            'first_name' => $firstName,
+            'last_name' => $lastName !== '' ? $lastName : $firstName,
             'email' => $input['email'],
             'password' => $input['password'],
         ]);

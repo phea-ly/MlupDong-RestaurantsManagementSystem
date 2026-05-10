@@ -1,105 +1,82 @@
-import { loginApi, logoutApi, meApi, registerApi } from '@/api/auth.api'
+const SESSION_KEY = "auth_session";
+const TOKEN_KEY = "auth_token";
 
-const AUTH_KEY = 'auth_session_user'
+export function saveSession(user) {
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ user }));
+  } catch {}
+}
 
 export function getSessionUser() {
-  const rawUser = localStorage.getItem(AUTH_KEY)
-
-  if (!rawUser) {
-    return null
-  }
-
   try {
-    return JSON.parse(rawUser)
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
   } catch {
-    localStorage.removeItem(AUTH_KEY)
-    return null
+    return null;
   }
 }
 
-function setSessionUser(user) {
-  if (!user || user.role !== 'admin') {
-    clearSessionUser()
-    return
-  }
-
-  localStorage.setItem(AUTH_KEY, JSON.stringify(user))
+export function hasUser() {
+  return !!getSessionUser()?.user;
 }
 
-function clearSessionUser() {
-  localStorage.removeItem(AUTH_KEY)
-}
-
-function parseApiError(error, fallbackMessage) {
-  const data = error?.response?.data
-
-  if (data?.message) {
-    return data.message
-  }
-
-  if (data?.errors) {
-    const firstField = Object.keys(data.errors)[0]
-    const firstMessage = data.errors[firstField]?.[0]
-
-    if (firstMessage) {
-      return firstMessage
-    }
-  }
-
-  return fallbackMessage
-}
-
-export function isAuthenticated() {
-  return getUserRole() === 'admin'
-}
-
-export function getUserRole() {
-  return getSessionUser()?.role ?? null
-}
-
-export function getDashboardPathByRole() {
-  return '/home/admin-dashboard'
-}
-
-export async function loginWithCredentials(email, password, remember = false) {
-  if (!email || !password) {
-    throw new Error('Email and password are required.')
-  }
-
+export function clearSession() {
   try {
-    const response = await loginApi({ email, password, remember })
-    setSessionUser(response.data.user)
-    return response.data.user
-  } catch (error) {
-    throw new Error(parseApiError(error, 'Unable to sign in.'))
-  }
+    localStorage.removeItem(SESSION_KEY);
+  } catch {}
 }
 
-export async function registerWithCredentials(payload) {
+export function saveToken(token) {
   try {
-    const response = await registerApi(payload)
-    setSessionUser(response.data.user)
-    return response.data.user
-  } catch (error) {
-    throw new Error(parseApiError(error, 'Unable to create account.'))
-  }
+    localStorage.setItem(TOKEN_KEY, token);
+  } catch {}
 }
 
-export async function syncAuthSession() {
+export function getToken() {
   try {
-    const response = await meApi()
-    setSessionUser(response.data.user)
-    return true
+    return localStorage.getItem(TOKEN_KEY);
   } catch {
-    clearSessionUser()
-    return false
+    return null;
   }
 }
 
-export async function logoutSession() {
+export function clearToken() {
   try {
-    await logoutApi()
-  } finally {
-    clearSessionUser()
+    localStorage.removeItem(TOKEN_KEY);
+  } catch {}
+}
+
+export function getDashboardPathByRole(role) {
+  if (!role) return "/login";
+  switch (role.toString().toLowerCase().trim()) {
+    case "admin":
+      return "/home/admin-dashboard";
+    case "chef":
+    case "cheff":
+      return "/chef";
+    case "waiter":
+    case "cashier":
+    case "staff":
+      return "/waiter";
+    default:
+      return "/login";
   }
 }
+
+export function canAccessPath(role, path) {
+  if (!role) return false;
+  const r = role.toString().toLowerCase().trim();
+  const base = "/" + (path.split("/")[1] ?? "");
+
+  switch (base) {
+    case "/home":
+      return ["admin"].includes(r);
+    case "/chef":
+      return ["admin", "chef", "cheff", "staff"].includes(r);
+    case "/waiter":
+      return ["admin", "waiter", "cashier", "staff"].includes(r);
+    default:
+      return ["admin"].includes(r);
+  }
+}
+

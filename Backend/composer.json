@@ -10,12 +10,16 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "chillerlan/php-qrcode": "^6.0",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/fortify": "^1.30",
         "laravel/framework": "^12.0",
+        "laravel/reverb": "^1.10",
+        "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "laravel/wayfinder": "^0.1.9",
-        "tymon/jwt-auth": "*"
+        "predis/predis": "^3.4",
+        "tymon/jwt-auth": "^2.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -74,8 +78,7 @@
             "@php artisan package:discover --ansi"
         ],
         "post-update-cmd": [
-            "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
-            "@php artisan boost:update --ansi"
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""

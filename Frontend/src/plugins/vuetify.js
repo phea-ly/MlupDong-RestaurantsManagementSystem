@@ -22,10 +22,11 @@ export default createVuetify({
       light: {
         dark: false,
         colors: {
-          primary: colors.red.darken1, // #E53935
-          secondary: colors.red.lighten4, // #FFCDD2
+          primary: '#2D5A27',
+          secondary: '#2D5A27',
         }
       },
     },
   },
 })
+

@@ -1,33 +1,181 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import routes from './routes'
-import { getDashboardPathByRole, getUserRole, isAuthenticated } from '@/utils/auth'
+// src/router/index.js
+import { createRouter, createWebHistory } from "vue-router";
+import { useAuthStore } from "@/stores/auth.store";
+import { canAccessPath } from "@/utils/auth";
+
+const routes = [
+  {
+    path: "/",
+    redirect: "/login",
+  },
+
+  // ── Guest only ─────────────────────────────────────────────────────────────
+  {
+    path: "/login",
+    name: "login",
+    meta: { guestOnly: true },
+    component: () => import("@/views/Login.vue"),
+  },
+
+  // ── Admin dashboard (/home/**) — admin only ────────────────────────────────
+  // The canAccessPath() guard enforces this. Any other role trying to visit
+  // /home/* is redirected to their own dashboard.
+  {
+    path: "/home",
+    meta: { requiresAuth: true, section: "home" },
+    component: () => import("@/views/Layout.vue"),
+    children: [
+      { path: "", redirect: "/home/admin-dashboard" },
+      {
+        path: "admin-dashboard",
+        name: "home-dashboard",
+        component: () => import("@/views/dashboard/AdminDashboard.vue"),
+      },
+      {
+        path: "menu",
+        name: "home-menu",
+        component: () => import("@/views/menu/Menu.vue"),
+      },
+      {
+        path: "roles",
+        name: "home-roles",
+        component: () => import("@/views/roles/roles.vue"),
+      },
+      {
+        path: "categories",
+        name: "home-categories",
+        component: () => import("@/views/categories/Categories.vue"),
+      },
+      {
+        path: "staff",
+        name: "home-staff",
+        component: () => import("@/views/staff/Staff.vue"),
+      },
+      {
+        path: "table",
+        name: "home-table",
+        component: () => import("@/views/table/Table.vue"),
+      },
+      {
+        path: "user",
+        name: "home-user",
+        component: () => import("@/views/user/User.vue"),
+      },
+      {
+        path: "sales-report",
+        name: "home-sales-report",
+        component: () => import("@/views/salesReport/SalesReport.vue"),
+      },
+      {
+        path: "activity-log",
+        name: "home-activity-log",
+        component: () => import("@/views/activity/Activity.vue"),
+      },
+    ],
+  },
+
+  // ── Waiter / cashier / staff / admin ──────────────────────────────────────
+  {
+    path: "/waiter",
+    name: "waiter-dashboard",
+    meta: { requiresAuth: true, section: "waiter" },
+    component: () => import("@/views/waiter/waiterApp.vue"),
+  },
+
+  // ── Chef / KDS — chef, staff, admin ───────────────────────────────────────
+  {
+    path: "/chef",
+    name: "chef-menu",
+    meta: { requiresAuth: true, section: "chef" },
+    component: () => import("@/views/kds/KdsApp.vue"),
+  },
+
+  // ── Public: customer QR menu (no login required) ──────────────────────────
+  {
+    path: "/menu/:token",
+    name: "customer-menu",
+    meta: { public: true },
+    component: () => import("@/views/customer/customerMenu.vue"),
+  },
+  {
+    path: "/order/:token",
+    name: "customer-order",
+    meta: { public: true },
+    component: () => import("@/views/customer/customerOrder.vue"),
+  },
+
+  // ── Fallback ───────────────────────────────────────────────────────────────
+  {
+    path: "/:pathMatch(.*)*",
+    redirect: "/login",
+  },
+];
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
-})
+});
 
-router.beforeEach((to) => {
-  const authenticated = isAuthenticated()
-  const role = getUserRole()
+// ── Navigation guard ──────────────────────────────────────────────────────────
 
-  if (to.meta.requiresAuth && !authenticated) {
-    return '/login'
+router.beforeEach(async (to) => {
+  const auth = useAuthStore();
+
+  if (to.meta.public) return true;
+
+  await auth.ensureAuthChecked();
+
+  const isAuthed = auth.isAuthenticated;
+
+  console.log(
+    "Guard:",
+    to.path,
+    "| isAuthed:",
+    isAuthed,
+    "| role:",
+    auth.role,
+    "| dashboard:",
+    auth.dashboardPath,
+  );
+
+  if (to.meta.guestOnly) {
+    if (isAuthed) {
+      // Prevent infinite redirect: if dashboardPath is /login (no valid role), clear session and stay on login
+      if (auth.dashboardPath === "/login") {
+        auth.clearSession();
+        return true;
+      }
+      return auth.dashboardPath;
+    }
+    return true;
   }
 
-  if (to.meta.guestOnly && authenticated) {
-    return getDashboardPathByRole()
+  if (to.meta.requiresAuth) {
+    if (!isAuthed) {
+      return { name: "login", query: { redirect: to.fullPath } };
+    }
+
+    // If user is authenticated but has no valid role, redirect to login
+    if (!auth.role || auth.dashboardPath === "/login") {
+      auth.clearSession();
+      return { name: "login" };
+    }
+
+    const section = to.meta.section;
+    console.log(
+      "Section:",
+      section,
+      "| canAccess:",
+      canAccessPath(auth.role, `/${section}`),
+    );
+
+    if (section && !canAccessPath(auth.role, `/${section}`)) {
+      return auth.dashboardPath;
+    }
   }
 
-  if (authenticated && to.path === '/home/dashboard') {
-    return getDashboardPathByRole()
-  }
+  return true;
+});
 
-  if (to.meta.roles && !to.meta.roles.includes(role)) {
-    return authenticated ? getDashboardPathByRole() : '/login'
-  }
+export default router;
 
-  return true
-})
-
-export default router

@@ -1,217 +1,189 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { loginWithCredentials } from '@/utils/auth'
+import { ref }                 from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { storeToRefs }         from 'pinia'
+import { useAuthStore }        from '@/stores/auth.store'
 
-const router = useRouter()
+const router    = useRouter()
+const route     = useRoute()
+const authStore = useAuthStore()
 
-const email = ref('')
+const { loading, error } = storeToRefs(authStore)
+
+const email    = ref('')
 const password = ref('')
-const rememberMe = ref(false)
-const errorText = ref('')
-const loading = ref(false)
+const showPass = ref(false)
+
+const toggleShowPass = () => (showPass.value = !showPass.value)
+const clearError     = () => authStore.clearError()
 
 async function login() {
-  errorText.value = ''
-  loading.value = true
-
+  if (!email.value || !password.value) return
   try {
-    await loginWithCredentials(email.value.trim(), password.value, rememberMe.value)
-    await router.push('/home/dashboard')
-  } catch (error) {
-    errorText.value = error.message
-  } finally {
-    loading.value = false
+    await authStore.login(email.value, password.value)
+    const redirect = route.query.redirect
+      ? decodeURIComponent(String(route.query.redirect))
+      : null
+    if (redirect && redirect !== '/login') {
+      router.push(redirect)
+    } else {
+      router.push(authStore.dashboardPath)
+    }
+  } catch {
+    // error is already set in the store
   }
-}
-
-function goToRegister() {
-  router.push('/register')
 }
 </script>
 
 <template>
-  <v-container fluid class="auth-page pa-0">
-    <v-row class="fill-height ma-0" align="center" justify="center">
-      <v-col cols="12" md="11" lg="10" xl="9">
-        <v-sheet class="auth-shell" rounded="xl" elevation="12">
-          <div class="left-panel">
-            <p class="brand">Urbee</p>
-            <h1 class="title">Welcome Back</h1>
-            <p class="subtitle">Sign in with your email address and password.</p>
+  <div class="login-bg" v-if="true">
+    <div class="bg-image" />
 
-            <p class="field-label">Email Address</p>
-            <v-text-field
-              v-model="email"
-              type="email"
-              variant="outlined"
-              density="comfortable"
-              hide-details="auto"
-              class="mb-3"
-              placeholder="name@example.com"
-            />
+    <v-container class="fill-height" fluid style="position:relative; z-index:2;">
+      <v-row align="center" justify="center" class="fill-height">
+        <v-col cols="12" sm="8" md="5" lg="4" xl="3">
 
-            <p class="field-label">Password</p>
-            <v-text-field
-              v-model="password"
-              type="password"
-              variant="outlined"
-              density="comfortable"
-              hide-details="auto"
-              class="mb-2"
-              @keyup.enter="login"
-            />
+          <v-card class="glass-card" rounded="xl" elevation="0">
+            <v-card-text class="pa-8">
 
-            <div class="meta-row">
-              <v-checkbox
-                v-model="rememberMe"
+              <div class="d-flex flex-column align-center ga-3 mb-6">
+                <v-avatar size="72" class="brand-avatar">
+                  <v-img src="/logo.png" alt="Mlup Dong" cover />
+                </v-avatar>
+                <div class="text-center">
+                  <div class="brand-name">Mlup Dong</div>
+                  <div class="brand-sub">Restaurant Management</div>
+                </div>
+              </div>
+
+              <div class="login-title mb-1">Sign In</div>
+              <div class="login-sub mb-6">Welcome back! Please enter your credentials.</div>
+
+              <v-alert
+                v-if="error"
+                type="error"
+                variant="tonal"
+                rounded="lg"
                 density="compact"
-                hide-details
-                color="#43a047"
-                label="Remember me"
+                closable
+                class="mb-4"
+                @click:close="clearError"
+              >
+                {{ error }}
+              </v-alert>
+
+              <v-text-field
+                v-model="email"
+                placeholder="Email address"
+                type="email"
+                append-inner-icon="mdi-account-outline"
+                variant="outlined"
+                rounded="lg"
+                density="comfortable"
+                class="glass-field mb-3"
+                hide-details="auto"
+                :disabled="loading"
+                @keyup.enter="login"
               />
-              <a href="#" class="forgot">Forgot Password?</a>
-            </div>
 
-            <p v-if="errorText" class="error mb-3">{{ errorText }}</p>
+              <v-text-field
+                v-model="password"
+                placeholder="Password"
+                :type="showPass ? 'text' : 'password'"
+                :append-inner-icon="showPass ? 'mdi-eye-outline' : 'mdi-eye-off-outline'"
+                variant="outlined"
+                rounded="lg"
+                density="comfortable"
+                class="glass-field mb-3"
+                hide-details="auto"
+                :disabled="loading"
+                @click:append-inner="toggleShowPass"
+                @keyup.enter="login"
+              />
 
-            <v-btn
-              size="large"
-              color="#43a047"
-              class="text-none font-weight-bold px-8"
-              :loading="loading"
-              @click="login"
-            >
-              Sign In
-            </v-btn>
+              <v-btn
+                block
+                size="large"
+                rounded="lg"
+                :loading="loading"
+                :disabled="!email || !password"
+                class="login-btn mb-5"
+                @click="login"
+              >
+                Sign In
+              </v-btn>
 
-            <p class="switch-copy">
-              Don't have an account?
-              <button type="button" class="link-btn" @click="goToRegister">Sign Up</button>
-            </p>
-          </div>
+              <v-divider class="mb-4" style="border-color: rgba(255,255,255,0.15)" />
 
-          <div class="right-panel" />
-        </v-sheet>
-      </v-col>
-    </v-row>
-  </v-container>
+              <div class="text-center text-caption" style="color: rgba(255,255,255,0.45)">
+                Powered by <em><strong style="color: rgba(255,255,255,0.7)">Mlup Dong</strong></em>
+              </div>
+
+            </v-card-text>
+          </v-card>
+
+        </v-col>
+      </v-row>
+    </v-container>
+  </div>
 </template>
 
 <style scoped>
-.auth-page {
+.login-bg {
+  font-family: "Manrope", sans-serif;
+  position: relative;
   min-height: 100vh;
-  padding: 28px 16px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background:
-    radial-gradient(circle at 12% 15%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 38%),
-    radial-gradient(circle at 88% 12%, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 34%),
-    linear-gradient(180deg, #d8dde1 0%, #cfd4d9 100%);
-}
-
-.auth-shell {
-  min-height: 500px;
-  width: min(1320px, 100%);
-  display: grid;
-  grid-template-columns: minmax(300px, 440px) 1fr;
   overflow: hidden;
-  border: 1px solid #e5e8eb;
-  box-shadow:
-    0 40px 80px rgba(30, 40, 52, 0.28),
-    0 8px 24px rgba(30, 40, 52, 0.2);
 }
-
-.left-panel {
-  background: #f8f8f8;
-  padding: 34px 30px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+.bg-image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: url("https://images.unsplash.com/photo-1599302592205-d7d683c83eea?fm=jpg&q=60&w=3000&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDE0fHx8ZW58MHx8fHx8") center / cover no-repeat;
+  animation: slow-zoom 20s ease-in-out infinite alternate;
 }
-
-.right-panel {
-  background-image:
-    linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12)),
-    url('https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1400&q=80');
-  background-size: cover;
-  background-position: center;
+@keyframes slow-zoom {
+  from { transform: scale(1); }
+  to   { transform: scale(1.06); }
 }
-
-.brand {
-  margin: 0 0 16px;
-  font-size: 36px;
-  line-height: 1;
-  letter-spacing: 0.03em;
-  font-family: "Segoe Script", "Lucida Handwriting", cursive;
-  color: #1f1f1f;
+.glass-card {
+  background: rgba(255,255,255,0.12) !important;
+  backdrop-filter: blur(22px) saturate(1.4);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  border: 1px solid rgba(255,255,255,0.22) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.28), 0 1px 0 rgba(255,255,255,0.18) inset !important;
+  animation: rise .6s cubic-bezier(.16,1,.3,1) both;
 }
-
-.title {
-  margin: 0;
-  font-size: 28px;
-  color: #1f1f1f;
+@keyframes rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
-.field-label {
-  margin: 18px 0 6px;
-  font-size: 12px;
-  color: #8c98a5;
+.brand-avatar {
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.15), 0 6px 24px rgba(15,158,95,0.45) !important;
+  flex-shrink: 0;
 }
-
-.meta-row {
-  margin: 8px 0 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.brand-name { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: 0.02em; }
+.brand-sub  {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  color: rgba(255,255,255,0.55); letter-spacing: 0.12em; margin-top: 2px;
 }
-
-.forgot {
-  color: #95a1ad;
-  text-decoration: none;
-  font-size: 13px;
+.login-title { font-family: "Playfair Display", serif; font-size: 32px; font-weight: 700; color: #fff; }
+.login-sub   { font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.5; }
+.glass-field :deep(.v-field)           { background: rgba(255,255,255,0.12) !important; border: 1px solid rgba(255,255,255,0.25) !important; }
+.glass-field :deep(.v-field__outline)  { display: none; }
+.glass-field :deep(input)              { color: #fff !important; font-family: "Manrope", sans-serif; font-weight: 500; }
+.glass-field :deep(input::placeholder) { color: rgba(255,255,255,0.55) !important; }
+.glass-field :deep(.v-icon)            { color: rgba(255,255,255,0.6) !important; }
+.login-btn {
+  background: linear-gradient(135deg, var(--app-primary), var(--app-primary-600)) !important;
+  color: #063824 !important; font-weight: 800 !important; font-size: 15px !important;
+  box-shadow: 0 6px 22px rgba(15,158,95,0.45) !important;
+  transition: transform .15s, box-shadow .15s !important;
 }
-
-.switch-copy {
-  margin: 18px 0 0;
-  color: #9aa4ae;
-  font-size: 13px;
-}
-
-.link-btn {
-  margin-left: 4px;
-  border: none;
-  background: transparent;
-  color: #43a047;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.subtitle {
-  margin: 8px 0 6px;
-  color: #8c98a5;
-  font-size: 14px;
-}
-
-.error {
-  color: #d95353;
-  font-size: 13px;
-}
-
-@media (max-width: 960px) {
-  .auth-shell {
-    grid-template-columns: 1fr;
-    min-height: auto;
-    width: min(560px, 100%);
-  }
-
-  .right-panel {
-    min-height: 220px;
-  }
-
-  .left-panel {
-    padding: 30px 24px;
-  }
-}
+.login-btn:hover  { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(15,158,95,0.55) !important; }
+.login-btn:active { transform: translateY(0);    box-shadow: 0 4px 14px rgba(15,158,95,0.4)  !important; }
 </style>

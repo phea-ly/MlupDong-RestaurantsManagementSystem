@@ -1,5 +1,2 @@
-import client from './client'
+export { default } from './api'
 
-export const getUsers = () => {
-  return client.get('/users')
-}
