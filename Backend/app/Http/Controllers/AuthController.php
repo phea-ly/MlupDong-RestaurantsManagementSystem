@@ -6,7 +6,6 @@ use App\Models\ActivityLog;
 use App\Models\User;
 use App\Traits\LogsActivity;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -56,12 +55,7 @@ class AuthController extends Controller
         // The Vue router uses role_name to decide which dashboard to land on.
         $user->load('role');
 
-        $cookieName     = config('jwt.cookie.name', 'auth_token');
-        $cookieTtl      = (int) config('jwt.ttl', 60);
-        $cookiePath     = config('jwt.cookie.path', '/');
-        $cookieDomain   = config('jwt.cookie.domain');
-        $cookieSecure   = (bool) config('jwt.cookie.secure', false);
-        $cookieSameSite = config('jwt.cookie.same_site', 'lax');
+        $cookieTtl = (int) config('jwt.ttl', 60);
 
         return response()->json([
             'token'      => $token,
@@ -75,23 +69,19 @@ class AuthController extends Controller
         try {
             $user = auth('api')->user();
             $this->logActivity('user', 'logout', "User \"{$user?->email}\" logged out.");
-            $cookieName = config('jwt.cookie.name', 'auth_token');
-            $token = request()->bearerToken() ?: request()->cookie($cookieName);
-            if ($token) {
-                JWTAuth::setToken($token)->invalidate();
-            }
+
+            // Source: https://stackoverflow.com/questions/29631302/logout-issue-with-laravel-jwt-auth-authentication
+            // Posted by Maykonn | Retrieved 2026-05-10 | CC BY-SA 3.0
+            // $forever = true ensures the token is permanently blacklisted.
+            // Set to false if cache storage is a concern.
+            $forever = true;
+            JWTAuth::parseToken()->invalidate($forever);
+
         } catch (JWTException $e) {
-            return response()->json(['error' => 'Failed to logout, please try again'], 500);
+            return response()->json(['error' => 'Failed to logout, please try again.'], 500);
         }
 
-        $cookieName     = config('jwt.cookie.name', 'auth_token');
-        $cookiePath     = config('jwt.cookie.path', '/');
-        $cookieDomain   = config('jwt.cookie.domain');
-        $cookieSecure   = (bool) config('jwt.cookie.secure', false);
-        $cookieSameSite = config('jwt.cookie.same_site', 'lax');
-
-        // Set TTL to -1 so the browser expires the cookie immediately
-        return response()->json(['message' => 'Successfully logged out']);
+        return response()->json(['message' => 'Successfully logged out.']);
     }
 
     public function getUser()
@@ -110,15 +100,15 @@ class AuthController extends Controller
 
             $user = auth('api')->user();
             if (!$user) {
-                return response()->json(['error' => 'User not found'], 404);
+                return response()->json(['error' => 'User not found.'], 404);
             }
 
-            // Reload role on every /user call so a role change takes effect immediately
+            // Reload role on every /me call so a role change takes effect immediately.
             $user->load('role');
 
             return response()->json(['user' => $this->formatUser($user)]);
         } catch (JWTException $e) {
-            return response()->json(['error' => 'Failed to fetch user profile'], 500);
+            return response()->json(['error' => 'Failed to fetch user profile.'], 500);
         }
     }
 
@@ -130,14 +120,12 @@ class AuthController extends Controller
             return response()->json(['message' => 'Unable to refresh token. Please login again.'], 401);
         }
 
-        $cookieName     = config('jwt.cookie.name', 'auth_token');
-        $cookieTtl      = (int) config('jwt.ttl', 60);
-        $cookiePath     = config('jwt.cookie.path', '/');
-        $cookieDomain   = config('jwt.cookie.domain');
-        $cookieSecure   = (bool) config('jwt.cookie.secure', false);
-        $cookieSameSite = config('jwt.cookie.same_site', 'lax');
+        $cookieTtl = (int) config('jwt.ttl', 60);
 
-        return response()->json(['token' => $token, 'expires_in' => $cookieTtl * 60]);
+        return response()->json([
+            'token'      => $token,
+            'expires_in' => $cookieTtl * 60,
+        ]);
     }
 
     public function updateUser(Request $request)
@@ -181,22 +169,18 @@ class AuthController extends Controller
     /**
      * Serialize a User for API responses.
      *
-     * role_name (from the roles table via the eager-loaded relation) is now
+     * role_name (from the roles table via the eager-loaded relation) is
      * included at the top level. The frontend auth store reads this field to
      * determine which dashboard to redirect to after login / on refresh.
      *
      * Routing matrix (matched case-insensitively in utils/auth.js):
-     *   admin            → /home          (full admin dashboard)
-     *   chef             → /chef          (KDS / kitchen display)
-     *   waiter           → /waiter        (service station)
-     *   cashier          → /waiter
-     *   staff            → /waiter        (default; may also visit /chef)
+     *   admin            → /home/admin-dashboard
+     *   chef / cheff     → /chef
+     *   waiter / cashier / staff → /waiter
      */
-    // AuthController.php — find this method and replace it
-
     private function formatUser(User $user): array
     {
-        $role = $user->getRelation('role'); // ← add this line
+        $role = $user->getRelation('role');
 
         return [
             'id'         => $user->user_id,
@@ -204,7 +188,7 @@ class AuthController extends Controller
             'first_name' => $user->first_name,
             'last_name'  => $user->last_name,
             'role_id'    => $user->role_id,
-            'role_name'  => $role?->role_name ?? null, // ← changed from $user->role?->role_name
+            'role_name'  => $role?->role_name ?? null,
             'avatar'     => $user->avatar_url
                 ? $user->avatar_url . '?t=' . time()
                 : null,
