@@ -20,6 +20,7 @@ class User extends Authenticatable implements JWTSubject
     protected $primaryKey = 'user_id';
 
     protected $fillable = [
+        'name',
         'first_name',
         'last_name',
         'email',
@@ -60,6 +61,17 @@ class User extends Authenticatable implements JWTSubject
     {
         return Attribute::make(
             get: fn () => trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? '')),
+            set: function (string $value): array {
+                $name = trim($value);
+                $parts = preg_split('/\s+/', $name, 2);
+                $firstName = $parts[0] ?? $name;
+                $lastName = $parts[1] ?? $firstName;
+
+                return [
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                ];
+            },
         );
     }
 
